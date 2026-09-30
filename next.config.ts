@@ -4,11 +4,16 @@ const config: NextConfig = {
   devIndicators: false,
   serverExternalPackages: [
     "pg",
-    "pdf-parse",
+    "pdfjs-dist",
     "mammoth",
     "@google-cloud/tasks",
     "@google-cloud/storage",
   ],
+  outputFileTracingIncludes: {
+    "/api/tickets/*/*": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+    ],
+  },
   experimental: { proxyClientMaxBodySize: "11mb" },
 };
 export default config;
