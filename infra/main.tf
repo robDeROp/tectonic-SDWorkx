@@ -277,6 +277,9 @@ resource "google_cloud_run_v2_service" "app" {
   name                = "clarity"
   location            = var.region
   deletion_protection = false
+  scaling {
+    min_instance_count = 0
+  }
   template {
 
     service_account                  = google_service_account.app.email

@@ -27,7 +27,10 @@ probe() {
   token="$(gcloud auth print-identity-token --impersonate-service-account="$GCP_DEPLOY_SERVICE_ACCOUNT" --audiences="$service_url" --include-email)" || return 1
   curl --fail --silent --show-error --retry 6 --retry-all-errors --retry-delay 5 \
     --max-time 15 -H "Authorization: Bearer $token" "$1/api/health" | \
-    python3 -c 'import json,sys; assert json.load(sys.stdin).get("status")=="ok"'
+    python3 -c 'import json,sys; assert json.load(sys.stdin).get("status")=="ok"' || return 1
+  # Exercise application imports and database queries, not only the lightweight probe.
+  curl --fail --silent --show-error --max-time 20 -H "Authorization: Bearer $token" "$1/api/tickets" | \
+    python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)'
 }
 probe "$candidate_url"
 rollback() {
