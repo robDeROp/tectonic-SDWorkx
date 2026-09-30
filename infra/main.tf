@@ -176,6 +176,7 @@ resource "google_sql_database_instance" "db" {
 
     ip_configuration {
       ipv4_enabled = true
+      ssl_mode     = "ENCRYPTED_ONLY"
     }
 
 
