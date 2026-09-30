@@ -17,9 +17,7 @@ import {
   Search,
   Send,
   ShieldCheck,
-  Sparkles,
   Upload,
-  X,
   TriangleAlert,
 } from "lucide-react";
 import { dateLabel, request, timeLabel } from "@/lib/client";
@@ -32,6 +30,14 @@ import {
   type ReviewResult,
   type TicketDetail,
 } from "@/lib/types";
+import {
+  GlyphTile,
+  HunchIcon,
+  HunchMark,
+  Relevance,
+  SourceChip,
+} from "./hunch";
+import { PipStatus } from "./pip-status";
 import { ErrorNotice, Modal, Spinner, Status } from "./ui";
 
 export function TicketWorkspace({ id }: { id: string }) {
@@ -154,6 +160,20 @@ export function TicketWorkspace({ id }: { id: string }) {
     );
   const { ticket, documents, jobs, messages, deliveries, ai } = data;
   const active = jobs.find((j) => ["queued", "running"].includes(j.state));
+  const running = jobs.find((j) => j.state === "running");
+  const pipStep = !running
+    ? null
+    : running.kind === "documents"
+      ? data.events.some(
+          (e) =>
+            e.jobId === running.id && e.label === "Betrouwbaarheid beoordelen",
+        )
+        ? "Betrouwbaarheid beoordelen"
+        : "Kennisbank doorzoeken"
+      : running.kind === "draft"
+        ? "Concept schrijven"
+        : "Antwoord controleren";
+  const emails = messages.filter((m) => m.kind === "email");
   const documentsReady =
     documents.length > 0 &&
     documents.every((d) => d.assessedVersion === ticket.documentVersion);
@@ -258,11 +278,13 @@ export function TicketWorkspace({ id }: { id: string }) {
     <div className="page case-page">
       <div className="case-breadcrumb">
         <Link href="/">
-          <ArrowLeft size={14} />
+          <ArrowLeft size={16} />
           Klantvragen
         </Link>
-        <span>/</span>
-        <span>TKT-{String(ticket.number).padStart(4, "0")}</span>
+        <span aria-hidden="true">/</span>
+        <span className="mono">
+          TKT-{String(ticket.number).padStart(4, "0")}
+        </span>
         <span className="case-category">Payroll België</span>
       </div>
       <header className="case-heading">
@@ -310,7 +332,7 @@ export function TicketWorkspace({ id }: { id: string }) {
       <div className="case-layout">
         <div className="case-conversation">
           <div className="case-section-label">
-            <MessageSquareText size={15} />
+            <MessageSquareText size={18} />
             <h2>Conversatie</h2>
             <span>Oudste eerst</span>
           </div>
@@ -326,7 +348,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                 <header>
                   <div>
                     <strong>{ticket.customer}</strong>
-                    <span className="thread-label">Klantvraag</span>
+                    <SourceChip kind="chats">Klantvraag</SourceChip>
                   </div>
                   <time title={dateLabel(ticket.createdAt)}>
                     {dateLabel(ticket.createdAt, true)} ·{" "}
@@ -353,7 +375,11 @@ export function TicketWorkspace({ id }: { id: string }) {
                   onDocument={setSelected}
                 />
               ) : entry.kind === "message" ? (
-                <li className="thread-item" key={entry.key}>
+                <li
+                  className="thread-item"
+                  key={entry.key}
+                  id={`bericht-${entry.message.id}`}
+                >
                   <span
                     className={`thread-avatar ${entry.message.kind === "email" ? "colleague-avatar" : ""}`}
                   >
@@ -367,11 +393,13 @@ export function TicketWorkspace({ id }: { id: string }) {
                     <header>
                       <div>
                         <strong>{entry.message.author}</strong>
-                        <span className="thread-label">
-                          {entry.message.kind === "email"
-                            ? "Collega-mail · demo"
-                            : "Interne notitie"}
-                        </span>
+                        {entry.message.kind === "email" ? (
+                          <SourceChip kind="chats">
+                            Collega-mail · demo
+                          </SourceChip>
+                        ) : (
+                          <span className="thread-label">Interne notitie</span>
+                        )}
                       </div>
                       <time>
                         {dateLabel(entry.at, true)} · {timeLabel(entry.at)}
@@ -409,7 +437,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                     <header>
                       <div>
                         <strong>Verzending gesimuleerd</strong>
-                        <span className="thread-label">
+                        <span className="thread-label label-success">
                           {entry.delivery.overridden
                             ? "Bewust overruled"
                             : "Goedgekeurd"}
@@ -519,7 +547,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                             : void act("draft")
                         }
                       >
-                        <Sparkles size={14} />
+                        <HunchIcon name="summary" size={16} />
                         Schrijf met AI
                       </button>
                       <button
@@ -628,75 +656,117 @@ export function TicketWorkspace({ id }: { id: string }) {
             Proof of concept · E-mailverzending wordt gesimuleerd.
           </p>
         </div>
-        <aside className="case-sources" aria-label="Documenten bij dit ticket">
-          <section className="sources-section">
-            <div className="sources-heading">
-              <h2>
-                Documenten <span>{documents.length}</span>
-              </h2>
+        <aside
+          className="case-sources hunch-panel"
+          aria-label="Hunch-context bij dit ticket"
+          aria-busy={running?.kind === "documents" ? "true" : undefined}
+        >
+          <div className="hunch-panel-top">
+            <span className="hunch-panel-brand">
+              <HunchMark size={26} />
+              hunch
+            </span>
+            <span className="hunch-panel-id">
+              TKT-{String(ticket.number).padStart(4, "0")}
+            </span>
+          </div>
+          <div className="hunch-panel-body">
+            <section className="sources-section">
+              <div className="sources-heading">
+                <h2>Documenten</h2>
+                {documents.length > 0 && (
+                  <SourceChip kind="docs">
+                    {documents.length} gevonden
+                  </SourceChip>
+                )}
+              </div>
+              <p className="sources-intro">De bronnen achter je antwoord</p>
+              <div className="source-list">
+                {documents.map((doc, i) => (
+                  <SourceCard
+                    key={doc.id}
+                    doc={doc}
+                    index={i}
+                    currentVersion={ticket.documentVersion}
+                    onClick={() => setSelected(doc)}
+                  />
+                ))}
+              </div>
+              {!documents.length &&
+                (active?.kind === "documents" ? (
+                  <div className="source-list" aria-hidden="true">
+                    <span className="hn-skel" />
+                    <span className="hn-skel" />
+                    <span className="hn-skel short" />
+                  </div>
+                ) : (
+                  <div className="sources-empty">
+                    <Search size={20} />
+                    <p>Nog niets gevonden. Voeg zelf een document toe.</p>
+                  </div>
+                ))}
               <button
-                className="icon-button"
-                aria-label="Document uploaden"
-                title="Document uploaden"
-                disabled={!!busy}
+                className="source-add"
                 onClick={() => setUpload(true)}
+                disabled={!!busy}
               >
                 <Upload size={16} />
+                Document toevoegen
               </button>
-            </div>
-            <p className="sources-intro">De bronnen achter je antwoord</p>
-            <div className="source-list">
-              {documents.map((doc, i) => (
-                <SourceCard
-                  key={doc.id}
-                  doc={doc}
-                  index={i}
-                  currentVersion={ticket.documentVersion}
-                  onClick={() => setSelected(doc)}
-                />
-              ))}
-            </div>
-            {!documents.length && (
-              <div className="sources-empty">
-                <Search size={20} />
-                <p>De kennisagent verzamelt relevante documenten.</p>
-              </div>
+              <p className="sources-disclaimer">
+                Scores zijn AI-inschattingen. Open een bron voor de toelichting
+                en eventuele tegenstrijdigheden.
+              </p>
+            </section>
+            {emails.length > 0 && (
+              <section className="sources-section">
+                <div className="sources-heading">
+                  <h2>Chats & e-mails</h2>
+                  <SourceChip kind="chats">{emails.length} gevonden</SourceChip>
+                </div>
+                <div className="source-list">
+                  {emails.map((mail) => (
+                    <a
+                      key={mail.id}
+                      className="source-card hn-k-chats"
+                      href={`#bericht-${mail.id}`}
+                    >
+                      <GlyphTile kind="chats" />
+                      <span className="source-card-body">
+                        <strong className="source-name">{mail.author}</strong>
+                        <span className="source-card-meta">
+                          E-mail · {dateLabel(mail.createdAt, true)}
+                        </span>
+                        <span className="source-snippet">{mail.content}</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </section>
             )}
-            <button
-              className="source-add"
-              onClick={() => setUpload(true)}
-              disabled={!!busy}
-            >
-              <Paperclip size={14} />
-              Document toevoegen
-            </button>
-            <p className="sources-disclaimer">
-              Scores zijn AI-inschattingen. Open een bron voor de toelichting en
-              eventuele tegenstrijdigheden.
-            </p>
-          </section>
-          <section className="case-properties">
-            <h3>Ticketgegevens</h3>
-            <dl>
-              <div>
-                <dt>Behandelaar</dt>
-                <dd>
-                  <span className="mini-avatar">JD</span>Jamie De Clercq
-                </dd>
-              </div>
-              <div>
-                <dt>Organisatie</dt>
-                <dd>{ticket.company}</dd>
-              </div>
-              <div>
-                <dt>Ontvangen</dt>
-                <dd>
-                  {dateLabel(ticket.createdAt, true)},{" "}
-                  {timeLabel(ticket.createdAt)}
-                </dd>
-              </div>
-            </dl>
-          </section>
+            <section className="case-properties">
+              <h3>Ticketgegevens</h3>
+              <dl>
+                <div>
+                  <dt>Behandelaar</dt>
+                  <dd>
+                    <span className="mini-avatar">JD</span>Jamie De Clercq
+                  </dd>
+                </div>
+                <div>
+                  <dt>Organisatie</dt>
+                  <dd>{ticket.company}</dd>
+                </div>
+                <div>
+                  <dt>Ontvangen</dt>
+                  <dd>
+                    {dateLabel(ticket.createdAt, true)},{" "}
+                    {timeLabel(ticket.createdAt)}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          </div>
         </aside>
       </div>
       {upload && (
@@ -806,6 +876,23 @@ export function TicketWorkspace({ id }: { id: string }) {
           </Modal>
         )
       )}
+      <PipStatus
+        activeId={running?.id ?? null}
+        step={pipStep}
+        outcomeOf={(jobId) => {
+          const job = jobs.find((j) => j.id === jobId);
+          if (!job) return null;
+          return {
+            done: job.state === "done",
+            message:
+              job.kind === "documents"
+                ? "Bronnen beoordeeld"
+                : job.kind === "draft"
+                  ? "Je concept staat klaar"
+                  : "Controle afgerond",
+          };
+        }}
+      />
     </div>
   );
 }
@@ -854,8 +941,14 @@ function AgentEntry({
       ? (job.result as ReviewResult)
       : null;
   const negative = review?.verdict === "changes_requested";
-  const Icon =
-    stage === "search" ? Search : stage === "draft" ? Sparkles : ShieldCheck;
+  const icon =
+    stage === "search" ? (
+      <Search size={16} />
+    ) : stage === "draft" ? (
+      <HunchIcon name="summary" size={16} />
+    ) : (
+      <ShieldCheck size={16} />
+    );
   const title =
     stage === "search"
       ? "Kennisagent zoekt relevante documenten"
@@ -890,9 +983,9 @@ function AgentEntry({
   return (
     <li className={`thread-item agent-item ${running ? "agent-running" : ""}`}>
       <span
-        className={`thread-avatar agent-avatar ${failed ? "agent-warning" : ""}`}
+        className={`thread-avatar agent-avatar agent-${stage} ${failed ? "agent-warning" : ""}`}
       >
-        {running ? <Spinner size={16} /> : <Icon size={16} />}
+        {running ? <Spinner size={16} /> : icon}
       </span>
       <div className="agent-content">
         <div className="agent-heading">
@@ -900,7 +993,7 @@ function AgentEntry({
           <span
             className={`agent-state ${failed || negative ? "needs-attention" : !running && !stale ? "done" : ""}`}
           >
-            {!running && !failed && !stale && !negative && <Check size={12} />}
+            {!running && !failed && !stale && !negative && <Check size={14} />}
             {state}
           </span>
           <time title={dateLabel(at)}>{timeLabel(at)}</time>
@@ -1046,37 +1139,30 @@ function SourceCard({
     doc.assessedVersion === currentVersion ? doc.assessment : null;
   return (
     <button
-      className="source-card"
+      className="source-card hn-k-docs"
       onClick={onClick}
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      <div className="source-card-top">
-        <FileText size={17} />
-        <span>{doc.kind}</span>
-        {assessment ? (
-          <strong
-            className={`source-score ${assessment.score >= 80 ? "high" : assessment.score >= 50 ? "mid" : "low"}`}
-          >
-            {assessment.score}%
-          </strong>
-        ) : (
-          <span className="source-unscored">Niet beoordeeld</span>
-        )}
-      </div>
-      <strong className="source-name">{doc.name}</strong>
-      <div className="source-card-meta">
-        <span>
-          {dateLabel(doc.date, true)}
+      <GlyphTile kind="docs" />
+      <span className="source-card-body">
+        <strong className="source-name">{doc.name}</strong>
+        <span className="source-card-meta">
+          {doc.kind} · {dateLabel(doc.date, true)}
           {doc.date && ` ${doc.date.slice(0, 4)}`}
+          {doc.fictional && " · Fictieve bron"}
         </span>
-        {doc.fictional && <span>Fictieve bron</span>}
-      </div>
-      {assessment?.contradictions.length ? (
-        <span className="source-conflict">
-          <TriangleAlert size={12} />
-          Tegenstrijdigheid gevonden
-        </span>
-      ) : null}
+        {assessment ? (
+          <Relevance value={assessment.score} label={assessment.jev ? "relevant" : "betrouwbaar"} />
+        ) : (
+          <span className="source-unscored">Nog niet beoordeeld</span>
+        )}
+        {assessment?.contradictions.length ? (
+          <span className="source-conflict">
+            <TriangleAlert size={14} />
+            Tegenstrijdigheid gevonden
+          </span>
+        ) : null}
+      </span>
     </button>
   );
 }
@@ -1195,10 +1281,31 @@ export function DocumentModal({
               <small>%</small>
             </span>
             <div>
-              <strong>AI-inschatting van betrouwbaarheid</strong>
+              <strong>{assessment.jev ? "Relevantie voor deze klantvraag" : "AI-inschatting van betrouwbaarheid"}</strong>
               <p>{assessment.summary}</p>
             </div>
           </div>
+          {assessment.jev && (
+            <>
+              <div className="assessment-grid">
+                {([
+                  ["Relevantie", assessment.jev.relevance],
+                  ["Bronbetrouwbaarheid", assessment.jev.reliability],
+                  ["Actualiteit", assessment.jev.freshness],
+                ] as const).map(([label, dimension]) => (
+                  <div key={label}>
+                    <span>{label}</span>
+                    <p>{dimension ? `${dimension.score}/100 · modelzekerheid ${Math.round(dimension.confidence * 100)}%` : "Onbekend · geen geldige brondatum"}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="small-copy">
+                Jev beoordeelt, Gemini licht toe. Scores en modelzekerheid zijn
+                AI-inschattingen, geen garantie op juistheid.
+                {` Beoordeeld op ${dateLabel(assessment.jev.assessedAt)}.`}
+              </p>
+            </>
+          )}
           <div className="assessment-grid">
             {[
               ["Bron & gezag", assessment.source],

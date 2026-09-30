@@ -1,11 +1,27 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { AlertCircle, LoaderCircle, X } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  CheckCheck,
+  LoaderCircle,
+  X,
+} from "lucide-react";
 import { statusLabel } from "@/lib/client";
+import { HunchIcon } from "./hunch";
+/* Every status pairs its colour with a glyph and a word. */
+const statusGlyph: Record<string, React.ReactNode> = {
+  working: <HunchIcon name="summary" size={13} />,
+  open: <ArrowRight size={13} strokeWidth={2.5} />,
+  attention: <AlertCircle size={13} strokeWidth={2.5} />,
+  reviewed: <Check size={13} strokeWidth={2.5} />,
+  sent: <CheckCheck size={13} strokeWidth={2.5} />,
+};
 export function Status({ status }: { status: string }) {
   return (
     <span className={`status status-${status}`}>
-      <span />
+      {statusGlyph[status] || <span className="status-dot" />}
       {statusLabel[status] || status}
     </span>
   );

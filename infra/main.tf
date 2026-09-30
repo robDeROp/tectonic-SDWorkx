@@ -92,6 +92,7 @@ locals {
     GOOGLE_CLOUD_PROJECT        = var.project_id
     GOOGLE_CLOUD_LOCATION       = coalesce(var.gemini_location, var.region)
     GEMINI_MODEL                = var.gemini_model
+    JEV_MODEL                   = var.jev_model
     TASK_BACKEND                = "cloud-tasks"
     STORAGE_BACKEND             = "gcs"
     GCS_BUCKET                  = google_storage_bucket.documents.name
@@ -333,6 +334,16 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       env {
+        name = "JEV_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = data.google_secret_manager_secret.jev.secret_id
+            version = "latest"
+          }
+        }
+      }
+
+      env {
         name = "DATABASE_URL"
         value_source {
           secret_key_ref {
@@ -356,7 +367,7 @@ resource "google_cloud_run_v2_service" "app" {
   lifecycle {
     ignore_changes = [template[0].containers[0].image, template[0].revision, traffic, client, client_version]
   }
-  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_project_iam_member.app_roles, google_project_iam_member.tasks_service_agent, google_service_account_iam_member.tasks_tokens, google_service_account_iam_member.enqueue_identity, google_storage_bucket_iam_member.app_documents]
+  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_secret_manager_secret_iam_member.app_jev, google_project_iam_member.app_roles, google_project_iam_member.tasks_service_agent, google_service_account_iam_member.tasks_tokens, google_service_account_iam_member.enqueue_identity, google_storage_bucket_iam_member.app_documents]
 
 }
 

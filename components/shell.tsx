@@ -2,73 +2,69 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ArrowUpRight,
   BookOpen,
   ChevronDown,
   CircleHelp,
   Inbox,
-  Layers3,
   Settings2,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
+import { HunchIcon, HunchLogo } from "./hunch";
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const nav = [
+    {
+      href: "/",
+      label: "Klantvragen",
+      icon: Inbox,
+      active: path === "/" || path.startsWith("/tickets"),
+    },
+    {
+      href: "/kennisbank",
+      label: "Kennisbank",
+      icon: BookOpen,
+      active: path === "/kennisbank",
+    },
+    {
+      href: "/instellingen",
+      label: "Verbindingen",
+      icon: Settings2,
+      active: path === "/instellingen",
+    },
+  ];
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link href="/" className="brand" aria-label="Clarity startpagina">
-          <span className="brand-icon">
-            <Layers3 size={22} />
-          </span>
-          <span>
-            clarity<span className="brand-dot">.</span>
-          </span>
+        <Link href="/" className="brand" aria-label="Hunch startpagina">
+          <HunchLogo size={34} />
         </Link>
         <div className="workspace">
-          <span className="workspace-logo">
-            sd<span>worx</span>
+          <span className="workspace-logo" aria-hidden="true">
+            SD
           </span>
           <div>
             SD Worx<span>Payroll workspace</span>
           </div>
-          <ChevronDown size={15} />
+          <ChevronDown size={16} />
         </div>
-        <div className="nav-caption">WERKPLEK</div>
+        <div className="nav-caption">Werkplek</div>
         <nav>
-          <Link
-            className={
-              path === "/" || path.startsWith("/tickets")
-                ? "nav-item active"
-                : "nav-item"
-            }
-            href="/"
-          >
-            <Inbox size={19} />
-            Klantvragen
-            <span className="nav-dot" />
-          </Link>
-          <Link
-            className={path === "/kennisbank" ? "nav-item active" : "nav-item"}
-            href="/kennisbank"
-          >
-            <BookOpen size={19} />
-            Kennisbank
-          </Link>
-          <Link
-            className={
-              path === "/instellingen" ? "nav-item active" : "nav-item"
-            }
-            href="/instellingen"
-          >
-            <Settings2 size={19} />
-            Verbindingen
-          </Link>
+          {nav.map(({ href, label, icon: Icon, active }) => (
+            <Link
+              key={href}
+              className={active ? "nav-item active" : "nav-item"}
+              aria-current={active ? "page" : undefined}
+              href={href}
+            >
+              <Icon size={20} />
+              {label}
+            </Link>
+          ))}
         </nav>
         <div className="sidebar-note">
-          <div className="tiny-spark">
-            <Sparkles size={16} />
-          </div>
+          <span className="tiny-spark">
+            <HunchIcon name="summary" size={18} />
+          </span>
           <strong>Kennis wordt vertrouwen.</strong>
           <p>
             Vind de juiste bronnen.
@@ -78,15 +74,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             Antwoord met vertrouwen.
           </p>
           <div className="note-rule" />
-          <span>
-            Find it. Understand it. Trust it.
-            <ArrowUpRight size={13} />
-          </span>
+          <span>Find it. Understand it. Trust it.</span>
         </div>
         <div className="sidebar-bottom">
           <div className="demo-label">
             <span />
-            PROOF OF CONCEPT
+            Proof of concept
           </div>
           <div className="profile">
             <span className="avatar avatar-dark">JD</span>
@@ -99,13 +92,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <div className="main-shell">
         <header className="topbar">
           <div className="topbar-context">
-            <span className="context-symbol">◈</span> Customer care{" "}
-            <span className="topbar-slash">/</span>
+            Customer care <span className="topbar-slash">/</span>
             <strong>Payroll België</strong>
           </div>
           <div className="topbar-right">
             <span className="safe-tag">
-              <ShieldCheck size={14} />
+              <ShieldCheck size={16} />
               Verzending in demomodus
             </span>
             <Link
@@ -113,14 +105,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="icon-button"
               aria-label="Hulp en verbindingen"
             >
-              <CircleHelp size={19} />
+              <CircleHelp size={20} />
             </Link>
             <span className="avatar avatar-small">JD</span>
           </div>
         </header>
         <main>{children}</main>
         <footer className="page-footer">
-          <span>Clarity · Een SD Worx proof of concept</span>
+          <span>Hunch · Een SD Worx proof of concept</span>
           <span>Gebouwd rond kennis. Ontworpen voor vertrouwen.</span>
         </footer>
       </div>

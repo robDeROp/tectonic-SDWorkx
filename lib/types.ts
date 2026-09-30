@@ -9,6 +9,18 @@ export const citationSchema = z.object({
   documentId: z.string(),
   quote: z.string().min(1),
 });
+const jevDimensionSchema = z.object({
+  score: z.number().int().min(0).max(100),
+  confidence: z.number().min(0).max(1),
+});
+export const jevAssessmentSchema = z.object({
+  model: z.string().min(1),
+  assessedAt: z.string(),
+  relevance: jevDimensionSchema,
+  reliability: jevDimensionSchema,
+  freshness: jevDimensionSchema.nullable(),
+});
+export type JevAssessment = z.infer<typeof jevAssessmentSchema>;
 export const assessmentSchema = z.object({
   documentId: z.string(),
   score: z.number().int().min(0).max(100),
@@ -17,6 +29,7 @@ export const assessmentSchema = z.object({
   age: z.string().min(1),
   relevance: z.string().min(1),
   contradictions: z.array(z.string()),
+  jev: jevAssessmentSchema.optional(),
 });
 export const assessmentResultSchema = z.object({
   assessments: z.array(assessmentSchema).min(1),
@@ -50,6 +63,7 @@ export type SourceDocument = {
   date: string | null;
   content: string;
   fictional: boolean;
+  assessment?: DocumentAssessment | null;
 };
 export type MessageView = {
   id: string;
@@ -60,6 +74,7 @@ export type MessageView = {
   createdAt: string;
 };
 export type JobInput = {
+  jevAssessments?: Record<string, JevAssessment>;
   messages?: { author: string; kind: string; content: string }[];
   question: string;
   answer: string;

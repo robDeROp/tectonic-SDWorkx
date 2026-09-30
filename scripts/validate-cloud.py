@@ -63,12 +63,40 @@ def wait_job(ticket, job_id=None):
     raise RuntimeError('Background job did not finish within five minutes')
 
 
+def valid_jev_assessments(detail):
+    documents = detail.get('documents', [])
+    if not documents:
+        return False
+    for document in documents:
+        assessment = document.get('assessment') or {}
+        jev = assessment.get('jev') or {}
+        if jev.get('model') != env.get('JEV_MODEL') or not jev.get('assessedAt'):
+            return False
+        if assessment.get('score') != (jev.get('relevance') or {}).get('score'):
+            return False
+        for dimension in ['relevance', 'reliability', 'freshness']:
+            value = jev.get(dimension)
+            if dimension == 'freshness' and not document.get('date'):
+                if value is not None:
+                    return False
+                continue
+            if not isinstance(value, dict):
+                return False
+            if not isinstance(value.get('score'), (int, float)) or not 0 <= value['score'] <= 100:
+                return False
+            if not isinstance(value.get('confidence'), (int, float)) or not 0 <= value['confidence'] <= 1:
+                return False
+    return True
+
+
 try:
     url = gcloud('run', 'services', 'describe', 'clarity', '--region=' + args.region, '--format=value(status.url)')
     report['url'] = url
     service = json.loads(gcloud('run', 'services', 'describe', 'clarity', '--region=' + args.region, '--format=json'))
     env = {entry['name']: entry.get('value') for entry in service['spec']['template']['spec']['containers'][0]['env']}
     record('Cloud backends configured', env.get('TASK_BACKEND') == 'cloud-tasks' and env.get('STORAGE_BACKEND') == 'gcs')
+    jev_key = next((entry for entry in service['spec']['template']['spec']['containers'][0]['env'] if entry['name'] == 'JEV_KEY'), {})
+    record('Jev configured through Secret Manager', bool(env.get('JEV_MODEL')) and jev_key.get('valueFrom', {}).get('secretKeyRef', {}).get('name') == 'clarity-jev-key')
     policy = json.loads(gcloud('run', 'services', 'get-iam-policy', 'clarity', '--region=' + args.region, '--format=json'))
     public = {'allUsers', 'allAuthenticatedUsers'}
     record('No public Cloud Run IAM bindings', not any(public.intersection(b.get('members', [])) for b in policy.get('bindings', [])))
@@ -105,6 +133,7 @@ try:
     detail, job = wait_job(ticket)
     record('Cloud Tasks dispatch and authenticated processing', job['state'] in ['done', 'failed'] and not job.get('dispatchError'), job['state'])
     record('Real Gemini document assessment', job['state'] == 'done' and len(detail['documents']) >= 3 and all(d['assessment'] for d in detail['documents']), job.get('error') or '')
+    record('Real Jev scores persisted for every document', job['state'] == 'done' and valid_jev_assessments(detail), env.get('JEV_MODEL') or '')
     # A successful upload requires the app service identity to persist an object in GCS.
     marker = str(uuid.uuid4())
     upload = Path('.data') / ('gcp-validation-' + marker + '.txt')
@@ -118,6 +147,7 @@ try:
     detail, upload_job = wait_job(ticket)
     record('Uploaded text persists in PostgreSQL', any(marker in d['content'] for d in detail['documents']))
     record('Real Gemini reassessment after upload', upload_job['state'] == 'done', upload_job.get('error') or '')
+    record('Real Jev reassessment after upload', upload_job['state'] == 'done' and valid_jev_assessments(detail))
     if upload_job['state'] == 'done':
         status, draft = request('/api/tickets/' + ticket + '/draft', {'version': detail['ticket']['answerVersion']})
         if status != 200:

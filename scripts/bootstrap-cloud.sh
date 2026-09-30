@@ -65,6 +65,8 @@ Path('infra/terraform.tfvars').write_text(''.join(f'{k} = {json.dumps(v)}\n' for
 PY
 refresh_credentials
 "$TERRAFORM" -chdir=infra init -input=false -backend-config="bucket=$state_bucket" -backend-config='prefix=clarity/application'
+gcloud services enable secretmanager.googleapis.com --project="$GCP_PROJECT_ID"
+node scripts/sync-jev-secret.mjs "$GCP_PROJECT_ID"
 "$TERRAFORM" -chdir=infra plan -input=false -out=application.tfplan
 "$TERRAFORM" -chdir=infra apply -input=false application.tfplan
 rm infra/application.tfplan

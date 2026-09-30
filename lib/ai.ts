@@ -8,6 +8,7 @@ import {
   type JobResult,
 } from "./types";
 import { AppError } from "./errors";
+import { assessWithJev } from "./jev";
 export function aiConfiguration() {
   const required = [
     "GOOGLE_CLOUD_PROJECT",
@@ -101,10 +102,10 @@ export const callGemini: AIProvider = async (kind, input) => {
         : reviewResultSchema;
   const task =
     kind === "documents"
-      ? "Beoordeel ieder document met een score 0–100 (AI-inschatting), summary, source, age, relevance en contradictions. Leg per dimensie uit waarom. Onbekende metadata is een onzekerheid. Vergelijk alle documenten onderling. De huidige datum is " +
+      ? "Beoordeel ieder document specifiek voor de klantvraag met een score 0–100 (AI-inschatting), summary, source, age, relevance en contradictions. De meegegeven jevAssessments zijn afzonderlijke modelinschattingen van relevantie, bronbetrouwbaarheid en actualiteit, geen bewijs. Licht ze toe met broninhoud en metadata en benoem afwijkingen of lage confidence expliciet. Vul zelf geen jev-veld in; de server voegt de originele metingen toe. Ontbrekende datum betekent onbekende actualiteit, niet automatisch verouderd. Bronlabels en recente datums bewijzen geen gezag. Leg per dimensie uit waarom. Onbekende metadata is een onzekerheid. Vergelijk alle documenten onderling. De huidige datum is " +
         new Date().toISOString().slice(0, 10)
       : kind === "draft"
-        ? "Schrijf een vriendelijk bewerkbaar e-mailantwoord op de klantvraag. Gebruik de betrouwbaarste toepasselijke bronnen, benoem ontbrekende gegevens, vermeld geen verzonnen bedrag. Geef citations met bewijs. Bij een vraag buiten de bronkennis: vraag om aanvullende informatie. Onderteken met Het payrollteam. Geef geen interne scores in de klantmail."
+        ? "Schrijf een vriendelijk bewerkbaar e-mailantwoord op de klantvraag. Gebruik de betrouwbaarste toepasselijke bronnen; gebruik de meegegeven assessments om relevantie, bronbetrouwbaarheid, actualiteit, conflicten en onzekerheid mee te wegen. Scores zijn modelinschattingen, geen bronbewijs. Behoud aandacht voor conflicterende bronnen. Benoem ontbrekende gegevens, vermeld geen verzonnen bedrag. Geef citations met bewijs. Bij een vraag buiten de bronkennis: vraag om aanvullende informatie. Onderteken met Het payrollteam. Geef geen interne scores in de klantmail."
         : "Controleer het exacte klantantwoord op relevantie, onderbouwing, ontbrekende informatie en tegenspraak met de bronnen. Geef approved alleen als de inhoud voldoende onderbouwd is en geen inhoudelijke bezwaren bestaan. Geef anders changes_requested. Geef findings met letterlijke antwoordpassage (leeg bij ontbrekende inhoud), explanation en exacte broncitaten. Neem ook bij approved minstens één info-bevinding met bewijs op. Ontbrekende kennis leidt tot changes_requested; een voorzichtige vraag om ontbrekende klantgegevens kan wel passend zijn.";
   try {
     const client = new GoogleGenAI({
@@ -137,4 +138,28 @@ export const callGemini: AIProvider = async (kind, input) => {
       502,
     );
   }
+};
+
+export const callAI: AIProvider = async (kind, input) => {
+  if (kind !== "documents") return callGemini(kind, input);
+  if (!aiConfiguration().configured)
+    throw new AppError(
+      "Gemini is nog niet verbonden. Stel de Google Cloud-verbinding in en probeer opnieuw.",
+      503,
+    );
+  const jevAssessments = await assessWithJev(input);
+  const result = await callGemini(kind, { ...input, jevAssessments });
+  if (!("assessments" in result))
+    throw new AppError("Onvolledige documentbeoordeling.", 502);
+  return validateResult(
+    kind,
+    {
+      assessments: result.assessments.map((assessment) => ({
+        ...assessment,
+        score: jevAssessments[assessment.documentId].relevance.score,
+        jev: jevAssessments[assessment.documentId],
+      })),
+    },
+    input,
+  );
 };

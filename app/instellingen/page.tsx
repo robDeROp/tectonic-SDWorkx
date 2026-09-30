@@ -1,21 +1,16 @@
-import {
-  Check,
-  Cloud,
-  Database,
-  ExternalLink,
-  Info,
-  Mail,
-  Sparkles,
-} from "lucide-react";
+import { Check, Cloud, Database, ExternalLink, Info } from "lucide-react";
 import { aiConfiguration } from "@/lib/ai";
+import { jevConfiguration } from "@/lib/jev";
+import { GlyphTile, HunchIcon } from "@/components/hunch";
 export const dynamic = "force-dynamic";
 export default function SettingsPage() {
   const ai = aiConfiguration();
+  const jev = jevConfiguration();
   return (
     <div className="page settings-page">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">DE MOTOR ACHTER CLARITY</div>
+          <div className="eyebrow">De motor achter Hunch</div>
           <h1>Verbindingen</h1>
           <p>
             Echte intelligentie. Transparante status. Jij houdt het overzicht.
@@ -23,8 +18,8 @@ export default function SettingsPage() {
         </div>
       </div>
       <section className="panel integration-card">
-        <div className="integration-icon">
-          <Sparkles size={27} />
+        <div className="integration-icon" aria-hidden="true">
+          <HunchIcon name="summary" size={28} />
         </div>
         <div className="integration-body">
           <div className="section-title-row">
@@ -90,7 +85,17 @@ export default function SettingsPage() {
       </section>
       <div className="settings-grid">
         <section className="panel compact-integration">
-          <Database size={24} />
+          <h2>Jev van TypeSafe</h2>
+          <p>Beoordeelt per klantvraag de relevantie, bronbetrouwbaarheid en actualiteit van documenten. Gemini verzorgt de toelichting.</p>
+          <span className="subtle-label">
+            {jev.configured ? `Geconfigureerd · ${jev.model}` : "Instellen vereist · JEV_KEY ontbreekt"}
+          </span>
+          <p className="small-copy">Verbinding wordt bij de eerste beoordeling gecontroleerd.</p>
+        </section>
+        <section className="panel compact-integration">
+          <span className="compact-icon" aria-hidden="true">
+            <Database size={20} />
+          </span>
           <h2>PostgreSQL & Drizzle</h2>
           <p>
             Tickets, documenten, antwoordversies en reviewresultaten worden
@@ -101,7 +106,7 @@ export default function SettingsPage() {
           </span>
         </section>
         <section className="panel compact-integration">
-          <Mail size={24} />
+          <GlyphTile kind="chats" size={40} />
           <h2>E-mail in demomodus</h2>
           <p>
             Verzendingen worden geregistreerd, inclusief ontvanger en antwoord.
@@ -113,7 +118,9 @@ export default function SettingsPage() {
           </span>
         </section>
         <section className="panel compact-integration">
-          <Cloud size={24} />
+          <span className="compact-icon" aria-hidden="true">
+            <Cloud size={20} />
+          </span>
           <h2>Achtergrondverwerking</h2>
           <p>
             {process.env.TASK_BACKEND === "cloud-tasks"

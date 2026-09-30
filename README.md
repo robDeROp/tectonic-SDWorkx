@@ -58,6 +58,20 @@ Open **http://127.0.0.1:3000**. Klik op het startticket. De drie demodocumenten 
 
 ## Gemini werkelijk verbinden
 
+### Documentbeoordeling met Jev + Gemini
+
+Vul `JEV_KEY` in `.env` met je TypeSafe API-key. `JEV_MODEL` is optioneel en staat standaard op `jev-1.13.0`. De server gebruikt de [officiële TypeSafe API](https://docs.typesafe.ai/api) om ieder document afzonderlijk te beoordelen tegen de klantvraag: relevantie, bronbetrouwbaarheid en actualiteit. Vier beschrijvende niveaus worden omgerekend van 0–3 naar 0–100; modelzekerheid blijft een aparte waarde. Bij ontbrekende of ongeldige brondatum is actualiteit onbekend. De hoofdscore is relevantie, geen percentage bewezen juistheid.
+
+Gemini ontvangt deze scores samen met de oorspronkelijke documenten, licht ze toe en zoekt onderlinge conflicten. De originele Jev-scores, modelversie en beoordelingstijd worden opgeslagen bij het document. Actuele beoordelingen gaan ook mee naar concepten en antwoordreviews. Bestaande beoordelingen zonder Jev blijven leesbaar; voer documentonderzoek opnieuw uit om Jev-scores te krijgen. Een fout bij Jev of Gemini laat de taak mislukken met een herhaalbare foutmelding; er is geen stille terugval naar verzonnen scores.
+
+Sla de key op in Google Cloud Secret Manager vóór een infrastructuurdeploy:
+
+```bash
+node scripts/sync-jev-secret.mjs YOUR_PROJECT_ID
+```
+
+Het script leest uitsluitend `JEV_KEY` uit `.env`, verstuurt de waarde via standaardinvoer, controleert de opgeslagen waarde zonder deze te tonen en maakt alleen bij een gewijzigde key een nieuwe versie aan. De secret heet `clarity-jev-key`. Terraform kent de applicatie leestoegang toe en koppelt deze aan `JEV_KEY` in Cloud Run; de key staat niet in Terraform-state. Het bootstrapscript voert de synchronisatie automatisch uit. Na keyrotatie moet de Cloud Run-app een nieuwe revisie krijgen om de nieuwe omgevingsvariabele in te laden.
+
 1. Kies een Google Cloud-project met billing en schakel `aiplatform.googleapis.com` in.
 2. Geef het lokale account de benodigde Vertex AI-rechten (`roles/aiplatform.user`).
 3. Meld lokaal aan met Application Default Credentials:

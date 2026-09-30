@@ -1,12 +1,17 @@
-import type { Metadata } from "next";
-import "@fontsource-variable/dm-sans";
-import "@fontsource-variable/manrope";
+import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/bricolage-grotesque/opsz.css";
+import "@fontsource-variable/figtree";
+import "@fontsource-variable/jetbrains-mono";
+import "./tokens.css";
 import "./globals.css";
 import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
-  title: "Clarity · SD Worx",
-  description:
-    "Van verspreide kennis naar een antwoord dat je kunt vertrouwen.",
+  title: "Hunch · SD Worx",
+  description: "De context achter elke klantvraag.",
+};
+export const viewport: Viewport = {
+  themeColor: "#fff8ef",
+  colorScheme: "light",
 };
 export default function RootLayout({
   children,
