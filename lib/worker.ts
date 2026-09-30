@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, lt, or, sql } from "drizzle-orm";
 import { db, type Transaction } from "./db";
 import { answers, documents, jobs, tickets } from "./db/schema";
-import { callGemini, validateResult, type AIProvider } from "./ai";
+import { callAI, validateResult, type AIProvider } from "./ai";
 import { demoDocuments } from "./fixtures";
 import { addEvent, lockTicket, type Ticket } from "./service";
 import { publicError } from "./errors";
@@ -41,7 +41,7 @@ async function ownsJob(tx: Transaction, job: Job, ticket: Ticket) {
 }
 export async function runNextJob(
   jobId?: string,
-  provider: AIProvider = callGemini,
+  provider: AIProvider = callAI,
   animate = true,
 ): Promise<boolean> {
   const job = await db.transaction(async (tx) => {
