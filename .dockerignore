@@ -1,0 +1,16 @@
+node_modules
+.next
+.data
+.env
+.env.*
+.git
+coverage
+test-results
+*.tsbuildinfo
+**/.terraform
+**/*.tfstate*
+**/*.tfplan
+**/*.tfvars
+**/backend.hcl
+gha-creds-*.json
+.github

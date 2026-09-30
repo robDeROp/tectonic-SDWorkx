@@ -1,0 +1,17 @@
+.gcloudignore
+.git
+.gitignore
+node_modules
+.next
+.data
+.env
+.env.*
+coverage
+test-results
+*.tsbuildinfo
+**/.terraform/**
+**/*.tfstate*
+**/*.tfplan
+**/*.tfvars
+**/backend.hcl
+gha-creds-*.json

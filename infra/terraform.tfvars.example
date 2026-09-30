@@ -1,0 +1,7 @@
+project_id = "your-project-id"
+region = "europe-west1"
+gemini_model = "your-enabled-gemini-model"
+app_image = "europe-west1-docker.pkg.dev/your-project-id/clarity/app:v1"
+tools_image = "europe-west1-docker.pkg.dev/your-project-id/clarity/tools:v1"
+viewer_members = ["user:you@example.com"]
+deployer_service_account = "clarity-deployer@your-project-id.iam.gserviceaccount.com"

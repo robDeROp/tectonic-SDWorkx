@@ -1,0 +1,56 @@
+{
+  "name": "sd-worx-ticket-studio",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "db:local": "tsx --env-file-if-exists=.env scripts/local-db.ts",
+    "worker": "tsx --env-file-if-exists=.env scripts/worker.ts",
+    "test": "vitest run",
+    "test:integration": "tsx --env-file-if-exists=.env scripts/integration-test.ts",
+    "format": "prettier --write app components lib scripts tests *.ts *.mts *.json *.yaml"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@google-cloud/storage": "^8.2.0",
+    "@google-cloud/tasks": "^7.2.1",
+    "@google/genai": "^2.24.0",
+    "drizzle-orm": "^0.45.3",
+    "google-auth-library": "^11.1.0",
+    "lucide-react": "^1.49.0",
+    "mammoth": "^1.13.0",
+    "next": "^16.3.8",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.23.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "drizzle-kit": "^0.31.11",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.0"
+    },
+    "gaxios@6.7.1": {
+      "uuid": "^11.1.1"
+    }
+  }
+}
