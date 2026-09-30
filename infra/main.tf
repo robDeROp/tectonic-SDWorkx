@@ -8,6 +8,10 @@ terraform {
       source = "hashicorp/google", version = "~> 6.0"
     }
 
+    google-beta = {
+      source = "hashicorp/google-beta", version = "~> 6.0"
+    }
+
     random = {
       source = "hashicorp/random", version = "~> 3.0"
     }
@@ -26,6 +30,12 @@ variable "region" {
   type    = string
   default = "europe-west1"
 
+}
+
+variable "gemini_location" {
+  type        = string
+  default     = null
+  description = "Vertex AI endpoint location; defaults to the infrastructure region."
 }
 
 variable "gemini_model" {
@@ -58,6 +68,18 @@ provider "google" {
 
 }
 
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+}
+
+resource "google_project_service_identity" "tasks" {
+  provider   = google-beta
+  project    = var.project_id
+  service    = "cloudtasks.googleapis.com"
+  depends_on = [google_project_service.apis]
+}
+
 data "google_project" "current" {
 
 }
@@ -68,7 +90,7 @@ locals {
   env = {
 
     GOOGLE_CLOUD_PROJECT        = var.project_id
-    GOOGLE_CLOUD_LOCATION       = var.region
+    GOOGLE_CLOUD_LOCATION       = coalesce(var.gemini_location, var.region)
     GEMINI_MODEL                = var.gemini_model
     TASK_BACKEND                = "cloud-tasks"
     STORAGE_BACKEND             = "gcs"
@@ -124,9 +146,15 @@ resource "google_service_account_iam_member" "tasks_tokens" {
 
   service_account_id = google_service_account.tasks.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-cloudtasks.iam.gserviceaccount.com"
+  member             = "serviceAccount:${google_project_service_identity.tasks.email}"
   depends_on         = [google_cloud_tasks_queue.reviews]
 
+}
+
+resource "google_project_iam_member" "tasks_service_agent" {
+  project = var.project_id
+  role    = "roles/cloudtasks.serviceAgent"
+  member  = "serviceAccount:${google_project_service_identity.tasks.email}"
 }
 
 resource "google_sql_database_instance" "db" {
@@ -148,6 +176,7 @@ resource "google_sql_database_instance" "db" {
 
     ip_configuration {
       ipv4_enabled = true
+      ssl_mode     = "ENCRYPTED_ONLY"
     }
 
 
@@ -249,6 +278,9 @@ resource "google_cloud_run_v2_service" "app" {
   name                = "clarity"
   location            = var.region
   deletion_protection = false
+  scaling {
+    min_instance_count = 0
+  }
   template {
 
     service_account                  = google_service_account.app.email
@@ -324,7 +356,7 @@ resource "google_cloud_run_v2_service" "app" {
   lifecycle {
     ignore_changes = [template[0].containers[0].image, template[0].revision, traffic, client, client_version]
   }
-  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_project_iam_member.app_roles]
+  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_project_iam_member.app_roles, google_project_iam_member.tasks_service_agent, google_service_account_iam_member.tasks_tokens, google_service_account_iam_member.enqueue_identity, google_storage_bucket_iam_member.app_documents]
 
 }
 

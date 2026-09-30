@@ -23,12 +23,33 @@ export async function extractDocument(
     } else if (ext === ".pdf") {
       if (!buffer.subarray(0, 5).equals(Buffer.from("%PDF-")))
         throw new Error("Invalid PDF");
-      const { PDFParse } = await import("pdf-parse");
-      const parser = new PDFParse({ data: buffer });
+      const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const loadingTask = getDocument({
+        data: new Uint8Array(buffer),
+        verbosity: 0,
+      });
       try {
-        content = (await parser.getText()).text;
+        const document = await loadingTask.promise;
+        const pages: string[] = [];
+        for (
+          let pageNumber = 1;
+          pageNumber <= document.numPages;
+          pageNumber++
+        ) {
+          const page = await document.getPage(pageNumber);
+          const text = await page.getTextContent();
+          pages.push(
+            text.items
+              .map((item) =>
+                "str" in item ? item.str + (item.hasEOL ? "\n" : " ") : "",
+              )
+              .join(""),
+          );
+          page.cleanup();
+        }
+        content = pages.join("\n\n");
       } finally {
-        await parser.destroy();
+        await loadingTask.destroy();
       }
     } else throw new AppError("Kies een PDF-, TXT- of DOCX-bestand.");
   } catch (error) {

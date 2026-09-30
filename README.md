@@ -135,7 +135,7 @@ GEMINI_MODEL=YOUR_ENABLED_GEMINI_MODEL_ID \
 bash scripts/bootstrap-cloud.sh
 ```
 
-Optioneel: `GCP_REGION`, `GITHUB_REPOSITORY` (standaard `robDeROp/tectonic-SDWorkx`), `VIEWER_MEMBER` (standaard de aangemelde Google-gebruiker) en `TERRAFORM` (pad naar het programma). Het script gebruikt expliciete projectparameters; het verandert je standaardproject niet. Bestaande resources buiten deze Terraform-states moet je eerst importeren als hun naam overeenkomt.
+Optioneel: `GEMINI_LOCATION` (AI-endpoint, standaard dezelfde regio; gebruik `global` als het gekozen model dat vereist), `GCP_REGION`, `GITHUB_REPOSITORY` (standaard `robDeROp/tectonic-SDWorkx`), `VIEWER_MEMBER` (standaard de aangemelde Google-gebruiker) en `TERRAFORM` (pad naar het programma). Het script gebruikt expliciete projectparameters; het verandert je standaardproject niet. Bestaande resources buiten deze Terraform-states moet je eerst importeren als hun naam overeenkomt.
 
 De state staat in `gs://PROJECT_ID-clarity-tfstate`, onder afzonderlijke prefixes voor bootstrap en app. Beperk toegang tot deze bucket: de state bevat het databasewachtwoord. Lokale variabelen en planbestanden zijn uitgesloten van Git, Docker en Cloud Build. Het script bewaart niet-geheime appinvoer in het genegeerde `infra/terraform.tfvars` voor latere infrastructuurwijzigingen.
 
@@ -148,6 +148,14 @@ De bootstrap zet ook `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_DEPLOY_SERVICE_ACCOUNT
 Applicatie-releases kunnen Cloud Run bijwerken en images publiceren. Ze hebben geen Terraform-state- of infrastructuurbeheerrechten. Infrastructuurwijzigingen worden in CI gevalideerd en door een bevoegde beheerder met Terraform gepland/toegepast. Terraform negeert de door CI beheerde image, revisie en verkeersverdeling, zodat een infrastructuurwijziging geen oude app terugzet.
 
 Databasewijzigingen moeten achterwaarts compatibel zijn: de vorige app blijft draaien tijdens migratie en kan bij een mislukte release terugkomen. Automatisch herstel zet alleen appverkeer terug, nooit de database. Verwijder pas later oude kolommen. De healthcheck controleert databasebereikbaarheid en het gemigreerde ticketschema; een echte Gemini-beoordeling blijft nodig om modeltoegang te bewijzen.
+
+### Werkelijke GCP-validatie
+
+```sh
+python3 scripts/validate-cloud.py --project=YOUR_PROJECT_ID --region=europe-west1
+```
+
+Deze controle gebruikt echte Cloud Run-, Cloud Tasks-, Cloud Storage-, PostgreSQL- en Gemini-verbindingen. Er wordt één duidelijk gemarkeerd fictief validatieticket met een TXT-upload gemaakt; bestaande tickets blijven behouden. Het rapport staat in `.data/cloud-validation.json`. Een geblokkeerde AI-aanvraag wordt als mislukte controle gerapporteerd, nooit vervangen door een mock. Het script controleert ook dat anonieme bezoekers en een menselijke identiteit geen toegang tot de taakverwerker krijgen.
 
 ### App openen en herstel
 

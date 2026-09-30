@@ -48,6 +48,7 @@ jobs:
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/api/health
+          curl --fail --silent --show-error http://127.0.0.1:8080/api/tickets > /dev/null
       - name: Build and smoke-test release containers
         run: |
           docker build --target runner -t clarity-app:test .
@@ -56,6 +57,7 @@ jobs:
           docker run --detach --name clarity-smoke --network host -e DATABASE_URL -e PORT=8088 clarity-app:test
           trap 'docker logs clarity-smoke; docker rm -f clarity-smoke' EXIT
           curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8088/api/health
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/tickets > /dev/null
   infrastructure:
     name: Validate infrastructure
     runs-on: ubuntu-latest
