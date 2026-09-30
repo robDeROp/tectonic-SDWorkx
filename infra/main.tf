@@ -8,6 +8,10 @@ terraform {
       source = "hashicorp/google", version = "~> 6.0"
     }
 
+    google-beta = {
+      source = "hashicorp/google-beta", version = "~> 6.0"
+    }
+
     random = {
       source = "hashicorp/random", version = "~> 3.0"
     }
@@ -26,6 +30,12 @@ variable "region" {
   type    = string
   default = "europe-west1"
 
+}
+
+variable "gemini_location" {
+  type        = string
+  default     = null
+  description = "Vertex AI endpoint location; defaults to the infrastructure region."
 }
 
 variable "gemini_model" {
@@ -58,6 +68,18 @@ provider "google" {
 
 }
 
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+}
+
+resource "google_project_service_identity" "tasks" {
+  provider   = google-beta
+  project    = var.project_id
+  service    = "cloudtasks.googleapis.com"
+  depends_on = [google_project_service.apis]
+}
+
 data "google_project" "current" {
 
 }
@@ -68,7 +90,7 @@ locals {
   env = {
 
     GOOGLE_CLOUD_PROJECT        = var.project_id
-    GOOGLE_CLOUD_LOCATION       = var.region
+    GOOGLE_CLOUD_LOCATION       = coalesce(var.gemini_location, var.region)
     GEMINI_MODEL                = var.gemini_model
     TASK_BACKEND                = "cloud-tasks"
     STORAGE_BACKEND             = "gcs"
@@ -124,7 +146,7 @@ resource "google_service_account_iam_member" "tasks_tokens" {
 
   service_account_id = google_service_account.tasks.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-cloudtasks.iam.gserviceaccount.com"
+  member             = "serviceAccount:${google_project_service_identity.tasks.email}"
   depends_on         = [google_cloud_tasks_queue.reviews]
 
 }

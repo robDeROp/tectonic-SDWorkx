@@ -51,7 +51,7 @@ registry="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/clarity"
 app_digest="$(gcloud artifacts docker images describe "${registry}/app:${tag}" --project="$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
 tools_digest="$(gcloud artifacts docker images describe "${registry}/tools:${tag}" --project="$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
 export TF_VAR_app_image="${registry}/app@${app_digest}" TF_VAR_tools_image="${registry}/tools@${tools_digest}"
-export TF_VAR_gemini_model="$GEMINI_MODEL" TF_VAR_deployer_service_account="$deployer"
+export TF_VAR_gemini_model="$GEMINI_MODEL" TF_VAR_gemini_location="${GEMINI_LOCATION:-$GCP_REGION}" TF_VAR_deployer_service_account="$deployer"
 TF_VAR_viewer_members="$(python3 -c 'import json,sys; print(json.dumps([sys.argv[1]]))' "$VIEWER_MEMBER")"
 export TF_VAR_viewer_members
 refresh_credentials
@@ -63,7 +63,7 @@ rm infra/application.tfplan
 python3 - <<'PY'
 import json, os
 from pathlib import Path
-keys = ['project_id', 'region', 'app_image', 'tools_image', 'gemini_model', 'deployer_service_account']
+keys = ['project_id', 'region', 'app_image', 'tools_image', 'gemini_model', 'gemini_location', 'deployer_service_account']
 values = {k: os.environ['TF_VAR_' + k] for k in keys}
 values['viewer_members'] = json.loads(os.environ['TF_VAR_viewer_members'])
 Path('infra/terraform.tfvars').write_text(''.join(f'{k} = {json.dumps(v)}\n' for k,v in values.items()))
