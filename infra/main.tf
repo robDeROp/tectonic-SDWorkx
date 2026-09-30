@@ -151,6 +151,12 @@ resource "google_service_account_iam_member" "tasks_tokens" {
 
 }
 
+resource "google_project_iam_member" "tasks_service_agent" {
+  project = var.project_id
+  role    = "roles/cloudtasks.serviceAgent"
+  member  = "serviceAccount:${google_project_service_identity.tasks.email}"
+}
+
 resource "google_sql_database_instance" "db" {
 
   name                = "clarity-postgres"
@@ -346,7 +352,7 @@ resource "google_cloud_run_v2_service" "app" {
   lifecycle {
     ignore_changes = [template[0].containers[0].image, template[0].revision, traffic, client, client_version]
   }
-  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_project_iam_member.app_roles]
+  depends_on = [google_project_service.apis, google_secret_manager_secret_version.database_url, google_secret_manager_secret_iam_member.app_secret, google_project_iam_member.app_roles, google_project_iam_member.tasks_service_agent, google_service_account_iam_member.tasks_tokens, google_service_account_iam_member.enqueue_identity, google_storage_bucket_iam_member.app_documents]
 
 }
 
