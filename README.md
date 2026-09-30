@@ -54,7 +54,7 @@ npm run worker
 
 Open **http://127.0.0.1:3000**. Klik op het startticket. De drie demodocumenten worden opgehaald. Zonder Gemini-configuratie stopt de flow bij beoordeling en verschijnt een bruikbare configuratiemelding. Handmatige antwoorden en uploads blijven beschikbaar. Een herlaadactie maakt geen nieuwe taak aan.
 
-`db:seed` is herhaalbaar en overschrijft geen ticket. **Demo herhalen** reset uitsluitend het oorspronkelijke demoticket, verwijdert de daarbij horende uploads/concepten/reviews en start een nieuwe generatie. Zelf aangemaakte tickets blijven behouden.
+`db:seed` is herhaalbaar en overschrijft geen ticket. **Demo herhalen** reset uitsluitend het oorspronkelijke demoticket, verwijdert de daarbij horende uploads/berichten/concepten/reviews en start een nieuwe generatie. Zelf aangemaakte tickets blijven behouden.
 
 ## Gemini werkelijk verbinden
 
@@ -105,7 +105,7 @@ Routes zijn interne app-interfaces zonder gebruikersbeheer. De cloudomgeving bli
 | `POST /api/tickets/:id/reset`           | Uitsluitend het oorspronkelijke demoticket resetten                                      |
 | `POST /api/internal/tasks`              | Alleen in cloudmodus; geverifieerd Google OIDC-token en exact toegestaan serviceaccount  |
 
-De documentenset, conversieversie, antwoordversie en demogeneratie vormen samen de geldigheid van een review. Wijzigingen maken lopende resultaten ongeldig. Gemini draait buiten databasetransacties; vóór het opslaan/verzenden worden versies opnieuw gecontroleerd onder een ticketlock. De editor is tijdens conceptgeneratie en antwoordreview tijdelijk vergrendeld. Losse API-wijzigingen en wijzigingen vanuit een andere sessie worden door de server afgevangen.
+De documentenset, conversatieversie, antwoordversie en demogeneratie vormen samen de geldigheid van een review. Wijzigingen maken lopende resultaten ongeldig. Gemini draait buiten databasetransacties; vóór het opslaan/verzenden worden versies opnieuw gecontroleerd onder een ticketlock. De editor is tijdens conceptgeneratie en antwoordreview tijdelijk vergrendeld. Losse API-wijzigingen en wijzigingen vanuit een andere sessie worden door de server afgevangen.
 
 Iedere taak heeft een lease met heartbeat. Een verlopen lease kan opnieuw worden opgepakt. Cloud Tasks kan een aanvraag herhalen; claims, versiecontroles en een unieke verzending per review voorkomen dubbele uitvoeringseffecten. Als het inplannen mislukt, blijft de taak opgeslagen en toont de app een herprobeeractie. Bij een procescrash tussen databasecommit en Cloud Tasks-dispatch kan een taak blijven wachten; kies dan **Opnieuw proberen**. De POC heeft geen afzonderlijke automatische outbox-reconciler.
 
@@ -113,37 +113,62 @@ AI-uitvoer wordt met Zod gevalideerd. Beoordelingen moeten precies één resulta
 
 Tabellen: `tickets`, `documents`, `answer_versions`, `jobs` (inclusief invoersnapshot en resultaat), `events`, `messages`, `deliveries`. De UI toont actuele reviews; eerdere versies blijven voor traceerbaarheid opgeslagen. Een reset verwijdert de historie van het oorspronkelijke demoticket bewust.
 
-## Google Cloud voorbereiden
+## Google Cloud en GitHub CI/CD
 
-De cloudbestanden worden meegeleverd; er worden bij lokaal gebruik geen cloudresources gemaakt.
+De repository bevat een volledige uitrolconfiguratie. De daadwerkelijke Google Cloud-resources ontstaan pas wanneer de bootstrap succesvol is uitgevoerd met toegang tot het gekozen project.
 
-- `Dockerfile`: `runner` voor de app, `tools` voor migraties en seeding.
-- `infra/cloudbuild.yaml`: bouwt beide images in Artifact Registry.
-- `infra/main.tf`: Cloud Run, Cloud SQL PostgreSQL 16, Cloud Tasks, private Cloud Storage, Secret Manager en serviceaccounts/IAM.
-- `infra/terraform.tfvars.example`: voorbeeldwaarden.
+- `infra/bootstrap`: Artifact Registry, Cloud Build-serviceaccount, private buildopslag en GitHub Workload Identity Federation.
+- `infra/main.tf` en `infra/cicd.tf`: private Cloud Run-app, migratiejob, PostgreSQL 16 met backups/herstelpuntlog en verwijderbeveiliging, Cloud Tasks, private documentopslag, Secret Manager en IAM.
+- `scripts/bootstrap-cloud.sh`: maakt de private statebucket met versiehistorie, past beide Terraform-configuraties toe, bouwt de eerste images, voert migraties uit en configureert GitHub-variabelen.
+- `.github/workflows/ci-cd.yml`: typecontrole, unit-tests, PostgreSQL-integratietests, productiebuild, healthcheck, Terraform-validatie en tests van de uitrolprocedure.
+- `scripts/deploy.sh`: bouwimages op digest, eerst migreren, dan een kandidaatversie zonder verkeer controleren en pas daarna activeren. Bij een fout na activering schakelt het script terug naar de vorige appversie.
 
-Voor een latere uitrol met de vereiste projectrechten:
+### Eerste installatie
+
+Vereist: een bestaand Google Cloud-project met billing, een account dat de genoemde resources en IAM mag beheren, schrijfrechten op de GitHub-repository, Google Cloud CLI, GitHub CLI, Terraform 1.9.8 en Python 3. De standaardregio is België (`europe-west1`). Selecteer een Gemini-model dat in dit project en deze regio beschikbaar is.
 
 ```sh
-gcloud config set project YOUR_PROJECT_ID
-gcloud services enable artifactregistry.googleapis.com cloudbuild.googleapis.com
-gcloud artifacts repositories create clarity --repository-format=docker --location=europe-west1
-gcloud builds submit --config=infra/cloudbuild.yaml --substitutions=_REGION=europe-west1,_TAG=v1
-cp infra/terraform.tfvars.example infra/terraform.tfvars
-# Vul project, model, image-URL's en toegestane demo-bezoekers in.
-terraform -chdir=infra init
-terraform -chdir=infra plan
-terraform -chdir=infra apply
-gcloud run jobs execute clarity-migrate --region=europe-west1 --wait
-# Open de private service via een lokale, geauthenticeerde proxy:
-gcloud run services proxy clarity --region=europe-west1 --port=8080
+gcloud auth login
+gh auth login
+GCP_PROJECT_ID=YOUR_PROJECT_ID \
+GEMINI_MODEL=YOUR_ENABLED_GEMINI_MODEL_ID \
+bash scripts/bootstrap-cloud.sh
 ```
 
-Open daarna `http://localhost:8080`. De aangemelde gebruiker moet in `viewer_members` staan. Geen `allUsers`-binding: de app heeft bewust geen eigen login of rollen. De Cloud Tasks-handler controleert bovendien het Google-token en het exacte task-serviceaccount. Zet `APP_URL` op de echte Cloud Run-origin; Terraform gebruikt de deterministische service-URL. De demo gebruikt een gedeelde medewerkeridentiteit.
+Optioneel: `GCP_REGION`, `GITHUB_REPOSITORY` (standaard `robDeROp/tectonic-SDWorkx`), `VIEWER_MEMBER` (standaard de aangemelde Google-gebruiker) en `TERRAFORM` (pad naar het programma). Het script gebruikt expliciete projectparameters; het verandert je standaardproject niet. Bestaande resources buiten deze Terraform-states moet je eerst importeren als hun naam overeenkomt.
 
-Cloud SQL is bereikbaar via de Cloud Run Unix-socket, niet via open authorized networks. `DATABASE_URL` staat in Secret Manager. De Terraform-state bevat wel het gegenereerde databasewachtwoord; bewaar state beveiligd, bijvoorbeeld in een private remote backend. De Cloud SQL-instance heeft verwijderbeveiliging. Opslag, SQL en modelgebruik kunnen kosten veroorzaken; uitrol gebeurt niet automatisch.
+De state staat in `gs://PROJECT_ID-clarity-tfstate`, onder afzonderlijke prefixes voor bootstrap en app. Beperk toegang tot deze bucket: de state bevat het databasewachtwoord. Lokale variabelen en planbestanden zijn uitgesloten van Git, Docker en Cloud Build. Het script bewaart niet-geheime appinvoer in het genegeerde `infra/terraform.tfvars` voor latere infrastructuurwijzigingen.
 
-In cloudmodus moet geen lokale worker draaien. Cloud Tasks roept de app aan met een maximale verwerkingstijd van 300 seconden. Bestanden staan in de private bucket. Logs bevatten taak-ID en foutsoort, geen klantinhoud. De Terraform-configuratie is lokaal syntactisch en tegen de providers gevalideerd. De daadwerkelijke uitrol moet nog in het doelproject worden getest; regionale modelbeschikbaarheid en IAM kunnen per project verschillen.
+### Automatische releases
+
+Pull requests draaien de controles. Een push naar `main` draait dezelfde controles en rolt daarna uit als de repositoryvariabele `CLOUD_DEPLOY_ENABLED=true` is. De bootstrap zet deze variabele pas na een geslaagde eerste uitrol. Handmatig opnieuw uitvoeren kan via **Actions → CI / CD → Run workflow** op `main`.
+
+De bootstrap zet ook `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_DEPLOY_SERVICE_ACCOUNT` en `GCP_WORKLOAD_IDENTITY_PROVIDER`. Dit zijn configuratiewaarden, geen geheimen. GitHub krijgt kortlevende Google-credentials via OIDC, beperkt tot het numerieke repository- en eigenaar-ID, `main` en deze specifieke workflow. Google-serviceaccountsleutels worden niet opgeslagen. GitHub Actions zijn vastgezet op commit-ID's.
+
+Applicatie-releases kunnen Cloud Run bijwerken en images publiceren. Ze hebben geen Terraform-state- of infrastructuurbeheerrechten. Infrastructuurwijzigingen worden in CI gevalideerd en door een bevoegde beheerder met Terraform gepland/toegepast. Terraform negeert de door CI beheerde image, revisie en verkeersverdeling, zodat een infrastructuurwijziging geen oude app terugzet.
+
+Databasewijzigingen moeten achterwaarts compatibel zijn: de vorige app blijft draaien tijdens migratie en kan bij een mislukte release terugkomen. Automatisch herstel zet alleen appverkeer terug, nooit de database. Verwijder pas later oude kolommen. De healthcheck controleert databasebereikbaarheid en het gemigreerde ticketschema; een echte Gemini-beoordeling blijft nodig om modeltoegang te bewijzen.
+
+### App openen en herstel
+
+Cloud Run vereist IAM-authenticatie. Gebruik voor de demo de lokale proxy:
+
+```sh
+gcloud run services proxy clarity --project=YOUR_PROJECT_ID --region=europe-west1 --port=8080
+```
+
+Open `http://localhost:8080`. Alleen opgegeven `viewer_members` en de benodigde serviceaccounts mogen de app aanroepen. Uploads staan in de private bucket; Cloud Tasks vervangt de lokale worker. Cloud SQL wordt via de Cloud Run Unix-socket verbonden, zonder open authorized networks. De maximale schaal is drie appinstanties.
+
+Een eerdere revisie herstellen:
+
+```sh
+gcloud run revisions list --service=clarity --project=YOUR_PROJECT_ID --region=europe-west1
+gcloud run services update-traffic clarity --to-revisions=PREVIOUS_REVISION=100 --project=YOUR_PROJECT_ID --region=europe-west1
+```
+
+Cloud SQL, opslag en modelgebruik veroorzaken kosten. De configuratie gebruikt een kleine zonale database voor de demo, geen hoogbeschikbare productieomgeving. De bestaande gedeelde demo-identiteit en gesimuleerde verzending blijven behouden.
+
+Ontwerpbronnen: [Google GitHub OIDC-authenticatie](https://github.com/google-github-actions/auth), [Cloud Run-authenticatie en revisie-audiences](https://docs.cloud.google.com/run/docs/authenticating/service-to-service), [Terraform GCS-backend](https://developer.hashicorp.com/terraform/language/backend/gcs).
 
 ## Verificatie
 
@@ -158,6 +183,6 @@ De integratietest vereist de lokale PostgreSQL-database en `TASK_BACKEND=local`.
 
 De tests controleren tekstextractie (PDF/TXT/DOCX), limieten, schema's, citaten, brondekking, versiecontroles, start-idempotentie, concurrente taakclaims, positieve review, negatieve review + override, wijzigingen tijdens de review, herbeoordeling na upload, technische fouten, opnieuw proberen en leaseherstel.
 
-De productiebuild en automatische tests bewijzen niet dat het doelproject toegang heeft tot Gemini. Daarvoor blijft een echte Vertex AI-aanvraag nodig. Docker- en Terraform-uitrol moeten ook nog in de doelomgeving worden uitgevoerd.
+De productiebuild en automatische tests bewijzen niet dat het doelproject toegang heeft tot Gemini. Daarvoor blijft een echte Vertex AI-aanvraag nodig. Een succesvolle lokale controle bewijst nog geen geslaagde cloudrelease; controleer ook de GitHub Actions-run en de doelomgeving.
 
 # tectonic-SDWorkx

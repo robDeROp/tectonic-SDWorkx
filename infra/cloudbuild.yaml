@@ -1,0 +1,30 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        build,
+        --target,
+        runner,
+        -t,
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/clarity/app:${_TAG}",
+        .,
+      ]
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        build,
+        --target,
+        tools,
+        -t,
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/clarity/tools:${_TAG}",
+        .,
+      ]
+images:
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/clarity/app:${_TAG}"
+  - "${_REGION}-docker.pkg.dev/$PROJECT_ID/clarity/tools:${_TAG}"
+substitutions:
+  _REGION: europe-west1
+  _TAG: v1
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s
