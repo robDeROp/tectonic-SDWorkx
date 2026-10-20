@@ -1,0 +1,89 @@
+/*
+ * Hunch design tokens.
+ * Source of truth: the Hunch design system (tokens.json).
+ * The app is light theme only: it ignores the OS dark-mode setting.
+ * Values marked "app extension" are not in the design system and exist only
+ * because the ticket app needs them (status tints, muted text on the header).
+ */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --surface: #fff8ef;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f6ebdc;
+  --header: #12343b;
+  --on-header: #fff3e4;
+  --line: #e6d5be;
+
+  /* Text */
+  --ink: #12343b;
+  --ink-muted: #4f666b;
+
+  /* Brand + category hues */
+  --coral: #ff7a50;
+  --coral-strong: #b53a14;
+  --coral-soft: #ffe4d9;
+  --on-coral: #12343b;
+  --sunflower: #ffc53d;
+  --sunflower-soft: #fff1c9;
+  --sunflower-strong: #7a4e00;
+  --teal: #1f8a87;
+  --teal-soft: #d7f1ec;
+  --teal-strong: #0d5f5c;
+  --berry: #c04a88;
+  --berry-soft: #fbe2ef;
+  --berry-strong: #8a2760;
+
+  /* Feedback */
+  --focus: #0d5f5c;
+  --success: #2a7a4b;
+  --danger: #b3261e;
+
+  /* Category colours: meaning, never decoration */
+  --cat-summary: var(--sunflower);
+  --cat-docs: var(--teal);
+  --cat-chats: var(--coral);
+  --cat-people: var(--berry);
+
+  /* App extensions (AA-checked) */
+  --success-soft: #e8f5ec;
+  --danger-soft: #fce6e3;
+  --on-header-muted: color-mix(in srgb, var(--on-header) 72%, var(--header));
+  --header-hover: color-mix(in srgb, var(--on-header) 10%, var(--header));
+
+  /* Type */
+  --font-display:
+    "Bricolage Grotesque Variable", "Bricolage Grotesque", "Figtree Variable",
+    system-ui, sans-serif;
+  --font-sans:
+    "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, Menlo, Consolas,
+    monospace;
+
+  /* Spacing: 4px scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Elevation: two shadows only */
+  --shadow-card:
+    0 1px 2px rgba(18, 52, 59, 0.08), 0 4px 12px rgba(18, 52, 59, 0.06);
+  --shadow-pop: 0 12px 32px rgba(18, 52, 59, 0.18);
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.3, 1.5, 0.5, 1);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

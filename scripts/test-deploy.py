@@ -17,9 +17,11 @@ with open(os.environ['DEPLOY_LOG'], 'a') as log:
 mode = os.environ['FAIL_MODE']
 if kind == 'curl':
     url = args[-1]
+    if mode == 'candidate-app' and 'candidate' in url and url.endswith('/api/tickets'):
+        sys.exit(22)
     if (mode == 'candidate' and 'candidate' in url) or (mode == 'live' and 'candidate' not in url):
         sys.exit(22)
-    print('{"status":"ok"}')
+    print('[]' if url.endswith('/api/tickets') else '{"status":"ok"}')
 elif args[:3] == ['run', 'services', 'describe']:
     if '--format=json' in args:
         print(json.dumps({'status': {'traffic': [
@@ -68,7 +70,7 @@ class Deployment(unittest.TestCase):
         self.assertLess(migrate, deploy)
         self.assertLess(deploy, candidate)
         self.assertLess(candidate, promote)
-        self.assertEqual(calls[-1][-1], 'https://service.run.app/api/health')
+        self.assertEqual(calls[-1][-1], 'https://service.run.app/api/tickets')
 
     def test_failed_migration_keeps_existing_release(self):
         result, calls = self.run_release('migration')
@@ -77,6 +79,11 @@ class Deployment(unittest.TestCase):
 
     def test_failed_candidate_never_receives_traffic(self):
         result, calls = self.run_release('candidate')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(any('--to-revisions=clarity-release=100' in c for c in calls))
+
+    def test_healthy_probe_cannot_hide_broken_application_routes(self):
+        result, calls = self.run_release('candidate-app')
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(any('--to-revisions=clarity-release=100' in c for c in calls))
 

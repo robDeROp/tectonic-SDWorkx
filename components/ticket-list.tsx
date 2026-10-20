@@ -3,21 +3,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  Check,
   CheckCheck,
-  Clock3,
-  FileText,
   Inbox,
   Plus,
   Search,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { dateLabel, request } from "@/lib/client";
 import type { TicketSummary } from "@/lib/types";
+import { GlyphTile, HunchIcon, Pip } from "./hunch";
 import { ErrorNotice, Modal, Spinner, Status } from "./ui";
 export function TicketList() {
   const router = useRouter();
@@ -59,9 +57,12 @@ export function TicketList() {
     <div className="page overview-page">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">JOUW WERKPLEK, MET MEER ZEKERHEID</div>
+          <div className="eyebrow">Jouw werkplek, met meer zekerheid</div>
           <h1>
-            Welkom terug, Jamie <span className="greeting-mark">✳</span>
+            Welkom terug, Jamie{" "}
+            <span className="greeting-mark" aria-hidden="true">
+              <HunchIcon name="summary" size={22} />
+            </span>
           </h1>
           <p>Elke klantvraag verdient een antwoord dat klopt.</p>
         </div>
@@ -73,80 +74,51 @@ export function TicketList() {
       <section className="hero-panel">
         <div className="hero-copy">
           <span className="hero-kicker">
-            <span className="live-dot" /> JE KENNISASSISTENT
+            <span className="live-dot" /> Je kennisassistent
           </span>
           <h2>
             Van informatie
             <br />
-            naar <span>vertrouwen.</span>
+            naar <mark>vertrouwen.</mark>
           </h2>
           <p>
-            De juiste bronnen. Een helder oordeel. Een sterker antwoord.
-            <br />
-            Clarity helpt je bij elke stap van de klantvraag.
+            De juiste bronnen. Een helder oordeel. Een sterker antwoord. <br />
+            Hunch helpt je bij elke stap van de klantvraag.
           </p>
           <Link href="/kennisbank" className="hero-link">
             Ontdek de kennis achter je antwoord
             <ArrowUpRight size={16} />
           </Link>
         </div>
-        <div className="trust-visual" aria-hidden="true">
-          <div className="visual-grid" />
-          <div className="floating-doc doc-one">
-            <FileText size={19} />
-            <div>
-              <i />
-              <i />
-            </div>
-            <span className="small-check">
-              <Check size={12} />
-            </span>
-          </div>
-          <div className="floating-doc doc-two">
-            <FileText size={19} />
-            <div>
-              <i />
-              <i />
-            </div>
-            <span className="small-check">
-              <Check size={12} />
-            </span>
-          </div>
-          <div className="connection-line" />
-          <div className="trust-core">
-            <ShieldCheck size={37} strokeWidth={1.6} />
-          </div>
-          <div className="verified-note">
-            <span className="green-dot" />
-            Onderbouwd met bronnen
-          </div>
-          <span className="visual-star star-one">✦</span>
-          <span className="visual-star star-two">✦</span>
-        </div>
+        <HeroArt />
       </section>
       <div className="stats-grid">
         <Stat
           title="Openstaande vragen"
           value={open}
           icon={<Inbox size={20} />}
+          tone="neutral"
           detail="Klaar om op te pakken"
         />
         <Stat
           title="AI aan het werk"
           value={tickets.filter((t) => t.status === "working").length}
-          icon={<Sparkles size={20} />}
+          icon={<HunchIcon name="summary" size={20} />}
+          tone="spark"
           detail="Kennis verzamelen & beoordelen"
         />
         <Stat
           title="Vraagt jouw aandacht"
           value={tickets.filter((t) => t.status === "attention").length}
-          icon={<Clock3 size={20} />}
+          icon={<AlertCircle size={20} />}
+          tone="attention"
           detail="Jouw expertise maakt het verschil"
         />
         <Stat
           title="Afgehandeld"
           value={tickets.filter((t) => t.status === "sent").length}
           icon={<CheckCheck size={20} />}
+          tone="success"
           detail="Antwoorden gecontroleerd"
         />
       </div>
@@ -159,7 +131,7 @@ export function TicketList() {
             <p>Van de eerste vraag tot een onderbouwd antwoord.</p>
           </div>
           <span className="subtle-label">
-            <span className="green-dot" />
+            <span className="live-dot" />
             Live overzicht
           </span>
         </div>
@@ -188,7 +160,6 @@ export function TicketList() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <span>⌕</span>
           </label>
         </div>
         {error && <ErrorNotice error={error} onRetry={load} />}
@@ -211,12 +182,13 @@ export function TicketList() {
             filtered.map((t) => (
               <Link href={`/tickets/${t.id}`} className="ticket-row" key={t.id}>
                 <div className="ticket-subject">
-                  <span className="ticket-symbol">
-                    <Inbox size={20} />
-                  </span>
+                  <GlyphTile kind="chats" size={40} />
                   <div>
                     <span className="ticket-number">
-                      TKT-{String(t.number).padStart(4, "0")} <span>·</span>{" "}
+                      <span className="mono">
+                        TKT-{String(t.number).padStart(4, "0")}
+                      </span>
+                      <span aria-hidden="true">·</span>
                       Payroll België
                     </span>
                     <strong>{t.subject}</strong>
@@ -249,8 +221,8 @@ export function TicketList() {
             ))
           ) : (
             <div className="empty-state">
-              <Inbox size={24} />
-              <strong>Geen klantvragen gevonden</strong>
+              <Pip state="idle" size={80} />
+              <strong>Niets gevonden</strong>
               <span>
                 Pas je zoekopdracht aan of maak een nieuwe klantvraag.
               </span>
@@ -266,36 +238,39 @@ export function TicketList() {
       </section>
       <div className="workflow-explainer">
         <div className="workflow-intro">
-          <span className="section-overline">ZO WERKT CLARITY</span>
+          <span className="section-overline">Zo werkt Hunch</span>
           <h3>
-            Jij houdt de regie.
-            <br />
+            Jij houdt de regie. <br />
             AI helpt je vooruit.
           </h3>
         </div>
         {[
           {
             n: "01",
-            icon: Search,
+            icon: <GlyphTile kind="docs" />,
             title: "Vind de juiste kennis",
             text: "Relevante documenten bij jouw klantvraag.",
           },
           {
             n: "02",
-            icon: ShieldCheck,
+            icon: <GlyphTile kind="summary" />,
             title: "Begrijp wat je kunt vertrouwen",
             text: "Bronnen, actualiteit en conflicten in beeld.",
           },
           {
             n: "03",
-            icon: CheckCheck,
+            icon: (
+              <span className="workflow-check" aria-hidden="true">
+                <ShieldCheck size={20} />
+              </span>
+            ),
             title: "Antwoord met zekerheid",
             text: "Een extra controle voor je op verzenden drukt.",
           },
-        ].map(({ n, icon: Icon, title, text }) => (
+        ].map(({ n, icon, title, text }) => (
           <div className="workflow-item" key={n}>
             <span className="workflow-number">{n}</span>
-            <Icon size={19} />
+            {icon}
             <h4>{title}</h4>
             <p>{text}</p>
           </div>
@@ -314,18 +289,22 @@ function Stat({
   title,
   value,
   icon,
+  tone,
   detail,
 }: {
   title: string;
   value: number;
   icon: React.ReactNode;
+  tone: "neutral" | "spark" | "attention" | "success";
   detail: string;
 }) {
   return (
     <div className="stat-card">
       <div className="stat-top">
         <span>{title}</span>
-        {icon}
+        <span className={`stat-icon stat-${tone}`} aria-hidden="true">
+          {icon}
+        </span>
       </div>
       <strong>{value.toString().padStart(2, "0")}</strong>
       <small>{detail}</small>
@@ -344,7 +323,7 @@ function NewTicket({
   return (
     <Modal
       title="Nieuwe klantvraag"
-      subtitle="Clarity start het documentonderzoek automatisch."
+      subtitle="Hunch start het documentonderzoek automatisch."
       onClose={onClose}
     >
       <form
@@ -419,7 +398,7 @@ function NewTicket({
           />
         </label>
         <div className="inline-info">
-          <Sparkles size={16} />
+          <HunchIcon name="summary" size={16} />
           Deze demo gebruikt drie fictieve bronnen over Belgisch
           vertrekvakantiegeld.
         </div>
@@ -436,3 +415,64 @@ function NewTicket({
     </Modal>
   );
 }
+
+/* Cover-style composition from the Hunch design system: the notched ticket
+   slab, category blocks and sparks, with Pip standing on the cream ground. */
+function HeroArt() {
+  return (
+    <div className="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 360 260" preserveAspectRatio="xMinYMid slice">
+        <rect
+          className="art-coral"
+          x="0"
+          y="-24"
+          width="120"
+          height="200"
+          rx="20"
+        />
+        <circle className="art-ground" cx="0" cy="88" r="13" />
+        <circle className="art-ground" cx="120" cy="88" r="13" />
+        <rect
+          className="art-sun"
+          x="0"
+          y="192"
+          width="72"
+          height="28"
+          rx="14"
+        />
+        <rect
+          className="art-teal"
+          x="232"
+          y="16"
+          width="84"
+          height="60"
+          rx="12"
+        />
+        <rect
+          className="art-berry"
+          x="328"
+          y="16"
+          width="110"
+          height="60"
+          rx="30"
+        />
+        <rect
+          className="art-deep"
+          x="232"
+          y="92"
+          width="200"
+          height="190"
+          rx="20"
+        />
+        <path className="art-sun" d={star(290, 168, 28)} />
+        <path className="art-sun" d={star(336, 124, 10)} />
+        <path className="art-sun" d={star(196, 40, 11)} />
+        <g transform="translate(112 130)">
+          <Pip state="idle" size={120} />
+        </g>
+      </svg>
+    </div>
+  );
+}
+const star = (x: number, y: number, s: number) =>
+  `M${x},${y - s} Q${x},${y} ${x + s},${y} Q${x},${y} ${x},${y + s} Q${x},${y} ${x - s},${y} Q${x},${y} ${x},${y - s} Z`;

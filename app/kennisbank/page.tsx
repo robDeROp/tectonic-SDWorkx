@@ -1,18 +1,19 @@
-import { BookOpen, FileText, Info, ShieldCheck } from "lucide-react";
+import { BookOpen, Info, ShieldCheck } from "lucide-react";
 import { demoDocuments } from "@/lib/fixtures";
 import { dateLabel } from "@/lib/client";
+import { GlyphTile, SourceChip } from "@/components/hunch";
 export default function KnowledgePage() {
   return (
     <div className="page">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">FIND IT. UNDERSTAND IT. TRUST IT.</div>
+          <div className="eyebrow">Find it. Understand it. Trust it.</div>
           <h1>Een gedeelde basis van kennis.</h1>
           <p>
             De drie bronnen achter de demonstratie over vertrekvakantiegeld.
           </p>
         </div>
-        <span className="page-heading-icon">
+        <span className="page-heading-icon" aria-hidden="true">
           <BookOpen size={28} />
         </span>
       </div>
@@ -27,15 +28,11 @@ export default function KnowledgePage() {
         </div>
       </div>
       <div className="knowledge-grid">
-        {demoDocuments.map((doc, i) => (
+        {demoDocuments.map((doc) => (
           <article className="panel knowledge-card" key={doc.key}>
             <div className="knowledge-top">
-              <span
-                className={`file-icon ${i === 0 ? "file-blue" : i === 1 ? "file-violet" : "file-amber"}`}
-              >
-                <FileText size={25} />
-              </span>
-              <span className="mini-tag">{doc.kind}</span>
+              <GlyphTile kind="docs" size={44} />
+              <SourceChip kind="docs">{doc.kind}</SourceChip>
             </div>
             <h2>{doc.name}</h2>
             <div className="knowledge-date">

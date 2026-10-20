@@ -78,13 +78,24 @@ export async function enqueue(tx: Transaction, ticket: Ticket, kind: string) {
       question: ticket.question,
       answer: ticket.answer,
       documents: sources.map(
-        ({ id, name, kind, date, content, fictional }) => ({
+        ({
           id,
           name,
           kind,
           date,
           content,
           fictional,
+          assessment,
+          assessedVersion,
+        }) => ({
+          id,
+          name,
+          kind,
+          date,
+          content,
+          fictional,
+          assessment:
+            assessedVersion === ticket.documentVersion ? assessment : null,
         }),
       ),
     },
