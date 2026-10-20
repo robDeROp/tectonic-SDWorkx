@@ -1090,8 +1090,7 @@ main {
   gap: var(--space-4);
   min-width: 0;
   padding: var(--space-6) clamp(24px, 3.5vw, 64px);
-  border-left: 1px solid var(--line);
-  background: radial-gradient(ellipse at center, #fff1cf 0%, #fff8eb 72%);
+  background: transparent;
 }
 .overview-activity-list {
   flex: 1;
@@ -1549,10 +1548,6 @@ main {
 @media (max-width: 1150px) {
   .overview-split-card {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .overview-guide {
-    border-left: 0;
-    border-top: 1px solid var(--line);
   }
   .overview-mascot-stage {
     max-width: 300px;
