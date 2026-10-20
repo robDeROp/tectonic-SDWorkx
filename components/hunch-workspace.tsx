@@ -17,8 +17,10 @@ import { dateLabel, hunchNumber, request, timeLabel } from "@/lib/client";
 import type { HelpCallView, HunchDetail, PersonView } from "@/lib/types";
 import { Pip, PipToast } from "./hunch";
 import { HunchContext } from "./hunch-context";
+import { HunchStatusEditor } from "./hunch-status-editor";
+import { HunchProposedActions } from "./hunch-proposed-actions";
 import { HunchConversation, SourceTag } from "./hunch-conversation";
-import { Avatar, ErrorNotice, HunchStatus, Modal, Spinner } from "./ui";
+import { Avatar, ErrorNotice, Modal, Spinner } from "./ui";
 
 type Toast = { state: "working" | "found"; message: string; leaving?: boolean };
 /** Which colleague picker is open: pass on, choose before sending, redirect. */
@@ -105,7 +107,7 @@ export function HunchWorkspace({ id }: { id: string }) {
       <header className="hunch-header">
         <div className="hunch-meta">
           <span className="mono">{hunchNumber(hunch.number)}</span>
-          <HunchStatus status={hunch.status} />
+          <HunchStatusEditor hunch={hunch} onSaved={load} />
           <SourceTag source={hunch.source} where={hunch.sourceLabel} />
         </div>
         <h1>{hunch.title}</h1>
@@ -126,7 +128,10 @@ export function HunchWorkspace({ id }: { id: string }) {
       <div className="hunch-layout">
         <div className="hunch-main">
           <HunchConversation hunch={hunch} onSent={load} />
-          <HunchContext context={hunch.context} />
+          <HunchContext
+            context={hunch.context}
+            hunches={hunch.relatedHunches}
+          />
         </div>
         <aside className="panel help-card" aria-label="Call for help">
           <HelpCard
@@ -175,6 +180,7 @@ export function HunchWorkspace({ id }: { id: string }) {
           {!!hunch.calls.length && <Trail calls={hunch.calls} />}
         </aside>
       </div>
+      <HunchProposedActions hunch={hunch} />
       {picking && (
         <PersonPicker
           hunch={hunch}

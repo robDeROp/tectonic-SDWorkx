@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { Moon } from "lucide-react";
+import Link from "next/link";
 import { dateLabel } from "@/lib/client";
-import type { HunchContextView } from "@/lib/types";
+import type { HunchContextView, HunchSummary } from "@/lib/types";
 import { GlyphTile, Relevance, SourceChip } from "./hunch";
-import { Avatar } from "./ui";
+import { Avatar, HunchStatus } from "./ui";
 
 type Tab = "people" | "docs" | "chats";
 
@@ -12,11 +13,17 @@ type Tab = "people" | "docs" | "chats";
  * What Hunch linked to this hunch: people, documents and conversations.
  * One list at a time, so the structure stays visible without the noise.
  */
-export function HunchContext({ context }: { context: HunchContextView }) {
+export function HunchContext({
+  context,
+  hunches,
+}: {
+  context: HunchContextView;
+  hunches: HunchSummary[];
+}) {
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "people", label: "Mensen", count: context.people.length },
     { key: "docs", label: "Documenten", count: context.documents.length },
-    { key: "chats", label: "Gesprekken", count: context.conversations.length },
+    { key: "chats", label: "Hunches", count: hunches.length },
   ];
   const [tab, setTab] = useState<Tab>(
     tabs.find((t) => t.count)?.key ?? "people",
@@ -27,7 +34,8 @@ export function HunchContext({ context }: { context: HunchContextView }) {
         <SourceChip kind="summary">Relevante context</SourceChip>
       </div>
       <p className="panel-intro">
-        Hunch koppelde deze mensen, documenten en gesprekken aan deze hunch.
+        Hunch koppelde deze mensen, documenten en gerelateerde hunches aan deze
+        vraag.
       </p>
       <div className="context-tabs" role="tablist">
         {tabs.map(({ key, label, count }) => (
@@ -92,23 +100,20 @@ export function HunchContext({ context }: { context: HunchContextView }) {
             </li>
           ))}
         {tab === "chats" &&
-          context.conversations.map((c) => (
+          hunches.map((c) => (
             <li key={c.id} className="context-item hn-k-chats">
               <GlyphTile kind="chats" />
               <div>
-                <strong>{c.title}</strong>
+                <Link href={`/hunches/${c.id}`}>
+                  <strong>{c.title}</strong>
+                </Link>
                 <span>
-                  {c.channel} · {c.location} · {dateLabel(c.lastActivity, true)}
+                  {c.author.name} · {dateLabel(c.updatedAt, true)}
                 </span>
-                <small>“{c.snippet}”</small>
+                <small>{c.workingOn}</small>
               </div>
               <div className="context-meta">
-                <span className="avatar-stack">
-                  {c.participants.map((p) => (
-                    <Avatar key={p.id} person={p} small />
-                  ))}
-                </span>
-                <Relevance value={c.relevance} label="relevant" />
+                <HunchStatus status={c.status} />
               </div>
             </li>
           ))}

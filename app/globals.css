@@ -528,7 +528,6 @@ code {
 .nav-item.active {
   background: var(--header-hover);
   color: var(--on-header);
-  box-shadow: inset 3px 0 0 var(--coral);
 }
 .nav-item.active > svg {
   color: var(--coral);
@@ -765,15 +764,12 @@ main {
 .primary {
   background: var(--coral);
   color: var(--on-coral);
-  box-shadow: 0 2px 0 var(--coral-strong);
 }
 .primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 3px 0 var(--coral-strong);
 }
 .primary:active:not(:disabled) {
   transform: translateY(1px) scale(0.98);
-  box-shadow: 0 1px 0 var(--coral-strong);
 }
 .secondary {
   background: var(--surface-raised);
@@ -2072,7 +2068,7 @@ button.thread-attachment:hover {
 }
 .composer-tabs button.selected {
   color: var(--ink);
-  border-bottom-color: var(--coral);
+  border-bottom-color: var(--ink);
 }
 .composer-recipient {
   display: flex;
@@ -3907,5 +3903,103 @@ button.thread-attachment:hover {
       flex-direction: column;
       align-items: flex-start;
     }
+  }
+}
+
+/* Editable status and grounded Gemini follow-up actions. */
+.status-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink);
+}
+.hunch-meta .status-edit .status {
+  margin-left: 0;
+}
+.status-edit:hover {
+  background: var(--surface-sunken);
+}
+.proposed-actions {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+}
+.proposed-actions h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.proposed-actions > .help-footnote {
+  margin-top: var(--space-4);
+  color: var(--ink-muted);
+}
+.proposed-action-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+}
+.proposed-action-list > li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line);
+}
+.proposed-action-list > li > div {
+  min-width: 0;
+  flex: 1;
+}
+.proposed-action-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal-soft);
+  color: var(--teal-strong);
+  font-weight: 650;
+}
+.proposed-action-list h3 {
+  margin-bottom: var(--space-2);
+}
+.proposed-action-list p {
+  color: var(--ink-muted);
+}
+.proposed-action-list .proposed-contact {
+  margin-top: var(--space-2);
+  font-weight: 600;
+  color: var(--ink);
+}
+.proposed-action-list details {
+  margin-top: var(--space-3);
+  font-size: 13px;
+}
+.proposed-action-list summary {
+  cursor: pointer;
+  color: var(--teal-strong);
+}
+.proposal-evidence {
+  margin-top: var(--space-3);
+}
+.proposal-evidence a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+}
+.proposal-evidence blockquote {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 650px) {
+  .proposed-actions .panel-head {
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 }

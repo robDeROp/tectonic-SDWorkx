@@ -14,6 +14,7 @@
     "worker": "tsx --env-file-if-exists=.env scripts/worker.ts",
     "test": "vitest run",
     "test:integration": "tsx --env-file-if-exists=.env scripts/integration-test.ts",
+    "test:hunches": "tsx --env-file-if-exists=.env scripts/hunch-integration-test.ts",
     "format": "prettier --write app components lib scripts tests *.ts *.mts *.json *.yaml"
   },
   "dependencies": {

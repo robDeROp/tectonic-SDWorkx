@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { hunchDemoData } from "./hunch-demo";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, or } from "drizzle-orm";
 import { db, type Transaction } from "./db";
 import { helpCalls, hunchContext, hunchMessages, hunches } from "./db/schema";
 import { findEmployee, type Employee } from "./directory";
@@ -156,9 +156,46 @@ export async function getHunch(
     .where(eq(hunchMessages.hunchId, id))
     .orderBy(asc(hunchMessages.createdAt));
   const base = summary(hunch, calls);
+  const links = await contextOf(hunch);
+  const matches = links.length
+    ? await db
+        .select()
+        .from(hunchContext)
+        .where(
+          and(
+            ne(hunchContext.hunchId, id),
+            or(
+              ...links.map((link) =>
+                and(
+                  eq(hunchContext.kind, link.kind),
+                  eq(hunchContext.refId, link.refId),
+                ),
+              ),
+            ),
+          ),
+        )
+    : [];
+  const scores = new Map<string, number>();
+  for (const match of matches)
+    scores.set(
+      match.hunchId,
+      (scores.get(match.hunchId) ?? 0) + match.relevance,
+    );
+  const relatedIds = [...scores]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 5)
+    .map(([key]) => key);
+  const related = relatedIds.length
+    ? await db.select().from(hunches).where(inArray(hunches.id, relatedIds))
+    : [];
+  const relatedCalls = await callsFor(relatedIds);
   return {
     ...base,
-    context: contextView(await contextOf(hunch)),
+    context: contextView(links),
+    relatedHunches: relatedIds.flatMap((key) => {
+      const row = related.find((candidate) => candidate.id === key);
+      return row ? [summary(row, relatedCalls.get(key) ?? [])] : [];
+    }),
     messages: messages.map((m) => {
       const person = m.authorId ? findEmployee(m.authorId) : undefined;
       return {
@@ -487,13 +524,78 @@ export async function passCall(
 }
 
 export async function resolveHunch(id: string, viewerId: string) {
+  await updateHunchStatus(id, viewerId, { status: "resolved" });
+}
+
+/** Keep the displayed status and the active help request in sync. */
+export async function updateHunchStatus(
+  id: string,
+  viewerId: string,
+  input: { status: HunchStatus; expectedStatus?: HunchStatus; toId?: string },
+) {
   await db.transaction(async (tx) => {
-    const { hunch } = await lockHunch(tx, id);
+    const { hunch, calls } = await lockHunch(tx, id);
     if (hunch.authorId !== viewerId)
-      throw new AppError("Alleen wie de hunch opende, kan ze afsluiten.", 403);
+      throw new AppError(
+        "Alleen wie de hunch opende, kan de status wijzigen.",
+        403,
+      );
+    if (input.expectedStatus && input.expectedStatus !== hunch.status)
+      throw new AppError(
+        "De status is intussen gewijzigd. Vernieuw de hunch en probeer opnieuw.",
+        409,
+      );
+    const active = activeCall(calls);
+    if (
+      input.status === hunch.status &&
+      (!input.toId || active?.recipientId === input.toId)
+    )
+      return;
+    if (input.status === "open" || input.status === "resolved") {
+      await tx
+        .update(helpCalls)
+        .set({
+          state: "cancelled",
+          note:
+            input.status === "resolved" ? "Hunch opgelost" : "Hunch heropend",
+        })
+        .where(
+          and(
+            eq(helpCalls.hunchId, id),
+            inArray(helpCalls.state, ["notified", "accepted"]),
+          ),
+        );
+    } else {
+      const toId = input.toId ?? active?.recipientId;
+      if (!toId) throw new AppError("Kies eerst de collega die je helpt.", 400);
+      const recipient = pickedRecipient(toId, hunch.authorId);
+      if (active?.recipientId === recipient.id) {
+        await tx
+          .update(helpCalls)
+          .set({
+            state: input.status === "waiting" ? "notified" : "accepted",
+            note: "Status bijgewerkt door de auteur",
+          })
+          .where(eq(helpCalls.id, active.id));
+      } else {
+        if (active)
+          await tx
+            .update(helpCalls)
+            .set({ state: "cancelled", note: "Omgeleid" })
+            .where(eq(helpCalls.id, active.id));
+        await tx.insert(helpCalls).values({
+          id: randomUUID(),
+          hunchId: id,
+          recipientId: recipient.id,
+          state: input.status === "waiting" ? "notified" : "accepted",
+          note: "Status ingesteld door de auteur",
+          emailedAt: input.status === "waiting" ? new Date() : null,
+        });
+      }
+    }
     await tx
       .update(hunches)
-      .set({ status: "resolved", updatedAt: new Date() })
+      .set({ status: input.status, updatedAt: new Date() })
       .where(eq(hunches.id, id));
   });
 }

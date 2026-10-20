@@ -231,10 +231,31 @@ export type HunchSummary = {
 };
 export type HunchDetail = HunchSummary & {
   context: HunchContextView;
+  relatedHunches: HunchSummary[];
   messages: HunchMessageView[];
   calls: HelpCallView[];
   passesLeft: number;
   viewer: { isAuthor: boolean; isHelper: boolean };
+};
+export type HunchActionSource = {
+  id: string;
+  label: string;
+  kind: "person" | "document" | "conversation" | "hunch" | "message";
+  detail: string;
+  personIds: string[];
+  href?: string;
+};
+export type HunchActionPlan = {
+  model: string;
+  generatedAt: string;
+  actions: {
+    title: string;
+    reason: string;
+    kind: "contact" | "read" | "follow_up";
+    person: { id: string; name: string; awayUntil: string | null } | null;
+    evidence: { sourceId: string; quote: string }[];
+  }[];
+  sources: HunchActionSource[];
 };
 export type HelpNotification = {
   hunchId: string;

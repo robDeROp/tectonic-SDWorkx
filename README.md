@@ -78,6 +78,25 @@ Opnieuw seeden vult alleen ontbrekende cases aan. Bestaande cases, reacties,
 statussen en verwijderde contextkeuzes worden niet overschreven.
 De invoerkanalen zijn voorbeelddata; er is geen live Teams- of Outlook-import.
 
+### Status en voorgestelde acties
+
+De auteur kan op de status bovenaan een hunch klikken om deze te wijzigen.
+Voor een wachtende of lopende hulpvraag wordt een beschikbare collega gekozen.
+Oplossen of heropenen sluit de actieve hulpvraag af. Gelijktijdige wijzigingen
+worden gecontroleerd zodat een verouderd formulier geen nieuwe status overschrijft.
+Het tabblad **Hunches** toont gerelateerde cases op basis van gedeelde context.
+
+Onderaan staan **Voorgestelde acties**. De knop **Acties voorstellen met Gemini**
+gebruikt de bestaande Vertex AI-configuratie en de gekoppelde mensen,
+documentmetadata, gesprekken, berichten en eerdere hunches. Exacte broncitaten
+en de koppeling tussen een contactpersoon en diens bron worden gecontroleerd.
+Documenteigenaars worden niet automatisch als auteur voorgesteld. Voorstellen
+blijven opgeslagen zolang de context en het model gelijk blijven; bij wijzigingen
+worden nieuwe voorstellen gevraagd. De voorstellen voeren zelf geen acties uit.
+
+Voer `npm run db:migrate` uit voor de opslag van voorstellen en
+`npm run test:hunches` voor de statuscontroles met een tijdelijke lokale testcase.
+
 ## Gemini werkelijk verbinden
 
 ### Documentbeoordeling met Jev + Gemini

@@ -10,7 +10,12 @@ import {
   index,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import type { DocumentAssessment, JobInput, JobResult } from "../types";
+import type {
+  DocumentAssessment,
+  JobInput,
+  JobResult,
+  HunchActionPlan,
+} from "../types";
 const time = (name: string) =>
   timestamp(name, { withTimezone: true }).notNull().defaultNow();
 export const tickets = pgTable("tickets", {
@@ -229,3 +234,12 @@ export const helpCalls = pgTable(
     index("help_calls_recipient_idx").on(t.recipientId, t.state),
   ],
 );
+
+export const hunchActionPlans = pgTable("hunch_action_plans", {
+  hunchId: text("hunch_id")
+    .primaryKey()
+    .references(() => hunches.id, { onDelete: "cascade" }),
+  contextHash: text("context_hash").notNull(),
+  plan: jsonb("plan").$type<HunchActionPlan>().notNull(),
+  createdAt: time("created_at"),
+});
