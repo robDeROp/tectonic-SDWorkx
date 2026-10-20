@@ -146,9 +146,9 @@ export function Pip({
       aria-label={
         label ||
         (working
-          ? "Pip zoekt context"
+          ? "Pip is looking for context"
           : found
-            ? "Pip heeft context gevonden"
+            ? "Pip has found context"
             : "Pip")
       }
     >
@@ -307,7 +307,7 @@ export function PipToast({
       data-leaving={leaving ? "true" : "false"}
     >
       <div className="hn-bubble">
-        <strong>{state === "found" ? "Alles klaar" : "Mee bezig"}</strong>
+        <strong>{state === "found" ? "All done" : "Working on it"}</strong>
         <span className="hn-bubble-msg" key={message}>
           {message}
           {state === "working" && (
@@ -325,10 +325,10 @@ export function PipToast({
 }
 
 const KIND_LABEL: Record<ContextKind, string> = {
-  summary: "Samenvatting",
-  docs: "Documenten",
-  chats: "Chats & e-mail",
-  people: "Mensen",
+  summary: "Summary",
+  docs: "Documents",
+  chats: "Chats & email",
+  people: "People",
 };
 
 /** Uppercase label naming a context type with its colour and glyph. */

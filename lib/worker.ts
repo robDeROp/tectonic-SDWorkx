@@ -108,7 +108,7 @@ export async function runNextJob(
             await addEvent(
               tx,
               job.ticketId,
-              "Document ontvangen",
+              "Document received",
               fixture.name,
               "info",
               job.id,
@@ -153,11 +153,11 @@ export async function runNextJob(
         tx,
         ticket.id,
         job.kind === "documents"
-          ? "Betrouwbaarheid beoordelen"
+          ? "Assessing reliability"
           : job.kind === "draft"
-            ? "Antwoord formuleren met Gemini"
-            : "Antwoord toetsen aan de bronnen",
-        `${input.documents.length} documenten · versie ${ticket.documentVersion}`,
+            ? "Writing an answer with Gemini"
+            : "Checking the answer against the sources",
+        `${input.documents.length} documents · version ${ticket.documentVersion}`,
         "info",
         job.id,
       );
@@ -205,8 +205,8 @@ export async function runNextJob(
         await addEvent(
           tx,
           ticket.id,
-          "Klaar voor antwoord",
-          "Bronnen beoordeeld; onzekerheden en conflicten zijn zichtbaar.",
+          "Ready to answer",
+          "Sources assessed; uncertainties and conflicts are visible.",
           "success",
           job.id,
         );
@@ -234,8 +234,8 @@ export async function runNextJob(
         await addEvent(
           tx,
           ticket.id,
-          "AI-concept gereed",
-          "Lees het antwoord na en pas aan waar nodig.",
+          "AI draft ready",
+          "Read through the answer and edit where needed.",
           "success",
           job.id,
         );
@@ -244,8 +244,8 @@ export async function runNextJob(
           tx,
           ticket.id,
           result.verdict === "approved"
-            ? "Antwoordreview goedgekeurd"
-            : "Antwoordreview vraagt aandacht",
+            ? "Answer review approved"
+            : "Answer review needs attention",
           result.summary,
           result.verdict === "approved" ? "success" : "warning",
           job.id,
@@ -292,7 +292,7 @@ export async function runNextJob(
       await addEvent(
         tx,
         ticket.id,
-        "Verwerking onderbroken",
+        "Processing interrupted",
         message,
         "error",
         job.id,

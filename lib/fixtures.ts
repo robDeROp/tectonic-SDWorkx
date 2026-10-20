@@ -4,49 +4,49 @@ export const demoTicket = {
   customer: "Sophie De Smet",
   company: "Atelier Noord",
   email: "sophie@atelier-noord.example",
-  subject: "Vakantiegeld bij uitdiensttreding",
+  subject: "Holiday pay on termination of employment",
   question:
-    "Beste SD Worx,\n\nOnze medewerker Thomas verlaat het bedrijf op 30 september. Hij is bediende en heeft dit jaar nog niet al zijn vakantiedagen opgenomen. Hoe verwerken we zijn vertrekvakantiegeld in de eindafrekening? Moeten we ook een vakantieattest bezorgen, en welke gegevens hebben jullie van ons nodig?\n\nAlvast bedankt!\nSophie De Smet\nHR Manager · Atelier Noord",
+    "Dear SD Worx,\n\nOur employee Thomas is leaving the company on 30 September. He is a white-collar employee and has not taken all of his holiday entitlement this year. How do we handle his departure holiday pay in the final settlement? Do we also need to provide a holiday certificate, and what information do you need from us?\n\nThanks in advance!\nSophie De Smet\nHR Manager · Atelier Noord",
   isDemo: true,
 };
 export const demoDocuments = [
   {
     key: "regelgeving",
-    name: "Vertrekvakantiegeld · regelgevend kader",
-    kind: "Wetgevingsgericht",
+    name: "Departure holiday pay · regulatory framework",
+    kind: "Legislative",
     date: "2026-08-15",
     content:
-      "FICTIEF DEMONSTRATIEMATERIAAL — geen echte wetgeving of juridisch advies. Voor deze fictieve casus gelden de volgende uitgangspunten. Bij de uitdiensttreding van een bediende moet de payrollafdeling het vertrekvakantiegeld onderzoeken en verwerken in de eindafrekening. De berekening houdt rekening met de relevante loonbasis, tewerkstellingsperiode, reeds uitbetaald vakantiegeld en opgenomen vakantiedagen. De werkgever bezorgt een vakantieattest aan de vertrekkende bediende. Zonder de loon- en vakantiehistoriek kan geen exact bedrag worden vastgesteld. Dit document bevat geen percentages of rekensleutel. Het geldt uitsluitend voor de fictieve Belgische bediendecasus en bevat geen algemene regels voor arbeiders.",
+      "FICTIONAL DEMONSTRATION MATERIAL — not real legislation or legal advice. The following assumptions apply to this fictional case. When a white-collar employee leaves employment, the payroll department must examine departure holiday pay and process it in the final settlement. The calculation takes account of the relevant salary basis, employment period, holiday pay already paid and leave already taken. The employer provides a holiday certificate to the departing employee. An exact amount cannot be determined without salary and holiday history. This document contains no percentages or calculation formula. It applies only to the fictional Belgian white-collar employee case and contains no general rules for blue-collar workers.",
   },
   {
     key: "werkinstructie",
-    name: "Payroll playbook · uitdiensttreding",
-    kind: "Intern",
+    name: "Payroll playbook · termination of employment",
+    kind: "Internal",
     date: "2026-09-10",
     content:
-      "FICTIEVE INTERNE WERKINSTRUCTIE — geen officieel document van SD Worx. Voor de demonstratiecasus: vraag de einddatum, het werknemersstatuut, de relevante loongegevens, de tewerkstellingshistoriek, het overzicht van opgenomen en resterende vakantiedagen en reeds uitbetaald vakantiegeld op. De payrollmedewerker controleert deze gegevens vóór de eindafrekening. Neem vertrekvakantiegeld mee in de eindafrekening van de bediende en bezorg het vakantieattest. Beloof geen exact bedrag zonder berekening op basis van de volledige historiek. Deze werkinstructie vervangt voor deze demo de interne FAQ van februari 2021. Verwijs de klant bij ontbrekende informatie naar zijn payrollcontact.",
+      "FICTIONAL INTERNAL WORK INSTRUCTION — not an official SD Worx document. For the demonstration case: request the end date, employee status, relevant salary data, employment history, an overview of leave taken and remaining, and holiday pay already paid. The payroll employee checks these details before the final settlement. Include departure holiday pay in the white-collar employee's final settlement and provide the holiday certificate. Do not promise an exact amount without a calculation based on the full history. For this demo, this work instruction supersedes the internal FAQ from February 2021. Refer the customer to their payroll contact if information is missing.",
   },
   {
     key: "archief",
-    name: "FAQ vakantie & vertrek · archief 2021",
-    kind: "Intern",
+    name: "Holiday & departure FAQ · 2021 archive",
+    kind: "Internal",
     date: "2021-02-12",
     content:
-      "FICTIEF ARCHIEFDOCUMENT — bevat opzettelijk onjuiste en tegenstrijdige informatie voor een softwaredemonstratie. Oude interne FAQ: bij vertrek van een bediende in september betalen we geen vertrekvakantiegeld via de eindafrekening; de nieuwe werkgever regelt alles. Een vakantieattest is niet nodig. Vraag alleen de naam en einddatum op. Deze instructie is verouderd en is vervangen door het payroll playbook van september 2026. Gebruik deze oude instructie niet als grondslag voor het klantantwoord.",
+      "FICTIONAL ARCHIVE DOCUMENT — contains deliberately incorrect and contradictory information for a software demonstration. Old internal FAQ: when a white-collar employee leaves in September, we do not pay departure holiday pay through the final settlement; the new employer handles everything. A holiday certificate is not required. Ask only for the name and end date. This instruction is outdated and has been superseded by the payroll playbook from September 2026. Do not use this old instruction as the basis for the customer answer.",
   },
 ];
 
 export const colleagueEmail = {
   author: "Emma Peeters",
   email: "emma.peeters@payroll.example",
-  subject: "Aanvulling uitdiensttreding · vakantiehistoriek",
+  subject: "Additional termination information · holiday history",
   content:
-    "Dag Jamie,\n\nIk vond nog een aanvullende checklist voor de eindafrekening. De loon- en vakantiehistoriek moeten nog worden bevestigd. Let op: de oude FAQ uit 2021 is vervangen. Kun je deze bijlage meenemen in je beoordeling?\n\nGroeten,\nEmma\n\nFictieve collega-mail voor de demonstratie.",
+    "Hi Jamie,\n\nI found an additional checklist for the final settlement. The salary and holiday history still need to be confirmed. Please note: the old FAQ from 2021 has been superseded. Can you include this attachment in your assessment?\n\nRegards,\nEmma\n\nFictional colleague email for the demonstration.",
   document: {
-    name: "Checklist eindafrekening · aanvulling collega.txt",
-    kind: "Intern",
+    name: "Final settlement checklist · colleague supplement.txt",
+    kind: "Internal",
     date: "2026-09-30",
     content:
-      "FICTIEF DEMONSTRATIEMATERIAAL — aanvullende interne checklist van een fictieve collega. Voor de Belgische bediendecasus moeten de loonhistoriek, tewerkstellingsperiode, reeds betaald vakantiegeld en opgenomen vakantiedagen bevestigd worden voordat de eindafrekening kan worden berekend. Deze gegevens zijn nog niet bevestigd. Bezorg een vakantieattest bij uitdiensttreding. De FAQ van 2021 is vervangen door het payroll playbook van september 2026. Dit document voegt geen percentages, bedragen of nieuwe wettelijke regels toe.",
+      "FICTIONAL DEMONSTRATION MATERIAL — additional internal checklist from a fictional colleague. For the Belgian white-collar employee case, salary history, employment period, holiday pay already paid and leave taken must be confirmed before the final settlement can be calculated. These details have not yet been confirmed. Provide a holiday certificate on termination of employment. The 2021 FAQ has been superseded by the payroll playbook from September 2026. This document adds no percentages, amounts or new legal rules.",
   },
 };

@@ -43,7 +43,7 @@ export function HunchStatusEditor({
     <>
       <button
         className="status-edit"
-        aria-label={`Status wijzigen: ${hunchStatusLabel[hunch.status]}`}
+        aria-label={`Change status: ${hunchStatusLabel[hunch.status]}`}
         onClick={() => {
           setStatus(hunch.status);
           setExpected(hunch.status);
@@ -57,8 +57,8 @@ export function HunchStatusEditor({
       </button>
       {editing && (
         <Modal
-          title="Status wijzigen"
-          subtitle="Werk de status en de betrokken collega bij."
+          title="Change status"
+          subtitle="Update the status and the colleague involved."
           onClose={() => {
             if (!busy) setEditing(false);
           }}
@@ -102,20 +102,20 @@ export function HunchStatusEditor({
             </label>
             {needsHelper && (
               <label>
-                Betrokken collega
+                Colleague involved
                 <select
                   required
                   value={toId}
                   disabled={busy}
                   onChange={(event) => setToId(event.target.value)}
                 >
-                  <option value="">Kies een collega</option>
+                  <option value="">Choose a colleague</option>
                   {people
                     .filter((p) => p.id !== hunch.author.id)
                     .map((p) => (
                       <option key={p.id} value={p.id} disabled={!!p.awayUntil}>
                         {p.name}
-                        {p.awayUntil ? " · afwezig" : ""}
+                        {p.awayUntil ? " · away" : ""}
                       </option>
                     ))}
                 </select>
@@ -123,13 +123,13 @@ export function HunchStatusEditor({
             )}
             {status === "helping" && (
               <p className="panel-intro">
-                Je legt vast dat deze collega helpt. Er wordt geen bericht
-                verstuurd.
+                This records that this colleague is helping. No message will be
+                sent.
               </p>
             )}
             {(status === "open" || status === "resolved") && hunch.helper && (
               <p className="panel-intro">
-                De lopende hulpvraag wordt afgesloten.
+                The current help request will be closed.
               </p>
             )}
             {error && <ErrorNotice error={error} />}
@@ -140,13 +140,13 @@ export function HunchStatusEditor({
                 disabled={busy}
                 onClick={() => setEditing(false)}
               >
-                Annuleren
+                Cancel
               </button>
               <button
                 className="button primary"
                 disabled={busy || (needsHelper && !toId)}
               >
-                {busy && <Spinner />}Opslaan
+                {busy && <Spinner />}Save
               </button>
             </div>
           </form>

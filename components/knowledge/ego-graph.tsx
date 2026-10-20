@@ -103,7 +103,7 @@ export function EgoGraph({
       .select(el)
       .insert("svg", ":first-child")
       .attr("role", "img")
-      .attr("aria-label", "Verbindingsgraaf") as d3.Selection<
+      .attr("aria-label", "Connection graph") as d3.Selection<
       SVGSVGElement,
       unknown,
       null,
@@ -315,7 +315,7 @@ export function EgoGraph({
       g.select("title").text(
         isC
           ? d.label
-          : `${d.label} (${d.rel})${d.kind === "unit" ? " · opent in het organigram" : ""}`,
+          : `${d.label} (${d.rel})${d.kind === "unit" ? " · opens in the organisation chart" : ""}`,
       );
       g.select(".kg-halo")
         .transition(T)
@@ -383,8 +383,7 @@ export function EgoGraph({
   return (
     <div className="kg-canvas kg-dotgrid" ref={stage}>
       <div className="kg-legend-note">
-        Klik op een bol om verder te springen · stippellijn = onderling
-        verbonden
+        Click a node to explore further · dotted line = connected to each other
       </div>
       <ZoomControls
         onZoom={(z) => {

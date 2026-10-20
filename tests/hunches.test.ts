@@ -40,14 +40,23 @@ describe("call for help routing", () => {
 });
 
 describe("context linked to a hunch", () => {
-  it("links people, documents and conversations directly from the text", () => {
-    const view = contextView(findContext(payroll, jamie));
-    expect(view.people[0].id).toBe("e-emma");
-    expect(view.people.map((p) => p.id)).not.toContain("e-jamie");
-    expect(view.documents.map((d) => d.id)).toContain("d-playbook");
-    expect(view.conversations.map((c) => c.id)).toContain("c-attest");
-    expect(view.documents[0].reason).toMatch(/^Herkend: /);
-  });
+  it.each([
+    payroll,
+    "How do I handle departure holiday pay in the final settlement for a part-time white-collar employee?",
+  ])(
+    "links relevant context for English and legacy Dutch questions: %s",
+    (question) => {
+      const view = contextView(findContext(question, jamie));
+      expect(view.people[0].id).toBe("e-emma");
+      expect(view.people.map((p) => p.id)).not.toContain("e-jamie");
+      expect(view.documents.map((d) => d.id)).toContain("d-playbook");
+      expect(view.conversations.map((c) => c.id)).toContain("c-attest");
+      expect(view.documents[0].reason).toMatch(/^Matched: /);
+      expect(view.documents[0].reason).not.toMatch(
+        /vakantie|eindafrekening|bediende/,
+      );
+    },
+  );
   it("mixes knowledge from different areas when the question does", () => {
     const view = contextView(
       findContext(
@@ -70,7 +79,7 @@ describe("context linked to a hunch", () => {
     const view = contextView(
       findContext("Ik weet niet waar te beginnen", jamie),
     );
-    expect(view.people.every((p) => p.team === "Payroll België")).toBe(true);
+    expect(view.people.every((p) => p.team === "Payroll Belgium")).toBe(true);
     expect(view.documents).toEqual([]);
   });
   it("matches at the start of words only", () => {

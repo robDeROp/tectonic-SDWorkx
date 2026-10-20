@@ -15,9 +15,9 @@ export async function seedTicketScenarios() {
         customer: "Sophie De Smet",
         company: "Atelier Noord",
         email: "sophie@atelier-noord.example",
-        subject: "Klantmail met collega-aanvulling en bijlage",
+        subject: "Customer email with a colleague's supplement and attachment",
         question:
-          "Dag Jamie,\n\nWelke informatie ontbreekt nog om de eindafrekening en het vakantieattest voor te bereiden? De loonhistoriek is nog niet bevestigd.\n\nGroeten,\nSophie\n\nFictieve testcase.",
+          "Hi Jamie,\n\nWhat information is still missing to prepare the final settlement and holiday certificate? The salary history has not yet been confirmed.\n\nRegards,\nSophie\n\nFictional test case.",
         status: "open",
         phase: "ready",
         contextVersion: 2,
@@ -28,9 +28,9 @@ export async function seedTicketScenarios() {
         customer: "Milan Verhoeven",
         company: "Studio Rivier",
         email: "milan@studio-rivier.example",
-        subject: "Nieuwe klantmail: toegang tot payroll-API",
+        subject: "New customer email: access to the payroll API",
         question:
-          "Beste,\n\nWe willen onze HR-tool koppelen aan de payroll-API. Welke documentatie en toegang hebben we nodig?\n\nGroeten,\nMilan\n\nFictieve testcase.",
+          "Hello,\n\nWe want to connect our HR tool to the payroll API. What documentation and access do we need?\n\nRegards,\nMilan\n\nFictional test case.",
       },
     ];
     const missing = examples.filter((row) => !existing.has(row.id!));
@@ -73,16 +73,16 @@ export async function seedTicketScenarios() {
           author: "Jamie De Clercq",
           kind: "note",
           content:
-            "Fictieve interne notitie: de loonhistoriek moet nog bevestigd worden. De bijlage is toegevoegd; er is nog geen AI-beoordeling uitgevoerd.",
+            "Fictional internal note: the salary history still needs to be confirmed. The attachment has been added; no AI assessment has been performed yet.",
           createdAt: now,
         },
       ]);
       await tx.insert(events).values({
         id: `${ticketId}-seeded`,
         ticketId,
-        label: "Testcase met mail en bijlage toegevoegd",
+        label: "Test case with email and attachment added",
         detail:
-          "Vier fictieve bronnen, een collega-mail en een interne notitie. Geen AI-beoordeling of verzending uitgevoerd.",
+          "Four fictional sources, a colleague email and an internal note. No AI assessment or sending has taken place.",
       });
     }
     return inserted.length;

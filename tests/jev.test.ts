@@ -17,7 +17,7 @@ const input: JobInput = {
     {
       id: "doc-1",
       name: "Checklist",
-      kind: "Intern",
+      kind: "Internal",
       date: "2026-01-01",
       content: "Vraag het vakantieattest op.",
       fictional: true,
@@ -50,7 +50,7 @@ beforeEach(() => {
           score: 99,
           summary: "Relevant voor de vraag",
           source: "Interne bron",
-          age: "Actueel",
+          age: "Current",
           relevance: "Attest vereist",
           contradictions: [],
         },
@@ -116,7 +116,7 @@ describe("Jev document evaluation", () => {
       },
     ]) {
       fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(body)));
-      await expect(assessWithJev(input)).rejects.toThrow("geldige beoordeling");
+      await expect(assessWithJev(input)).rejects.toThrow("valid assessment");
     }
   });
   it("fails clearly without a key and makes no external request", async () => {
@@ -139,7 +139,7 @@ describe("Jev document evaluation", () => {
     fetchMock.mockRejectedValueOnce(
       new DOMException("Timeout", "TimeoutError"),
     );
-    await expect(assessWithJev(input)).rejects.toThrow("geldige beoordeling");
+    await expect(assessWithJev(input)).rejects.toThrow("valid assessment");
   });
   it("isolates documents and customer questions on repeated evaluations", async () => {
     fetchMock.mockImplementation(

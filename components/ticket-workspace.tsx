@@ -117,7 +117,7 @@ export function TicketWorkspace({ id }: { id: string }) {
         if (action === "draft" || action === "review") current = await save();
         if ((action === "send" || action === "override") && dirty.current)
           throw new Error(
-            "Je antwoord is gewijzigd. Laat de nieuwe versie eerst controleren.",
+            "Your answer has changed. Have the new version checked first.",
           );
         if (action === "message") {
           noteId.current ??= crypto.randomUUID();
@@ -153,7 +153,7 @@ export function TicketWorkspace({ id }: { id: string }) {
         ) : (
           <div className="loading-page">
             <Spinner size={25} />
-            <p>Je ticket wordt geopend…</p>
+            <p>Opening your ticket…</p>
           </div>
         )}
       </div>
@@ -165,14 +165,13 @@ export function TicketWorkspace({ id }: { id: string }) {
     ? null
     : running.kind === "documents"
       ? data.events.some(
-          (e) =>
-            e.jobId === running.id && e.label === "Betrouwbaarheid beoordelen",
+          (e) => e.jobId === running.id && e.label === "Assessing reliability",
         )
-        ? "Betrouwbaarheid beoordelen"
-        : "Kennisbank doorzoeken"
+        ? "Assessing reliability"
+        : "Searching the knowledge base"
       : running.kind === "draft"
-        ? "Concept schrijven"
-        : "Antwoord controleren";
+        ? "Writing a draft"
+        : "Check answer";
   const emails = messages.filter((m) => m.kind === "email");
   const documentsReady =
     documents.length > 0 &&
@@ -213,10 +212,10 @@ export function TicketWorkspace({ id }: { id: string }) {
   for (const job of jobs) {
     if (job.kind === "documents") {
       const received = data.events.filter(
-        (e) => e.jobId === job.id && e.label === "Document ontvangen",
+        (e) => e.jobId === job.id && e.label === "Document received",
       );
       const assessment = data.events.find(
-        (e) => e.jobId === job.id && e.label === "Betrouwbaarheid beoordelen",
+        (e) => e.jobId === job.id && e.label === "Assessing reliability",
       );
       if (received.length || !documents.length)
         entries.push({
@@ -279,13 +278,13 @@ export function TicketWorkspace({ id }: { id: string }) {
       <div className="case-breadcrumb">
         <Link href="/tickets">
           <ArrowLeft size={16} />
-          Klantvragen
+          Customer questions
         </Link>
         <span aria-hidden="true">/</span>
         <span className="mono">
           TKT-{String(ticket.number).padStart(4, "0")}
         </span>
-        <span className="case-category">Payroll België</span>
+        <span className="case-category">Payroll Belgium</span>
       </div>
       <header className="case-heading">
         <div>
@@ -298,7 +297,7 @@ export function TicketWorkspace({ id }: { id: string }) {
           </div>
         </div>
         <details className="case-menu" ref={actionsMenu}>
-          <summary aria-label="Meer ticketacties">
+          <summary aria-label="More ticket actions">
             <MoreHorizontal size={21} />
           </summary>
           <div>
@@ -308,13 +307,13 @@ export function TicketWorkspace({ id }: { id: string }) {
             >
               <Mail size={15} />
               {receivedEmail
-                ? "Collega-mail toegevoegd"
-                : "Demo: collega-mail ontvangen"}
+                ? "Colleague email added"
+                : "Demo: receive colleague email"}
             </button>
             {ticket.isDemo && (
               <button disabled={!!busy} onClick={() => openAction("reset")}>
                 <Clock3 size={15} />
-                Demo opnieuw starten
+                Restart demo
               </button>
             )}
           </div>
@@ -333,12 +332,12 @@ export function TicketWorkspace({ id }: { id: string }) {
         <div className="case-conversation">
           <div className="case-section-label">
             <MessageSquareText size={18} />
-            <h2>Conversatie</h2>
-            <span>Oudste eerst</span>
+            <h2>Conversation</h2>
+            <span>Oldest first</span>
           </div>
           <ol
             className="case-thread"
-            aria-label="Chronologische ticketactiviteit"
+            aria-label="Ticket activity in chronological order"
           >
             <li className="thread-item">
               <span className="thread-avatar customer-avatar">
@@ -348,7 +347,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                 <header>
                   <div>
                     <strong>{ticket.customer}</strong>
-                    <SourceChip kind="chats">Klantvraag</SourceChip>
+                    <SourceChip kind="chats">Customer question</SourceChip>
                   </div>
                   <time title={dateLabel(ticket.createdAt)}>
                     {dateLabel(ticket.createdAt, true)} ·{" "}
@@ -395,10 +394,10 @@ export function TicketWorkspace({ id }: { id: string }) {
                         <strong>{entry.message.author}</strong>
                         {entry.message.kind === "email" ? (
                           <SourceChip kind="chats">
-                            Collega-mail · demo
+                            Colleague email · demo
                           </SourceChip>
                         ) : (
-                          <span className="thread-label">Interne notitie</span>
+                          <span className="thread-label">Internal note</span>
                         )}
                       </div>
                       <time>
@@ -436,11 +435,11 @@ export function TicketWorkspace({ id }: { id: string }) {
                   <article className="thread-card sent-card">
                     <header>
                       <div>
-                        <strong>Verzending gesimuleerd</strong>
+                        <strong>Sending simulated</strong>
                         <span className="thread-label label-success">
                           {entry.delivery.overridden
-                            ? "Bewust overruled"
-                            : "Goedgekeurd"}
+                            ? "Manually overridden"
+                            : "Approved"}
                         </span>
                       </div>
                       <time>
@@ -448,7 +447,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                       </time>
                     </header>
                     <div className="thread-mail-meta">
-                      Aan {entry.delivery.recipient} · {entry.delivery.subject}
+                      To {entry.delivery.recipient} · {entry.delivery.subject}
                     </div>
                     <p className="thread-body">{entry.delivery.content}</p>
                   </article>
@@ -459,7 +458,7 @@ export function TicketWorkspace({ id }: { id: string }) {
               <span className="thread-avatar">JD</span>
               <section
                 className="thread-card case-composer"
-                aria-label="Bericht opstellen"
+                aria-label="Compose message"
               >
                 <div className="composer-tabs">
                   <button
@@ -468,7 +467,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                     aria-pressed={composer === "answer"}
                   >
                     <Mail size={15} />
-                    Antwoord aan klant
+                    Answer to customer
                   </button>
                   <button
                     className={composer === "note" ? "selected" : ""}
@@ -476,18 +475,17 @@ export function TicketWorkspace({ id }: { id: string }) {
                     aria-pressed={composer === "note"}
                   >
                     <MessageSquareText size={15} />
-                    Interne notitie
+                    Internal note
                   </button>
                 </div>
                 {composer === "note" ? (
                   <>
                     <p className="composer-recipient">
-                      Alleen zichtbaar voor je team · telt mee als context voor
-                      AI
+                      Only visible to your team · included as context for AI
                     </p>
                     <textarea
-                      aria-label="Interne notitie"
-                      placeholder="Voeg context toe of deel een bevinding met je team…"
+                      aria-label="Internal note"
+                      placeholder="Add context or share a finding with your team…"
                       value={note}
                       disabled={!!busy}
                       maxLength={5000}
@@ -497,7 +495,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                       }}
                     />
                     <footer className="composer-footer">
-                      <span>Wordt toegevoegd aan de conversatie</span>
+                      <span>Will be added to the conversation</span>
                       <button
                         className="button secondary small"
                         disabled={!!busy || !note.trim()}
@@ -508,7 +506,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                         ) : (
                           <MessageSquareText size={14} />
                         )}
-                        Notitie toevoegen
+                        Add note
                       </button>
                     </footer>
                   </>
@@ -516,13 +514,13 @@ export function TicketWorkspace({ id }: { id: string }) {
                   <>
                     <div className="composer-recipient">
                       <span>
-                        Aan <strong>{ticket.email}</strong>
+                        To <strong>{ticket.email}</strong>
                       </span>
                       <span className="simulation-chip">Demo</span>
                     </div>
                     <textarea
-                      aria-label="Antwoord aan klant"
-                      placeholder="Schrijf je antwoord aan de klant, of laat de schrijfagent een concept voorstellen…"
+                      aria-label="Answer to customer"
+                      placeholder="Write your answer to the customer, or let the writing agent suggest a draft…"
                       value={answer}
                       disabled={editorLocked}
                       maxLength={20000}
@@ -548,7 +546,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                         }
                       >
                         <HunchIcon name="summary" size={16} />
-                        Schrijf met AI
+                        Write with AI
                       </button>
                       <button
                         className="text-button save-draft"
@@ -556,16 +554,13 @@ export function TicketWorkspace({ id }: { id: string }) {
                         onClick={() => void act("save")}
                       >
                         {busy === "save" ? <Spinner size={13} /> : null}
-                        {isDirty
-                          ? "Concept opslaan"
-                          : `Concept opgeslagen · v${version}`}
+                        {isDirty ? "Save draft" : `Draft saved · v${version}`}
                       </button>
                     </div>
                     {draft && !isDirty && (
                       <details className="composer-citations">
                         <summary>
-                          {draft.citations.length} bronverwijzingen bij dit
-                          concept
+                          {draft.citations.length} citations for this draft
                         </summary>
                         {draft.citations.map((c, i) => (
                           <button
@@ -594,19 +589,19 @@ export function TicketWorkspace({ id }: { id: string }) {
                         <div>
                           <strong>
                             {alreadySent && !isDirty
-                              ? "Dit antwoord is verzonden (simulatie)"
+                              ? "This answer has been sent (simulation)"
                               : reviewValid
                                 ? review?.verdict === "approved"
-                                  ? "Alle controles geslaagd. Klaar om te verzenden."
-                                  : "De review vraagt om aanpassingen."
+                                  ? "All checks passed. Ready to send."
+                                  : "The review requests changes."
                                 : isDirty && latestReview
-                                  ? "Antwoord gewijzigd · opnieuw controleren"
-                                  : "Eerst controleren, dan verzenden"}
+                                  ? "Answer changed · check again"
+                                  : "Check first, then send"}
                           </strong>
                           <p>
                             {reviewValid
-                              ? "Lees de bevindingen in de tijdlijn hierboven."
-                              : "De reviewagent toetst je antwoord aan de actuele bronnen."}
+                              ? "Read the findings in the timeline above."
+                              : "The review agent checks your answer against the current sources."}
                           </p>
                         </div>
                       </div>
@@ -628,7 +623,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                           ) : (
                             <ShieldCheck size={14} />
                           )}
-                          Antwoord controleren
+                          Check answer
                         </button>
                         <button
                           className="button primary small"
@@ -642,8 +637,8 @@ export function TicketWorkspace({ id }: { id: string }) {
                           <Send size={14} />
                           {reviewValid &&
                           review?.verdict === "changes_requested"
-                            ? "Toch verzenden"
-                            : "Definitief verzenden"}
+                            ? "Send anyway"
+                            : "Confirm and send"}
                         </button>
                       </div>
                     </div>
@@ -653,12 +648,12 @@ export function TicketWorkspace({ id }: { id: string }) {
             </li>
           </ol>
           <p className="case-demo-footnote">
-            Proof of concept · E-mailverzending wordt gesimuleerd.
+            Proof of concept · Email sending is simulated.
           </p>
         </div>
         <aside
           className="case-sources hunch-panel"
-          aria-label="Hunch-context bij dit ticket"
+          aria-label="Hunch context for this ticket"
           aria-busy={running?.kind === "documents" ? "true" : undefined}
         >
           <div className="hunch-panel-top">
@@ -673,14 +668,12 @@ export function TicketWorkspace({ id }: { id: string }) {
           <div className="hunch-panel-body">
             <section className="sources-section">
               <div className="sources-heading">
-                <h2>Documenten</h2>
+                <h2>Documents</h2>
                 {documents.length > 0 && (
-                  <SourceChip kind="docs">
-                    {documents.length} gevonden
-                  </SourceChip>
+                  <SourceChip kind="docs">{documents.length} found</SourceChip>
                 )}
               </div>
-              <p className="sources-intro">De bronnen achter je antwoord</p>
+              <p className="sources-intro">The sources behind your answer</p>
               <div className="source-list">
                 {documents.map((doc, i) => (
                   <SourceCard
@@ -702,7 +695,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                 ) : (
                   <div className="sources-empty">
                     <Search size={20} />
-                    <p>Nog niets gevonden. Voeg zelf een document toe.</p>
+                    <p>Nothing found yet. Add a document yourself.</p>
                   </div>
                 ))}
               <button
@@ -711,18 +704,18 @@ export function TicketWorkspace({ id }: { id: string }) {
                 disabled={!!busy}
               >
                 <Upload size={16} />
-                Document toevoegen
+                Add document
               </button>
               <p className="sources-disclaimer">
-                Scores zijn AI-inschattingen. Open een bron voor de toelichting
-                en eventuele tegenstrijdigheden.
+                Scores are AI estimates. Open a source for the explanation and
+                any contradictions.
               </p>
             </section>
             {emails.length > 0 && (
               <section className="sources-section">
                 <div className="sources-heading">
-                  <h2>Chats & e-mails</h2>
-                  <SourceChip kind="chats">{emails.length} gevonden</SourceChip>
+                  <h2>Chats & emails</h2>
+                  <SourceChip kind="chats">{emails.length} found</SourceChip>
                 </div>
                 <div className="source-list">
                   {emails.map((mail) => (
@@ -735,7 +728,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                       <span className="source-card-body">
                         <strong className="source-name">{mail.author}</strong>
                         <span className="source-card-meta">
-                          E-mail · {dateLabel(mail.createdAt, true)}
+                          Email · {dateLabel(mail.createdAt, true)}
                         </span>
                         <span className="source-snippet">{mail.content}</span>
                       </span>
@@ -745,20 +738,20 @@ export function TicketWorkspace({ id }: { id: string }) {
               </section>
             )}
             <section className="case-properties">
-              <h3>Ticketgegevens</h3>
+              <h3>Ticket details</h3>
               <dl>
                 <div>
-                  <dt>Behandelaar</dt>
+                  <dt>Assigned to</dt>
                   <dd>
                     <span className="mini-avatar">JD</span>Jamie De Clercq
                   </dd>
                 </div>
                 <div>
-                  <dt>Organisatie</dt>
+                  <dt>Organisation</dt>
                   <dd>{ticket.company}</dd>
                 </div>
                 <div>
-                  <dt>Ontvangen</dt>
+                  <dt>Received</dt>
                   <dd>
                     {dateLabel(ticket.createdAt, true)},{" "}
                     {timeLabel(ticket.createdAt)}
@@ -788,17 +781,17 @@ export function TicketWorkspace({ id }: { id: string }) {
       )}
       {confirm === "colleague-email" ? (
         <Modal
-          title="Een collega deelt extra informatie"
-          subtitle="Demoscenario · deze mail is nog niet toegevoegd aan het ticket."
+          title="A colleague shares more information"
+          subtitle="Demo scenario · this email has not been added to the ticket yet."
           onClose={() => !busy && setConfirm(null)}
         >
           <div className="colleague-preview">
             <div className="email-envelope">
-              <span>Van</span>
+              <span>From</span>
               <strong>
                 {colleagueEmail.author} &lt;{colleagueEmail.email}&gt;
               </strong>
-              <span>Onderwerp</span>
+              <span>Subject</span>
               <strong>{colleagueEmail.subject}</strong>
             </div>
             <p>{colleagueEmail.content}</p>
@@ -814,14 +807,14 @@ export function TicketWorkspace({ id }: { id: string }) {
               disabled={!!busy}
               onClick={() => setConfirm(null)}
             >
-              Sluiten
+              Close
             </button>
             <button
               className="button primary"
               disabled={!!busy}
               onClick={() => void act("colleague-email")}
             >
-              {busy ? <Spinner /> : <Mail size={16} />}Mail & bijlage toevoegen
+              {busy ? <Spinner /> : <Mail size={16} />}Add email & attachment
             </button>
           </div>
         </Modal>
@@ -830,17 +823,17 @@ export function TicketWorkspace({ id }: { id: string }) {
           <Modal
             title={
               confirm === "reset"
-                ? "Demonstratie opnieuw starten?"
+                ? "Restart the demonstration?"
                 : confirm === "draft"
-                  ? "Een nieuw AI-concept maken?"
-                  : "Verzenden ondanks de AI-bezwaren?"
+                  ? "Create a new AI draft?"
+                  : "Send despite the AI's concerns?"
             }
             subtitle={
               confirm === "reset"
-                ? "Uploads, berichten, concepten en reviews van dit oorspronkelijke demoticket worden verwijderd."
+                ? "Uploads, messages, drafts and reviews for this original demo ticket will be deleted."
                 : confirm === "draft"
-                  ? "Gemini vervangt je huidige tekst. De opgeslagen versie blijft in de antwoordhistoriek."
-                  : "Je bevestigt dat je de bevindingen hebt gelezen. Deze keuze wordt geregistreerd. De verzending blijft een simulatie."
+                  ? "Gemini will replace your current text. The saved version stays in the answer history."
+                  : "You confirm that you have read the findings. This choice is recorded. Sending remains a simulation."
             }
             onClose={() => !busy && setConfirm(null)}
           >
@@ -851,7 +844,7 @@ export function TicketWorkspace({ id }: { id: string }) {
                 disabled={!!busy}
                 onClick={() => setConfirm(null)}
               >
-                Annuleren
+                Cancel
               </button>
               <button
                 className="button primary"
@@ -867,10 +860,10 @@ export function TicketWorkspace({ id }: { id: string }) {
               >
                 {busy && <Spinner />}
                 {confirm === "reset"
-                  ? "Demo herhalen"
+                  ? "Replay demo"
                   : confirm === "draft"
-                    ? "Concept maken"
-                    : "Bewust toch verzenden"}
+                    ? "Create draft"
+                    : "Override and send"}
               </button>
             </div>
           </Modal>
@@ -886,10 +879,10 @@ export function TicketWorkspace({ id }: { id: string }) {
             done: job.state === "done",
             message:
               job.kind === "documents"
-                ? "Bronnen beoordeeld"
+                ? "Sources assessed"
                 : job.kind === "draft"
-                  ? "Je concept staat klaar"
-                  : "Controle afgerond",
+                  ? "Your draft is ready"
+                  : "Check complete",
           };
         }}
       />
@@ -915,10 +908,10 @@ function AgentEntry({
   onDocument: (doc: DocumentView) => void;
 }) {
   const received = data.events.filter(
-    (e) => e.jobId === job.id && e.label === "Document ontvangen",
+    (e) => e.jobId === job.id && e.label === "Document received",
   );
   const assessmentStarted = data.events.some(
-    (e) => e.jobId === job.id && e.label === "Betrouwbaarheid beoordelen",
+    (e) => e.jobId === job.id && e.label === "Assessing reliability",
   );
   const searchDone =
     stage === "search" && (assessmentStarted || job.state === "done");
@@ -951,33 +944,33 @@ function AgentEntry({
     );
   const title =
     stage === "search"
-      ? "Kennisagent zoekt relevante documenten"
+      ? "Knowledge agent is finding relevant documents"
       : stage === "assess"
-        ? "Bronagent beoordeelt betrouwbaarheid"
+        ? "Source agent is assessing reliability"
         : stage === "draft"
-          ? "Schrijfagent maakt een concept"
-          : "Reviewagent controleert het antwoord";
+          ? "Writing agent is creating a draft"
+          : "Review agent is checking the answer";
   const state = stale
-    ? "Eerdere versie"
+    ? "Earlier version"
     : failed
-      ? "Onderbroken"
+      ? "Interrupted"
       : running
         ? job.state === "queued"
-          ? "Ingepland"
-          : "Bezig"
+          ? "Scheduled"
+          : "In progress"
         : negative
-          ? "Aanpassing nodig"
-          : "Voltooid";
+          ? "Changes needed"
+          : "Complete";
   const isLatest = data.jobs[0]?.id === job.id;
   const failureMessage = !isLatest
-    ? "Deze poging werd onderbroken. De vervolgstappen staan hieronder."
+    ? "This attempt was interrupted. The next steps are shown below."
     : !data.ai.configured
-      ? "Gemini is nog niet verbonden. De documenten zijn beschikbaar; de beoordeling wacht op een verbinding."
+      ? "Gemini is not connected yet. The documents are available; the assessment is waiting for a connection."
       : job.error;
   const at =
     stage === "assess"
       ? data.events.find(
-          (e) => e.jobId === job.id && e.label === "Betrouwbaarheid beoordelen",
+          (e) => e.jobId === job.id && e.label === "Assessing reliability",
         )?.createdAt || job.createdAt
       : job.createdAt;
   return (
@@ -1001,28 +994,28 @@ function AgentEntry({
         {stage === "search" ? (
           <p>
             {searchDone
-              ? `${received.length || 3} documenten gevonden en doorgegeven aan de bronagent.`
+              ? `${received.length || 3} documents found and passed to the source agent.`
               : running
-                ? "De kennisbank wordt doorzocht. Documenten verschijnen rechts."
-                : "Het documentonderzoek is onderbroken."}
+                ? "The knowledge base is being searched. Documents appear on the right."
+                : "Document research was interrupted."}
           </p>
         ) : stage === "assess" ? (
           <p>
             {job.state === "done"
-              ? "Bronsoort, ouderdom, toepasbaarheid en tegenstrijdigheden zijn beoordeeld."
+              ? "Source type, age, applicability and contradictions have been assessed."
               : failed
                 ? failureMessage
-                : "De agent vergelijkt de documenten en onderbouwt de betrouwbaarheid per bron."}
+                : "The agent compares documents and explains each source's reliability."}
           </p>
         ) : stage === "draft" ? (
           <p>
             {job.state === "done"
-              ? "Een bewerkbaar concept met bronverwijzingen is toegevoegd aan de editor."
+              ? "An editable draft with citations has been added to the editor."
               : failed
                 ? !data.ai.configured
-                  ? "Verbind Gemini om een concept te maken."
+                  ? "Connect Gemini to create a draft."
                   : job.error
-                : "De agent formuleert een antwoord op basis van de bronnen en conversatie."}
+                : "The agent is writing an answer based on the sources and conversation."}
           </p>
         ) : (
           <p>
@@ -1030,21 +1023,21 @@ function AgentEntry({
               ? review.summary
               : failed
                 ? !data.ai.configured
-                  ? "Verbind Gemini om het antwoord te controleren."
+                  ? "Connect Gemini to check the answer."
                   : job.error
-                : "Het antwoord wordt getoetst op relevantie, onderbouwing, ontbrekende informatie en tegenstrijdigheden."}
+                : "The answer is being checked for relevance, supporting evidence, missing information and contradictions."}
           </p>
         )}
         {failed && isLatest && (
           <div className="agent-actions">
             {!data.ai.configured && (
               <Link className="text-button" href="/instellingen">
-                Verbinding instellen
+                Set up connection
                 <ChevronRight size={13} />
               </Link>
             )}
             <button className="text-button" onClick={onRetry} disabled={busy}>
-              Opnieuw proberen
+              Try again
             </button>
           </div>
         )}
@@ -1052,7 +1045,7 @@ function AgentEntry({
           <div className="agent-actions">
             <span>{job.dispatchError}</span>
             <button className="text-button" onClick={onRetry} disabled={busy}>
-              Opnieuw inplannen
+              Reschedule
             </button>
           </div>
         )}
@@ -1060,9 +1053,9 @@ function AgentEntry({
           <details className="agent-checks">
             <summary>
               <ChevronDown size={14} />
-              {review.findings.length}{" "}
-              {review.findings.length === 1 ? "bevinding" : "bevindingen"}{" "}
-              bekijken {stale && "· niet meer actueel"}
+              View {review.findings.length}{" "}
+              {review.findings.length === 1 ? "finding" : "findings"}{" "}
+              {stale && "· no longer current"}
             </summary>
             <div>
               {review.findings.map((finding, i) => (
@@ -1073,10 +1066,10 @@ function AgentEntry({
                   <strong>
                     {
                       {
-                        relevance: "Relevantie",
-                        evidence: "Onderbouwing",
-                        missing: "Ontbrekende informatie",
-                        contradiction: "Tegenstrijdigheid",
+                        relevance: "Relevance",
+                        evidence: "Supporting evidence",
+                        missing: "Missing information",
+                        contradiction: "Contradiction",
                       }[finding.category]
                     }
                   </strong>
@@ -1096,7 +1089,7 @@ function AgentEntry({
                       >
                         <FileText size={14} />
                         <span>
-                          <strong>{doc?.name || "Bron"}</strong>
+                          <strong>{doc?.name || "Source"}</strong>
                           <q>{citation.quote}</q>
                         </span>
                       </button>
@@ -1111,7 +1104,7 @@ function AgentEntry({
           <details className="agent-checks">
             <summary>
               <ChevronDown size={14} />
-              Gevonden documenten
+              Documents found
             </summary>
             <ul>
               {received.map((e) => (
@@ -1149,17 +1142,20 @@ function SourceCard({
         <span className="source-card-meta">
           {doc.kind} · {dateLabel(doc.date, true)}
           {doc.date && ` ${doc.date.slice(0, 4)}`}
-          {doc.fictional && " · Fictieve bron"}
+          {doc.fictional && " · Fictional source"}
         </span>
         {assessment ? (
-          <Relevance value={assessment.score} label={assessment.jev ? "relevant" : "betrouwbaar"} />
+          <Relevance
+            value={assessment.score}
+            label={assessment.jev ? "relevant" : "reliable"}
+          />
         ) : (
-          <span className="source-unscored">Nog niet beoordeeld</span>
+          <span className="source-unscored">Not assessed yet</span>
         )}
         {assessment?.contradictions.length ? (
           <span className="source-conflict">
             <TriangleAlert size={14} />
-            Tegenstrijdigheid gevonden
+            Contradiction found
           </span>
         ) : null}
       </span>
@@ -1187,7 +1183,7 @@ export function DocumentCard({
       style={{ animationDelay: `${index * 90}ms` }}
     >
       <div
-        className={`file-icon ${doc.kind === "Wetgevingsgericht" ? "file-blue" : doc.date && doc.date < "2024" ? "file-amber" : "file-violet"}`}
+        className={`file-icon ${doc.kind === "Legislative" ? "file-blue" : doc.date && doc.date < "2024" ? "file-amber" : "file-violet"}`}
       >
         <FileText size={23} />
         <span>
@@ -1212,18 +1208,18 @@ export function DocumentCard({
             assessment.contradictions.length ? (
               <>
                 <TriangleAlert size={12} />
-                Mogelijk conflict · bekijk de toelichting
+                Possible conflict · view explanation
               </>
             ) : (
               <>
                 <Check size={12} />
-                Beoordeeld op bron en context
+                Assessed for source and context
               </>
             )
           ) : (
             <>
               <Clock3 size={12} />
-              Nog niet beoordeeld
+              Not assessed yet
             </>
           )}
         </small>
@@ -1267,8 +1263,8 @@ export function DocumentModal({
       {doc.fictional && (
         <div className="inline-info">
           <Info size={17} />
-          Fictief demonstratiemateriaal. Geen officiële wetgeving of intern SD
-          Worx-document.
+          Fictional demonstration material. Not official legislation or an
+          internal SD Worx document.
         </div>
       )}
       {assessment ? (
@@ -1281,36 +1277,46 @@ export function DocumentModal({
               <small>%</small>
             </span>
             <div>
-              <strong>{assessment.jev ? "Relevantie voor deze klantvraag" : "AI-inschatting van betrouwbaarheid"}</strong>
+              <strong>
+                {assessment.jev
+                  ? "Relevance to this customer question"
+                  : "AI estimate of reliability"}
+              </strong>
               <p>{assessment.summary}</p>
             </div>
           </div>
           {assessment.jev && (
             <>
               <div className="assessment-grid">
-                {([
-                  ["Relevantie", assessment.jev.relevance],
-                  ["Bronbetrouwbaarheid", assessment.jev.reliability],
-                  ["Actualiteit", assessment.jev.freshness],
-                ] as const).map(([label, dimension]) => (
+                {(
+                  [
+                    ["Relevance", assessment.jev.relevance],
+                    ["Source reliability", assessment.jev.reliability],
+                    ["Freshness", assessment.jev.freshness],
+                  ] as const
+                ).map(([label, dimension]) => (
                   <div key={label}>
                     <span>{label}</span>
-                    <p>{dimension ? `${dimension.score}/100 · modelzekerheid ${Math.round(dimension.confidence * 100)}%` : "Onbekend · geen geldige brondatum"}</p>
+                    <p>
+                      {dimension
+                        ? `${dimension.score}/100 · model confidence ${Math.round(dimension.confidence * 100)}%`
+                        : "Unknown · no valid source date"}
+                    </p>
                   </div>
                 ))}
               </div>
               <p className="small-copy">
-                Jev beoordeelt, Gemini licht toe. Scores en modelzekerheid zijn
-                AI-inschattingen, geen garantie op juistheid.
-                {` Beoordeeld op ${dateLabel(assessment.jev.assessedAt)}.`}
+                Jev assesses, Gemini explains. Scores and model confidence are
+                AI estimates, not a guarantee of accuracy.
+                {` Assessed on ${dateLabel(assessment.jev.assessedAt)}.`}
               </p>
             </>
           )}
           <div className="assessment-grid">
             {[
-              ["Bron & gezag", assessment.source],
-              ["Actualiteit", assessment.age],
-              ["Toepasselijkheid", assessment.relevance],
+              ["Source & authority", assessment.source],
+              ["Freshness", assessment.age],
+              ["Applicability", assessment.relevance],
             ].map(([label, value]) => (
               <div key={label}>
                 <span>{label}</span>
@@ -1322,7 +1328,7 @@ export function DocumentModal({
             <div className="conflict-details">
               <strong>
                 <TriangleAlert size={16} />
-                Tegenstrijdigheden
+                Contradictions
               </strong>
               {assessment.contradictions.map((text, i) => (
                 <p key={i}>{text}</p>
@@ -1333,10 +1339,10 @@ export function DocumentModal({
       ) : (
         <div className="pending-assessment">
           <ShieldCheck size={20} />
-          <p>De actuele documentbeoordeling is nog niet beschikbaar.</p>
+          <p>The current document assessment is not available yet.</p>
         </div>
       )}
-      <h3 className="source-content-heading">Brontekst</h3>
+      <h3 className="source-content-heading">Source text</h3>
       <div className="source-content">{doc.content}</div>
     </Modal>
   );
@@ -1355,19 +1361,19 @@ function UploadModal({
   const [error, setError] = useState("");
   return (
     <Modal
-      title="Voeg kennis toe"
-      subtitle="Nieuwe informatie start automatisch een nieuwe bronbeoordeling."
+      title="Add knowledge"
+      subtitle="New information automatically starts a new source assessment."
       onClose={onClose}
     >
       <form
         onSubmit={async (e) => {
           e.preventDefault();
           if (!file) {
-            setError("Kies eerst een bestand.");
+            setError("Choose a file first.");
             return;
           }
           if (file.size > 10 * 1024 * 1024) {
-            setError("Het bestand is groter dan 10 MB.");
+            setError("The file is larger than 10 MB.");
             return;
           }
           const form = new FormData(e.currentTarget);
@@ -1396,38 +1402,38 @@ function UploadModal({
           }}
         >
           <Upload size={27} />
-          <strong>{file ? file.name : "Sleep een document hierheen"}</strong>
+          <strong>{file ? file.name : "Drag a document here"}</strong>
           <span>
             {file
-              ? `${(file.size / 1024).toFixed(0)} KB · klik om te vervangen`
-              : "of klik om een bestand te kiezen"}
+              ? `${(file.size / 1024).toFixed(0)} KB · click to replace`
+              : "or click to choose a file"}
           </span>
-          <small>PDF met tekst, TXT of DOCX · maximaal 10 MB</small>
+          <small>PDF with text, TXT or DOCX · up to 10 MB</small>
           <input
             type="file"
-            aria-label="Kies document"
+            aria-label="Choose document"
             accept=".pdf,.txt,.docx"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
         </label>
         <div className="form-grid">
           <label>
-            Type bron
-            <select name="kind" defaultValue="Onbekend">
+            Source type
+            <select name="kind" defaultValue="Unknown">
               {sourceKinds.map((kind) => (
                 <option key={kind}>{kind}</option>
               ))}
             </select>
           </label>
           <label>
-            Documentdatum <span className="optional">optioneel</span>
+            Document date <span className="optional">optional</span>
             <input type="date" name="date" />
           </label>
         </div>
         <div className="inline-info">
           <Info size={17} />
-          Onbekende brongegevens blijven zichtbaar als onzekerheid. Je bestaande
-          antwoord blijft behouden.
+          Unknown source details remain visible as uncertainty. Your existing
+          answer is preserved.
         </div>
         {error && <ErrorNotice error={error} />}
         <div className="modal-actions">
@@ -1437,10 +1443,10 @@ function UploadModal({
             onClick={onClose}
             disabled={busy}
           >
-            Annuleren
+            Cancel
           </button>
           <button className="button primary" disabled={busy}>
-            {busy ? <Spinner /> : <Upload size={16} />}Toevoegen & beoordelen
+            {busy ? <Spinner /> : <Upload size={16} />}Add & assess
           </button>
         </div>
       </form>

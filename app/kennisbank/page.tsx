@@ -15,13 +15,13 @@ export default async function KnowledgePage({
       <div className="kg-page-head">
         <div>
           <div className="eyebrow">Find it. Understand it. Trust it.</div>
-          <h1>Kennisbank</h1>
+          <h1>Knowledge base</h1>
           <p>
-            Alle documenten, gesprekken, hunches en klantvragen per onderwerp:
-            welke bronnen dragen de kennis, en waar ontbreekt ze?
+            All documents, conversations, hunches and customer questions by
+            topic: which sources hold the knowledge, and where are the gaps?
           </p>
         </div>
-        <span className="kg-poc-chip">Fictieve demodata</span>
+        <span className="kg-poc-chip">Fictional demo data</span>
       </div>
       <KnowledgeLandscape
         key={JSON.stringify([item, topic])}

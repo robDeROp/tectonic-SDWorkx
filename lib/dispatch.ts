@@ -49,7 +49,7 @@ export async function dispatchJob(id: string) {
       .update(jobs)
       .set({
         dispatchError:
-          "De taak kon niet worden ingepland. Controleer Cloud Tasks en probeer opnieuw.",
+          "The task could not be scheduled. Check Cloud Tasks and try again.",
       })
       .where(eq(jobs.id, id));
   }

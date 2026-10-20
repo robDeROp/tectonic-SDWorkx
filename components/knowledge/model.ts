@@ -41,58 +41,58 @@ export const GLYPH: Record<NodeKind, string> = {
   unit: "M9 3 H15 V8 H9 Z M12 8 V12 M5 15 V12 H19 V15 M3 15 H7 V20 H3 Z M10 15 H14 V20 H10 Z M17 15 H21 V20 H17 Z",
 };
 export const KIND: Record<NodeKind, { label: string; plural: string }> = {
-  doc: { label: "Document", plural: "Documenten" },
-  chat: { label: "Gesprek", plural: "Gesprekken" },
+  doc: { label: "Document", plural: "Documents" },
+  chat: { label: "Conversation", plural: "Conversations" },
   hunch: { label: "Hunch", plural: "Hunches" },
-  ticket: { label: "Klantvraag", plural: "Klantvragen" },
-  person: { label: "Persoon", plural: "Mensen" },
+  ticket: { label: "Customer question", plural: "Customer questions" },
+  person: { label: "Person", plural: "People" },
   unit: { label: "Team", plural: "Teams" },
 };
 export const kindLabel = (it: GraphItem) =>
   it.type === "chat"
     ? it.source === "Teams"
-      ? "Teams-gesprek"
+      ? "Teams conversation"
       : it.source === "Outlook"
-        ? "Mailthread"
-        : "DevOps-discussie"
+        ? "Email thread"
+        : "DevOps discussion"
     : KIND[it.type].label;
 export const AUTH_REL: Record<KnowledgeKind, string> = {
-  doc: "geschreven door",
-  chat: "gestart door",
-  hunch: "geopend door",
-  ticket: "gesteld door",
+  doc: "written by",
+  chat: "started by",
+  hunch: "opened by",
+  ticket: "asked by",
 };
 const AUTH_VERB: Record<KnowledgeKind, string> = {
-  doc: "schreef",
-  chat: "startte",
-  hunch: "opende",
-  ticket: "behandelde",
+  doc: "wrote",
+  chat: "started",
+  hunch: "opened",
+  ticket: "handled",
 };
 const JOIN_REL: Record<KnowledgeKind, string> = {
-  doc: "werkte mee",
-  chat: "nam deel",
-  hunch: "hielp mee",
-  ticket: "werkte mee",
+  doc: "contributed",
+  chat: "participated",
+  hunch: "helped",
+  ticket: "contributed",
 };
 export const OUT_REL: Record<KnowledgeRel, string> = {
-  cites: "verwijst naar",
-  supersedes: "vervangt",
-  discusses: "bespreekt",
-  uses: "gebruikt",
+  cites: "references",
+  supersedes: "supersedes",
+  discusses: "discusses",
+  uses: "uses",
 };
 export const IN_REL: Record<KnowledgeRel, string> = {
-  cites: "aangehaald door",
-  supersedes: "vervangen door",
-  discusses: "besproken in",
-  uses: "gebruikt in",
+  cites: "cited by",
+  supersedes: "superseded by",
+  discusses: "discussed in",
+  uses: "used in",
 };
-export const LEVEL = ["Organisatie", "Afdeling", "Team"];
+export const LEVEL = ["Organisation", "Department", "Team"];
 
 /* ---------- formatting ---------- */
-export const fmt = (n: number) => n.toLocaleString("nl-BE");
+export const fmt = (n: number) => n.toLocaleString("en-GB");
 export const fmtDate = (iso: string) =>
   new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString(
-    "nl-BE",
+    "en-GB",
     { day: "numeric", month: "short", year: "numeric" },
   );
 export const trunc = (s: string, n: number) =>
@@ -309,12 +309,12 @@ export const GROUP_ORDER: NodeKind[] = [
   "ticket",
 ];
 export const GROUP_LABEL: Record<NodeKind, string> = {
-  person: "Mensen",
+  person: "People",
   unit: "Teams",
-  doc: "Documenten",
-  chat: "Gesprekken",
+  doc: "Documents",
+  chat: "Conversations",
   hunch: "Hunches",
-  ticket: "Klantvragen",
+  ticket: "Customer questions",
 };
 
 const nItem = (it: GraphItem, rel: string): EgoNode => ({
@@ -386,10 +386,10 @@ function egoItem(m: Model, it: GraphItem): Ego {
   });
   it.experts.forEach((pid) => {
     const p = m.person(pid);
-    if (p) E.add(nPerson(p, "voorgestelde expert"));
+    if (p) E.add(nPerson(p, "suggested expert"));
   });
   const u = a && m.unit(a.unitId);
-  if (u) E.add(nUnit(m, u, "eigenaar"));
+  if (u) E.add(nUnit(m, u, "owner"));
   it.refs.forEach((r) => {
     const x = m.item(r.to);
     if (x) E.add(nItem(x, OUT_REL[r.rel]));
@@ -403,9 +403,9 @@ function egoItem(m: Model, it: GraphItem): Ego {
 function egoPerson(m: Model, p: GraphPerson): Ego {
   const E = egoBuilder(nPerson(p, p.role));
   const boss = p.managerId ? m.person(p.managerId) : undefined;
-  if (boss) E.add(nPerson(boss, "leidinggevende"));
+  if (boss) E.add(nPerson(boss, "manager"));
   const u = m.unit(p.unitId);
-  if (u) E.add(nUnit(m, u, p.isHead ? "leidt" : "lid van"));
+  if (u) E.add(nUnit(m, u, p.isHead ? "leads" : "member of"));
   const co = new Map<string, number>();
   for (const id of [...m.authored(p.id), ...m.joined(p.id)]) {
     const it = m.item(id)!;
@@ -418,15 +418,13 @@ function egoPerson(m: Model, p: GraphPerson): Ego {
     .forEach(([q, k]) => {
       const x = m.person(q);
       if (x)
-        E.add(
-          nPerson(x, `${k} ${k === 1 ? "gedeeld item" : "gedeelde items"}`),
-        );
+        E.add(nPerson(x, `${k} ${k === 1 ? "shared item" : "shared items"}`));
     });
   if (p.isHead)
     m.membersOf(p.unitId)
       .filter((id) => id !== p.id)
       .slice(0, 4)
-      .forEach((id) => E.add(nPerson(m.person(id)!, "rapporteert aan")));
+      .forEach((id) => E.add(nPerson(m.person(id)!, "reports to")));
   m.authored(p.id)
     .map((id) => m.item(id)!)
     .sort(byDateDesc)
@@ -438,7 +436,7 @@ function egoPerson(m: Model, p: GraphPerson): Ego {
   m.suggested(p.id)
     .map((id) => m.item(id)!)
     .sort(byDateDesc)
-    .forEach((it) => E.add(nItem(it, "voorgesteld als expert")));
+    .forEach((it) => E.add(nItem(it, "suggested as an expert")));
   return E.ego;
 }
 const isItemKind = (k: NodeKind): k is KnowledgeKind =>
@@ -487,7 +485,7 @@ export function signalsFor(m: Model, it: GraphItem): Signal[] {
     const n = m.item(sup.from)!;
     s.push({
       tone: "danger",
-      text: `Vervangen door “${n.title}”. Gebruik dit niet meer als bron.`,
+      text: `Superseded by “${n.title}”. Do not use this as a source anymore.`,
       go: { to: "graph", focus: { kind: "item", id: n.id } },
     });
   }
@@ -504,20 +502,20 @@ export function signalsFor(m: Model, it: GraphItem): Signal[] {
       if (late.length)
         s.push({
           tone: "warn",
-          text: `${late.length} ${late.length === 1 ? "item gebruikte" : "items gebruikten"} na publicatie nog de vervangen “${old.title}”.`,
+          text: `${late.length} ${late.length === 1 ? "item still used" : "items still used"} the superseded source after publication: “${old.title}”.`,
           go: { to: "graph", focus: { kind: "item", id: late[0].id } },
         });
     });
   if (!sup && it.type === "doc" && ageOf(it) > 3)
     s.push({
       tone: "warn",
-      text: "Ouder dan drie jaar. Vraag de eigenaar om dit na te kijken.",
+      text: "More than three years old. Ask the owner to review it.",
     });
   const used = inc.filter((r) => r.rel === "uses").length;
   if (used)
     s.push({
       tone: "ok",
-      text: `Gebruikt als bron in ${used} ${used === 1 ? "hunch of klantvraag" : "hunches en klantvragen"}.`,
+      text: `Used as a source in ${used} ${used === 1 ? "hunch or customer question" : "hunches and customer questions"}.`,
     });
   return s;
 }

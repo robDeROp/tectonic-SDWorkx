@@ -15,11 +15,11 @@ export const POST = (request: Request) =>
       !process.env.APP_URL ||
       !process.env.CLOUD_TASKS_SERVICE_ACCOUNT
     )
-      throw new AppError("Niet beschikbaar.", 404);
+      throw new AppError("Not available.", 404);
     const token = request.headers
       .get("authorization")
       ?.match(/^Bearer (.+)$/)?.[1];
-    if (!token) throw new AppError("Authenticatie vereist.", 401);
+    if (!token) throw new AppError("Authentication required.", 401);
     try {
       const identity = await new OAuth2Client().verifyIdToken({
         idToken: token,
@@ -32,7 +32,7 @@ export const POST = (request: Request) =>
       )
         throw new Error("Wrong service identity");
     } catch {
-      throw new AppError("Ongeldige taakidentiteit.", 403);
+      throw new AppError("Invalid task identity.", 403);
     }
     const { jobId } = z
       .object({ jobId: z.string().uuid() })
@@ -40,7 +40,10 @@ export const POST = (request: Request) =>
     if (!(await runNextJob(jobId))) {
       const [job] = await db.select().from(jobs).where(eq(jobs.id, jobId));
       if (job?.state === "running" || job?.state === "queued")
-        throw new AppError("Taak is nog bezig. Probeer later opnieuw.", 503);
+        throw new AppError(
+          "The task is still running. Please try again later.",
+          503,
+        );
     }
     return { ok: true };
   });

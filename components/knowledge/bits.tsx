@@ -76,21 +76,17 @@ export function Dot({ color }: { color: string }) {
 }
 export function ZoomControls({
   onZoom,
-  fitLabel = "Passend maken",
+  fitLabel = "Fit to view",
 }: {
   onZoom: (z: "in" | "out" | "fit") => void;
   fitLabel?: string;
 }) {
   return (
     <div className="kg-zoom">
-      <button type="button" aria-label="Inzoomen" onClick={() => onZoom("in")}>
+      <button type="button" aria-label="Zoom in" onClick={() => onZoom("in")}>
         +
       </button>
-      <button
-        type="button"
-        aria-label="Uitzoomen"
-        onClick={() => onZoom("out")}
-      >
+      <button type="button" aria-label="Zoom out" onClick={() => onZoom("out")}>
         −
       </button>
       <button

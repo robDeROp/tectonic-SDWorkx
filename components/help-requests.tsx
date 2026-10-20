@@ -29,11 +29,11 @@ export function HelpRequests({
   if (asks.length === 1) {
     const [h] = asks;
     return (
-      <section className="help-inbox" aria-label="Hulpvraag voor jou">
+      <section className="help-inbox" aria-label="Help request for you">
         <Pip state="found" size={88} />
         <div className="help-inbox-body">
-          <strong>{first(h.author.name)} kan jouw hulp gebruiken</strong>
-          <span>Hunch stuurde deze vraag naar jou.</span>
+          <strong>{first(h.author.name)} could use your help</strong>
+          <span>Hunch sent this request to you.</span>
           <div className="help-inbox-list">
             <Link href={`/hunches/${h.id}`} className="help-inbox-item">
               <Avatar person={h.author} small />
@@ -69,7 +69,7 @@ export function HelpRequests({
   return (
     <section
       className="help-inbox help-inbox-compact"
-      aria-label="Hulpvragen voor jou"
+      aria-label="Help requests for you"
     >
       <button
         className="help-summary"
@@ -78,8 +78,8 @@ export function HelpRequests({
       >
         <Pip state="found" size={56} />
         <span className="help-summary-text">
-          <strong>{asks.length} collega&apos;s vragen jouw hulp</strong>
-          <small>Oudste vraag: {agoLabel(oldest.updatedAt)}</small>
+          <strong>{asks.length} colleagues are asking for your help</strong>
+          <small>Oldest request: {agoLabel(oldest.updatedAt)}</small>
         </span>
         <span className="avatar-stack" aria-hidden="true">
           {asks.map((h) => (
@@ -87,7 +87,7 @@ export function HelpRequests({
           ))}
         </span>
         <span className="help-summary-toggle">
-          {open ? "Verberg" : "Bekijk"}
+          {open ? "Hide" : "View"}
           <ChevronDown size={16} />
         </span>
       </button>
@@ -126,13 +126,13 @@ export function HelpRequests({
                         ) : (
                           <UserRoundCheck size={15} />
                         )}
-                        Ik pak dit op
+                        I'll take this on
                       </button>
                       <Link
                         href={`/hunches/${h.id}`}
                         className="button secondary small"
                       >
-                        Bekijk hunch <ArrowRight size={15} />
+                        View hunch <ArrowRight size={15} />
                       </Link>
                     </div>
                   </div>

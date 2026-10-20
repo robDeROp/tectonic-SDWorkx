@@ -21,3 +21,7 @@ gha-creds-*.json
 
 __pycache__/
 *.pyc
+
+# Generated Remotion previews, exports and original soundtrack
+out/video/
+public/hunch-video/soundtrack.wav

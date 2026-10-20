@@ -31,7 +31,7 @@ export async function lockTicket(tx: Transaction, id: string) {
     .from(tickets)
     .where(eq(tickets.id, id))
     .for("update");
-  if (!ticket) throw new AppError("Dit ticket bestaat niet.", 404);
+  if (!ticket) throw new AppError("This ticket does not exist.", 404);
   return ticket;
 }
 export async function addEvent(
@@ -118,10 +118,10 @@ export async function enqueue(tx: Transaction, ticket: Ticket, kind: string) {
     tx,
     ticket.id,
     kind === "documents"
-      ? "Documentonderzoek ingepland"
+      ? "Document research scheduled"
       : kind === "draft"
-        ? "AI-concept aangevraagd"
-        : "Antwoordreview ingepland",
+        ? "AI draft requested"
+        : "Answer review scheduled",
     undefined,
     "info",
     id,
@@ -145,7 +145,7 @@ export async function listTickets() {
 }
 export async function getDetail(id: string) {
   const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
-  if (!ticket) throw new AppError("Dit ticket bestaat niet.", 404);
+  if (!ticket) throw new AppError("This ticket does not exist.", 404);
   const [docs, runs, timeline, sent, conversation] = await Promise.all([
     db
       .select()
@@ -212,7 +212,7 @@ export async function createTicket(data: {
     await addEvent(
       tx,
       id,
-      "Klantvraag ontvangen",
+      "Customer question received",
       `${data.customer} · ${data.company}`,
     );
     return enqueue(tx, ticket, "documents");
@@ -227,7 +227,7 @@ export async function startTicket(id: string) {
     await addEvent(
       tx,
       id,
-      "Klantvraag ontvangen",
+      "Customer question received",
       `${ticket.customer} · ${ticket.company}`,
     );
     return enqueue(tx, ticket, "documents");
@@ -243,7 +243,7 @@ export async function saveAnswer(
     const ticket = await lockTicket(tx, id);
     if (ticket.answerVersion !== expectedVersion)
       throw new AppError(
-        "Het antwoord is elders gewijzigd. Herlaad het ticket voordat je verdergaat.",
+        "The answer was changed elsewhere. Reload the ticket before continuing.",
         409,
       );
     if (ticket.answer === content)
@@ -330,7 +330,7 @@ export async function addDocument(
         300000
     )
       throw new AppError(
-        "De demo ondersteunt maximaal 15 documenten en 300.000 tekens per ticket.",
+        "The demo supports up to 15 documents and 300,000 characters per ticket.",
       );
     await obsoleteJobs(tx, id);
     await tx
@@ -344,8 +344,8 @@ export async function addDocument(
     await addEvent(
       tx,
       id,
-      "Extra document toegevoegd",
-      `${data.name} · eerdere reviews zijn vervallen`,
+      "Additional document added",
+      `${data.name} · previous reviews are no longer valid`,
     );
     return enqueue(tx, { ...ticket, documentVersion: version }, "documents");
   });
@@ -360,7 +360,7 @@ export async function requestAI(
     const ticket = await lockTicket(tx, id);
     if (ticket.answerVersion !== expectedVersion)
       throw new AppError(
-        "Het antwoord is gewijzigd. Sla de actuele tekst op en probeer opnieuw.",
+        "The answer has changed. Save the current text and try again.",
         409,
       );
     const [active] = await tx
@@ -371,7 +371,7 @@ export async function requestAI(
       );
     if (active) {
       if (active.kind === kind) return active.id;
-      throw new AppError("Wacht tot de huidige verwerking klaar is.", 409);
+      throw new AppError("Wait for the current processing to finish.", 409);
     }
     const docs = await tx
       .select()
@@ -381,9 +381,9 @@ export async function requestAI(
       !docs.length ||
       docs.some((d) => d.assessedVersion !== ticket.documentVersion)
     )
-      throw new AppError("Laat eerst de actuele documenten beoordelen.", 409);
+      throw new AppError("Have the current documents assessed first.", 409);
     if (kind === "review" && !ticket.answer.trim())
-      throw new AppError("Schrijf eerst een antwoord.");
+      throw new AppError("Write an answer first.");
     const [previous] = await tx
       .select()
       .from(jobs)
@@ -430,8 +430,8 @@ export async function recordDelivery(
   await addEvent(
     tx,
     ticket.id,
-    "Verzending gesimuleerd",
-    `${ticket.email}${override ? " · AI-bezwaren bewust overruled door demomedewerker" : " · antwoord goedgekeurd"}`,
+    "Sending simulated",
+    `${ticket.email}${override ? " · AI concerns manually overridden by demo employee" : " · answer approved"}`,
     "success",
     reviewId,
   );
@@ -459,7 +459,7 @@ export async function sendReviewedAnswer(
       review.documentVersion !== ticket.documentVersion
     )
       throw new AppError(
-        "Deze review is niet afgerond of niet meer actueel.",
+        "This review is incomplete or no longer current.",
         409,
       );
     const [already] = await tx
@@ -484,7 +484,7 @@ export async function retryTicket(id: string) {
     if (last.state === "queued") return last.id;
     if (last.state === "running") {
       if (last.leaseUntil && last.leaseUntil.getTime() > Date.now())
-        throw new AppError("De verwerking is nog bezig.", 409);
+        throw new AppError("Processing is still in progress.", 409);
       await tx
         .update(jobs)
         .set({ state: "queued", leaseToken: null, leaseUntil: null })
@@ -492,16 +492,14 @@ export async function retryTicket(id: string) {
       return last.id;
     }
     if (last.state !== "failed")
-      throw new AppError("Er is geen mislukte verwerking om te herhalen.", 409);
+      throw new AppError("There is no failed task to retry.", 409);
     return enqueue(tx, ticket, last.kind);
   });
   await dispatchJob(jobId);
 }
 export async function resetDemo(id: string) {
   if (id !== DEMO_ID)
-    throw new AppError(
-      "Alleen het oorspronkelijke demoticket kan opnieuw worden afgespeeld.",
-    );
+    throw new AppError("Only the original demo ticket can be replayed.");
   const { jobId, files } = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
     const docs = await tx
@@ -530,7 +528,7 @@ export async function resetDemo(id: string) {
       })
       .where(eq(tickets.id, id))
       .returning();
-    await addEvent(tx, id, "Demonstratie opnieuw gestart");
+    await addEvent(tx, id, "Demonstration restarted");
     return {
       jobId: await enqueue(tx, reset, "documents"),
       files: docs.flatMap((d) => (d.storageKey ? [d.storageKey] : [])),
@@ -557,7 +555,7 @@ export async function addMessage(
       .where(eq(messages.id, messageId));
     if (existing) {
       if (existing.ticketId !== id || existing.content !== content)
-        throw new AppError("Bericht-id is al gebruikt.", 409);
+        throw new AppError("Message ID has already been used.", 409);
       return;
     }
     const conversation = await tx
@@ -571,7 +569,7 @@ export async function addMessage(
         50000
     )
       throw new AppError(
-        "Dit demoticket ondersteunt maximaal 50 berichten en 50.000 tekens.",
+        "This demo ticket supports up to 50 messages and 50,000 characters.",
       );
     await tx.insert(messages).values({
       id: messageId,
@@ -643,7 +641,7 @@ export async function receiveColleagueEmail(id: string) {
         300000
     )
       throw new AppError(
-        "De maximale documentruimte voor dit ticket is bereikt.",
+        "The maximum document capacity for this ticket has been reached.",
       );
     const documentId = `${messageId}-attachment`;
     await tx.insert(documents).values({
@@ -676,8 +674,8 @@ export async function receiveColleagueEmail(id: string) {
     await addEvent(
       tx,
       id,
-      "Bijlage toegevoegd aan het onderzoek",
-      "Alle documenten worden opnieuw beoordeeld; eerdere antwoordreviews vervallen.",
+      "Attachment added to the research",
+      "All documents will be reassessed; previous answer reviews are no longer valid.",
     );
     return enqueue(tx, next, "documents");
   });

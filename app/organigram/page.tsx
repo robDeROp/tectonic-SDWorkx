@@ -14,14 +14,14 @@ export default async function OrgChartPage({
     <div className="kg-page">
       <div className="kg-page-head">
         <div>
-          <div className="eyebrow">Wie weet wat?</div>
-          <h1>Organigram</h1>
+          <div className="eyebrow">Who knows what?</div>
+          <h1>Organisation chart</h1>
           <p>
-            De organisatie zoals Entra ID ze kent, met per team de kennis die
-            het deelt. Klik op een collega om te zien waar die kennis zit.
+            The organisation as Entra ID sees it, with the knowledge each team
+            shares. Click a colleague to explore their expertise.
           </p>
         </div>
-        <span className="kg-poc-chip">Fictieve demodata</span>
+        <span className="kg-poc-chip">Fictional demo data</span>
       </div>
       <KnowledgeOrgChart
         key={JSON.stringify([person, unit])}

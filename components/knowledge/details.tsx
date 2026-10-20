@@ -75,9 +75,9 @@ export function Connections({
   return (
     <>
       <h3>
-        Verbonden met <span className="kg-count">{egoTotal(ego)}</span>
+        Connected to <span className="kg-count">{egoTotal(ego)}</span>
       </h3>
-      {!ego.ring.length && <p>Nog geen verbanden gevonden.</p>}
+      {!ego.ring.length && <p>No connections found yet.</p>}
       {GROUP_ORDER.map((g) => {
         const list = ego.ring.filter((n) => n.group === g);
         if (!list.length) return null;
@@ -111,7 +111,7 @@ export function Connections({
               ))}
             </div>
             {ego.over[g] ? (
-              <div className="kg-more">+ {ego.over[g]} meer</div>
+              <div className="kg-more">+ {ego.over[g]} more</div>
             ) : null}
           </div>
         );
@@ -203,13 +203,13 @@ export function ItemDetails({
             </dd>
           </>
         )}
-        <dt>Locatie</dt>
+        <dt>Location</dt>
         <dd>{it.location}</dd>
-        <dt>{it.type === "doc" ? "Bijgewerkt" : "Laatste activiteit"}</dt>
+        <dt>{it.type === "doc" ? "Updated" : "Latest activity"}</dt>
         <dd>{fmtDate(it.date)}</dd>
         {t && (
           <>
-            <dt>Onderwerp</dt>
+            <dt>Topic</dt>
             <dd>
               <button
                 type="button"
@@ -234,7 +234,7 @@ export function ItemDetails({
               onGo({ to: "graph", focus: { kind: "item", id: it.id } })
             }
           >
-            Toon alle verbanden
+            Show all connections
           </button>
         ) : (
           <button
@@ -242,7 +242,7 @@ export function ItemDetails({
             className="kg-btn"
             onClick={() => onGo({ to: "map", id: it.id })}
           >
-            Toon in de kennisbank
+            Show in knowledge base
           </button>
         )}
         {it.href && (
@@ -251,7 +251,7 @@ export function ItemDetails({
             className="kg-btn"
             onClick={() => onGo({ to: "href", href: it.href! })}
           >
-            Open {it.type === "hunch" ? "hunch" : "klantvraag"}{" "}
+            Open {it.type === "hunch" ? "hunch" : "customer question"}{" "}
             <ArrowUpRight size={15} />
           </button>
         )}
@@ -286,16 +286,16 @@ export function PersonDetails({
         <span className="kg-avatar kg-lg">{p.initials}</span>
         <div>
           <div className="kg-eyebrow">
-            {place === "org" ? "Medewerker" : "Persoon"}
+            {place === "org" ? "Employee" : "Person"}
           </div>
           <h2>{p.name}</h2>
           <p className="kg-role">{p.role}</p>
           {p.awayUntil ? (
             <span className="kg-pill kg-warn kg-nodot">
-              <Moon size={12} /> Afwezig tot {dateLabel(p.awayUntil, true)}
+              <Moon size={12} /> Away until {dateLabel(p.awayUntil, true)}
             </span>
           ) : (
-            <span className="kg-pill kg-ok">Beschikbaar</span>
+            <span className="kg-pill kg-ok">Available</span>
           )}
         </div>
       </div>
@@ -317,7 +317,7 @@ export function PersonDetails({
       <dl className="kg-meta">
         {boss && (
           <>
-            <dt>Leidinggevende</dt>
+            <dt>Manager</dt>
             <dd>
               <PersonLink
                 model={model}
@@ -330,18 +330,18 @@ export function PersonDetails({
         )}
         {p.isHead && (
           <>
-            <dt>Leidt</dt>
-            <dd>{model.membersOf(p.unitId).length - 1} teamleden</dd>
+            <dt>Leads</dt>
+            <dd>{model.membersOf(p.unitId).length - 1} team members</dd>
           </>
         )}
-        <dt>Bijdragen</dt>
+        <dt>Contributions</dt>
         <dd>
-          {made} gemaakt · {joined} meegewerkt
+          {made} created · {joined} contributed
         </dd>
       </dl>
       {p.expertise.length > 0 && (
         <>
-          <h3>Waarom {p.first} dit weet</h3>
+          <h3>Why {p.first} knows this</h3>
           <div className="kg-rows">
             {p.expertise.slice(0, 3).map((x) => (
               <div className="kg-row kg-static" key={x.signal}>
@@ -382,7 +382,7 @@ export function PersonDetails({
       {place === "org" &&
         (recent.length ? (
           <>
-            <h3>Recente kennis</h3>
+            <h3>Recent knowledge</h3>
             <div className="kg-rows">
               {recent.map((it) => (
                 <button
@@ -406,7 +406,7 @@ export function PersonDetails({
           </>
         ) : (
           <p className="kg-summary">
-            Nog geen gedeelde kennis gevonden voor deze persoon.
+            No shared knowledge found for this person yet.
           </p>
         ))}
       <div className="kg-btn-row">
@@ -418,7 +418,7 @@ export function PersonDetails({
               onGo({ to: "graph", focus: { kind: "person", id: p.id } })
             }
           >
-            Toon verbanden
+            Show connections
           </button>
         ) : (
           <button
@@ -426,7 +426,7 @@ export function PersonDetails({
             className="kg-btn"
             onClick={() => onGo({ to: "org", kind: "person", id: p.id })}
           >
-            Toon in het organigram
+            Show in organisation chart
           </button>
         )}
       </div>

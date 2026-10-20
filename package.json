@@ -16,6 +16,9 @@
     "test:integration": "tsx --env-file-if-exists=.env scripts/integration-test.ts",
     "test:hunches": "tsx --env-file-if-exists=.env scripts/hunch-integration-test.ts",
     "test:browser": "playwright test",
+    "video:assets": "node scripts/video-assets.mjs",
+    "video:studio": "npm run video:assets && remotion studio video/index.tsx",
+    "video:render": "npm run video:assets && remotion render video/index.tsx PerfectHunch out/video/create-the-perfect-hunch.mp4",
     "format": "prettier --write app components lib scripts tests *.ts *.mts *.json *.yaml"
   },
   "dependencies": {
@@ -39,6 +42,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "@remotion/cli": "4.0.537",
     "@types/d3": "^7.4.3",
     "@types/node": "^26.6.3",
     "@types/pg": "^8.23.1",
@@ -47,6 +51,7 @@
     "drizzle-kit": "^0.31.11",
     "embedded-postgres": "^18.4.0-beta.17",
     "prettier": "^3.9.9",
+    "remotion": "4.0.537",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

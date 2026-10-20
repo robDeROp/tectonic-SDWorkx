@@ -18,7 +18,7 @@ export function PipStatus({
 }: {
   /** Id of the job that is queued or running, or null when idle. */
   activeId: string | null;
-  /** Human label of the running step, e.g. "Kennisbank doorzoeken". */
+  /** Human label of the running step, e.g. "Searching the knowledge base". */
   step: string | null;
   /** Looks up how a finished job ended and what to say about it. */
   outcomeOf: (id: string) => { done: boolean; message: string } | null;

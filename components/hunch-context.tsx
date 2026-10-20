@@ -30,7 +30,7 @@ export function HunchContext({
   const opens = (focus: Focus, name: string) => ({
     role: "button",
     tabIndex: 0,
-    "aria-label": `Details en verbanden van ${name}`,
+    "aria-label": `Details and connections for ${name}`,
     onClick: () => setDetails(focus),
     onKeyDown: (e: React.KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
@@ -45,21 +45,21 @@ export function HunchContext({
     </span>
   );
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: "people", label: "Mensen", count: context.people.length },
-    { key: "docs", label: "Documenten", count: context.documents.length },
+    { key: "people", label: "People", count: context.people.length },
+    { key: "docs", label: "Documents", count: context.documents.length },
     { key: "chats", label: "Hunches", count: hunches.length },
   ];
   const [tab, setTab] = useState<Tab>(
     tabs.find((t) => t.count)?.key ?? "people",
   );
   return (
-    <section className="panel context-panel" aria-label="Relevante context">
+    <section className="panel context-panel" aria-label="Relevant context">
       <div className="panel-head">
-        <SourceChip kind="summary">Relevante context</SourceChip>
+        <SourceChip kind="summary">Relevant context</SourceChip>
       </div>
       <p className="panel-intro">
-        Hunch koppelde deze mensen, documenten en gerelateerde hunches aan deze
-        vraag.
+        Hunch linked these people, documents and related hunches to this
+        question.
       </p>
       <div className="context-tabs" role="tablist">
         {tabs.map(({ key, label, count }) => (
@@ -97,11 +97,10 @@ export function HunchContext({
               <div className="context-meta">
                 {p.awayUntil ? (
                   <span className="away-tag">
-                    <Moon size={13} /> Afwezig tot{" "}
-                    {dateLabel(p.awayUntil, true)}
+                    <Moon size={13} /> Away until {dateLabel(p.awayUntil, true)}
                   </span>
                 ) : (
-                  <span className="available-tag">Beschikbaar</span>
+                  <span className="available-tag">Available</span>
                 )}
                 {p.relevance !== undefined && (
                   <Relevance value={p.relevance} label="relevant" />
@@ -127,7 +126,7 @@ export function HunchContext({
                 <small className="context-reason">{d.reason}</small>
               </div>
               <div className="context-meta">
-                <span>Bijgewerkt {dateLabel(d.updatedAt, true)}</span>
+                <span>Updated {dateLabel(d.updatedAt, true)}</span>
                 <Relevance value={d.relevance} label="relevant" />
                 {hint}
               </div>
@@ -153,7 +152,7 @@ export function HunchContext({
           ))}
         {!tabs.find((t) => t.key === tab)?.count && (
           <li className="context-empty">
-            Hunch vond hier nog niets voor deze hunch.
+            Hunch hasn't found anything here for this hunch yet.
           </li>
         )}
       </ul>

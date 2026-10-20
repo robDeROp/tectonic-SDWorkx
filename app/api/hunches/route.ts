@@ -8,11 +8,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const GET = () => api(() => listHunches(CURRENT_USER_ID));
 const schema = z.object({
-  title: z.string().trim().min(3, "Geef je hunch een korte titel.").max(160),
+  title: z.string().trim().min(3, "Give your hunch a short title.").max(160),
   workingOn: z
     .string()
     .trim()
-    .min(10, "Beschrijf in minstens 10 tekens waar je aan werkt.")
+    .min(10, "Describe what you're working on in at least 10 characters.")
     .max(5000),
   /** Items the author removed from Hunch's suggestion, as "kind:id". */
   exclude: z.array(z.string().max(120)).max(50).optional(),
@@ -29,7 +29,7 @@ export const POST = (request: Request) =>
         ),
       };
     if (Number(request.headers.get("content-length")) > MAX_FILE_SIZE + 100000)
-      throw new AppError("Het bestand is groter dan 10 MB.");
+      throw new AppError("The file is larger than 10 MB.");
     const form = await request.formData();
     const data = schema.parse({
       title: form.get("title"),
@@ -40,7 +40,7 @@ export const POST = (request: Request) =>
     let attachment: { name: string; text: string } | undefined;
     if (file instanceof File && file.size) {
       if (file.size > MAX_FILE_SIZE)
-        throw new AppError("Het bestand is groter dan 10 MB.");
+        throw new AppError("The file is larger than 10 MB.");
       const name = z
         .string()
         .min(1)

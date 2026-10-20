@@ -95,14 +95,14 @@ export function HunchWorkspace({ id }: { id: string }) {
       </div>
     ) : (
       <div className="loading-page">
-        <Spinner /> Hunch laden…
+        <Spinner /> Loading hunch…
       </div>
     );
 
   return (
     <div className="page hunch-page">
       <Link href="/hunches" className="back-link">
-        <ArrowLeft size={16} /> Alle hunches
+        <ArrowLeft size={16} /> All hunches
       </Link>
       <header className="hunch-header">
         <div className="hunch-meta">
@@ -114,13 +114,13 @@ export function HunchWorkspace({ id }: { id: string }) {
         <div className="hunch-author">
           <Avatar person={hunch.author} small />
           <span>
-            Geopend door{" "}
-            <strong>{hunch.viewer.isAuthor ? "jou" : hunch.author.name}</strong>
+            Opened by{" "}
+            <strong>{hunch.viewer.isAuthor ? "you" : hunch.author.name}</strong>
             {!hunch.viewer.isAuthor &&
               ` · ${hunch.author.jobTitle}, ${hunch.author.team}`}{" "}
             · {dateLabel(hunch.createdAt, true)}
             {hunch.source !== "hunch" &&
-              ` · via de ${hunch.source === "teams" ? "Teams" : "Outlook"}-plugin`}
+              ` · via the ${hunch.source === "teams" ? "Teams" : "Outlook"}-plugin`}
           </span>
         </div>
       </header>
@@ -132,7 +132,7 @@ export function HunchWorkspace({ id }: { id: string }) {
             context={hunch.context}
             hunches={hunch.relatedHunches}
             origin={{
-              eyebrow: `Geopend vanuit ${hunchNumber(hunch.number)}`,
+              eyebrow: `Opened from ${hunchNumber(hunch.number)}`,
               title: hunch.title,
               kind: "hunch",
             }}
@@ -146,11 +146,11 @@ export function HunchWorkspace({ id }: { id: string }) {
             onHelp={() =>
               act(
                 "help",
-                chosen ? "Hulpvraag versturen" : "De juiste collega zoeken",
+                chosen ? "Send help request" : "Finding the right colleague",
                 (h) =>
                   h.helper
-                    ? `${h.helper.name} is verwittigd`
-                    : "Hulpvraag verstuurd",
+                    ? `${h.helper.name} has been notified`
+                    : "Help request sent",
                 { toId: chosen?.id },
               ).then(() => setChosen(null))
             }
@@ -159,28 +159,26 @@ export function HunchWorkspace({ id }: { id: string }) {
             onCancel={() =>
               act(
                 "cancel",
-                "Hulpvraag intrekken",
-                () => "Hulpvraag ingetrokken",
+                "Withdraw help request",
+                () => "Help request withdrawn",
               )
             }
             onVolunteer={() =>
               act(
                 "volunteer",
-                "Hulp aanbieden",
-                (h) => `${h.author.name.split(" ")[0]} weet dat je helpt`,
+                "Offer help",
+                (h) => `${h.author.name.split(" ")[0]} knows you're helping`,
               )
             }
             onAccept={() =>
               act(
                 "accept",
-                "Hulpvraag oppakken",
-                (h) => `${h.author.name.split(" ")[0]} weet dat je helpt`,
+                "Take on help request",
+                (h) => `${h.author.name.split(" ")[0]} knows you're helping`,
               )
             }
             onPass={() => setPicking("pass")}
-            onResolve={() =>
-              act("resolve", "Afsluiten", () => "Hunch opgelost")
-            }
+            onResolve={() => act("resolve", "Close", () => "Hunch resolved")}
           />
           {!!hunch.calls.length && <Trail calls={hunch.calls} />}
         </aside>
@@ -196,11 +194,11 @@ export function HunchWorkspace({ id }: { id: string }) {
             if (picking === "choose") return setChosen(person);
             void act(
               picking === "pass" ? "pass" : "help",
-              picking === "pass" ? "Doorgeven" : "Omleiden",
+              picking === "pass" ? "Pass on" : "Redirect",
               (h) =>
                 h.helper
-                  ? `${picking === "pass" ? "Doorgegeven" : "Omgeleid"} naar ${h.helper.name}`
-                  : "Verstuurd",
+                  ? `${picking === "pass" ? "Passed on" : "Redirected"} to ${h.helper.name}`
+                  : "Sent",
               { toId: person.id, note },
             );
           }}
@@ -255,13 +253,13 @@ function HelpCard({
         <Pip state={helperState === "accepted" ? "found" : "idle"} size={96} />
         <h2>
           {helperState === "accepted"
-            ? `Je helpt ${first(author.name)}`
-            : `${first(author.name)} vraagt jouw hulp`}
+            ? `You're helping ${first(author.name)}`
+            : `${first(author.name)} is asking for your help`}
         </h2>
         <p>
           {helperState === "accepted"
-            ? `${first(author.name)} weet dat je dit oppakt. Neem contact op via Teams of mail.`
-            : "Hunch stuurde deze vraag naar jou. Pak hem op of geef hem door."}
+            ? `${first(author.name)} knows you're taking this on. Get in touch via Teams or email.`
+            : "Hunch sent this request to you. Take it on or pass it on."}
         </p>
         <div className="help-actions">
           {helperState !== "accepted" && (
@@ -270,7 +268,7 @@ function HelpCard({
               disabled={busy}
               onClick={onAccept}
             >
-              <UserRoundCheck size={18} /> Ik pak dit op
+              <UserRoundCheck size={18} /> I'll take this on
             </button>
           )}
           <button
@@ -278,13 +276,13 @@ function HelpCard({
             disabled={busy || hunch.passesLeft <= 0}
             onClick={onPass}
           >
-            <Forward size={18} /> Doorgeven
+            <Forward size={18} /> Pass on
           </button>
         </div>
         <small className="help-footnote">
           {hunch.passesLeft > 0
-            ? `Nog ${hunch.passesLeft}× door te geven`
-            : "Deze hulpvraag kan niet meer worden doorgegeven"}
+            ? `Can be passed on ${hunch.passesLeft} more ${hunch.passesLeft === 1 ? "time" : "times"}`
+            : "This help request cannot be passed on again"}
         </small>
       </div>
     );
@@ -293,10 +291,10 @@ function HelpCard({
     return (
       <div className="help-state">
         <Pip state="found" size={96} />
-        <h2>Opgelost</h2>
+        <h2>Resolved</h2>
         <p>
-          Fijn dat je verder kunt. Deze context blijft vindbaar voor
-          collega&apos;s.
+          Glad you can move forward. This context stays available for colleagues
+          to find.
         </p>
       </div>
     );
@@ -305,17 +303,17 @@ function HelpCard({
     return (
       <div className="help-state">
         <Pip state="idle" size={96} />
-        <h2>Weet jij hier meer over?</h2>
+        <h2>Do you know more about this?</h2>
         <p>
-          {first(author.name)} heeft nog geen hulp ingeroepen. Pak het op en{" "}
-          {first(author.name)} weet meteen dat jij helpt.
+          {first(author.name)} hasn't asked for help yet. Take this on and{" "}
+          {first(author.name)} will know right away that you're helping.
         </p>
         <button
           className="button primary"
           disabled={busy}
           onClick={onVolunteer}
         >
-          <UserRoundCheck size={18} /> Ik pak dit op
+          <UserRoundCheck size={18} /> I'll take this on
         </button>
       </div>
     );
@@ -334,10 +332,10 @@ function HelpCard({
     return (
       <div className="help-state">
         <Pip state="idle" size={96} />
-        <h2>Kom je er niet uit?</h2>
+        <h2>Need a hand?</h2>
         <p>
-          Roep hulp in. Pip stuurt je vraag naar de meest relevante collega die
-          nu beschikbaar is.
+          Ask for help. Pip sends your question to the most relevant colleague
+          who is available now.
         </p>
         <div className="next-up">
           {next ? (
@@ -347,25 +345,25 @@ function HelpCard({
                 <strong>{next.name}</strong>
                 <small>
                   {chosen
-                    ? "Zelf gekozen"
+                    ? "Chosen by you"
                     : away.length
-                      ? `${away.map((p) => first(p.name)).join(", ")} is afwezig`
+                      ? `${away.map((p) => first(p.name)).join(", ")} is away`
                       : next.signal}
                 </small>
               </span>
             </>
           ) : (
             <span>
-              <small>Niemand die Hunch vond, is beschikbaar.</small>
+              <small>None of the people Hunch found are available.</small>
             </span>
           )}
           <button
             className="text-button"
             disabled={busy}
             onClick={onChoose}
-            aria-label="Kies zelf wie je hulpvraag krijgt"
+            aria-label="Choose who receives your help request"
           >
-            <Pencil size={14} /> Wijzig
+            <Pencil size={14} /> Change
           </button>
         </div>
         <button
@@ -373,7 +371,7 @@ function HelpCard({
           disabled={busy || !next}
           onClick={onHelp}
         >
-          <HandHelping size={18} /> Roep hulp in
+          <HandHelping size={18} /> Ask for help
         </button>
       </div>
     );
@@ -384,26 +382,26 @@ function HelpCard({
       <Pip state={status === "helping" ? "found" : "working"} size={96} />
       <h2>
         {status === "helping"
-          ? `${helper ? first(helper.name) : "Een collega"} helpt je verder`
-          : `${helper ? first(helper.name) : "Een collega"} is verwittigd`}
+          ? `${helper ? first(helper.name) : "A colleague"} is helping you`
+          : `${helper ? first(helper.name) : "A colleague"} has been notified`}
       </h2>
       <p>
         {!viewer.isAuthor
-          ? "Pip volgt deze hulpvraag op."
+          ? "Pip is following up on this help request."
           : status === "helping"
-            ? "Je hoort snel iets via Teams of mail."
-            : "Pip laat je weten zodra er iemand reageert. Je hoeft niets te doen."}
+            ? "You'll hear back soon via Teams or email."
+            : "Pip will let you know when someone responds. You don't need to do anything."}
       </p>
       {viewer.isAuthor && (
         <div className="help-links">
           <button className="text-button" disabled={busy} onClick={onResolve}>
-            <CheckCheck size={16} /> Opgelost
+            <CheckCheck size={16} /> Resolved
           </button>
           <button className="text-button" disabled={busy} onClick={onRedirect}>
-            <Shuffle size={16} /> Iemand anders
+            <Shuffle size={16} /> Someone else
           </button>
           <button className="text-button" disabled={busy} onClick={onCancel}>
-            <Undo2 size={16} /> Intrekken
+            <Undo2 size={16} /> Withdraw
           </button>
         </div>
       )}
@@ -415,7 +413,7 @@ function HelpCard({
 function Trail({ calls }: { calls: HelpCallView[] }) {
   return (
     <div className="help-trail">
-      <span className="section-overline">Verloop</span>
+      <span className="section-overline">History</span>
       <ol>
         {calls.map((c) => (
           <li key={c.id} className={`trail-${c.state}`}>
@@ -425,30 +423,29 @@ function Trail({ calls }: { calls: HelpCallView[] }) {
               <small>
                 {c.state === "skipped" ? (
                   <>
-                    <Moon size={12} /> Afwezig tot{" "}
-                    {c.note ? dateLabel(c.note, true) : "onbekend"} ·
-                    overgeslagen
+                    <Moon size={12} /> Away until{" "}
+                    {c.note ? dateLabel(c.note, true) : "unknown"} · skipped
                   </>
                 ) : c.state === "passed" ? (
                   <>
-                    <Forward size={12} /> Gaf door
+                    <Forward size={12} /> Passed on
                     {c.note ? `: “${c.note}”` : ""}
                   </>
                 ) : c.state === "cancelled" ? (
                   <>
                     <Undo2 size={12} />{" "}
-                    {c.note === "Omgeleid"
-                      ? "Omgeleid naar een andere collega"
-                      : "Hulpvraag ingetrokken"}
+                    {c.note === "Redirected"
+                      ? "Redirected to another colleague"
+                      : "Help request withdrawn"}
                   </>
                 ) : c.state === "accepted" ? (
                   <>
-                    <UserRoundCheck size={12} /> {c.note ?? "Pakte het op"}
+                    <UserRoundCheck size={12} /> {c.note ?? "Took it on"}
                   </>
                 ) : (
                   <>
-                    <Mail size={12} /> E-mail verstuurd om{" "}
-                    {timeLabel(c.emailedAt ?? c.createdAt)} · demomodus
+                    <Mail size={12} /> Email sent at{" "}
+                    {timeLabel(c.emailedAt ?? c.createdAt)} · demo mode
                   </>
                 )}
               </small>
@@ -462,21 +459,21 @@ function Trail({ calls }: { calls: HelpCallView[] }) {
 
 const PICKER = {
   pass: {
-    title: "Hulpvraag doorgeven",
-    subtitle: "Kies wie dit beter kan beantwoorden.",
-    confirm: "Doorgeven",
+    title: "Pass on help request",
+    subtitle: "Choose who is better placed to answer this.",
+    confirm: "Pass on",
   },
   choose: {
-    title: "Wie krijgt je hulpvraag?",
+    title: "Who receives your help request?",
     subtitle:
-      "Pip kiest de meest relevante beschikbare collega. Je mag zelf iemand anders kiezen.",
-    confirm: "Kiezen",
+      "Pip chooses the most relevant available colleague. You can choose someone else.",
+    confirm: "Choose",
   },
   redirect: {
-    title: "Hulpvraag omleiden",
+    title: "Redirect help request",
     subtitle:
-      "Je hulpvraag gaat naar iemand anders. De huidige collega wordt vrijgegeven.",
-    confirm: "Omleiden",
+      "Your help request will go to someone else. The current colleague will be released.",
+    confirm: "Redirect",
   },
 };
 
@@ -531,7 +528,7 @@ function PersonPicker({
                 <strong>{p.name}</strong>
                 <small>
                   {p.awayUntil
-                    ? `Afwezig tot ${dateLabel(p.awayUntil, true)}`
+                    ? `Away until ${dateLabel(p.awayUntil, true)}`
                     : (p.signal ?? `${p.jobTitle} · ${p.team}`)}
                 </small>
               </span>
@@ -550,23 +547,23 @@ function PersonPicker({
               }
             }}
           >
-            Iemand anders uit de organisatie kiezen
+            Choose someone else in the organisation
           </button>
         )}
         {mode === "pass" && (
           <label>
-            Korte toelichting (optioneel)
+            Brief explanation (optional)
             <input
               value={note}
               maxLength={500}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Waarom is deze collega beter geplaatst?"
+              placeholder="Why is this colleague better placed to help?"
             />
           </label>
         )}
         <div className="modal-actions">
           <button type="button" className="button secondary" onClick={onClose}>
-            Annuleren
+            Cancel
           </button>
           <button
             className="button primary"

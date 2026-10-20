@@ -11,9 +11,9 @@ export function hunchDemoData() {
     {
       id: "hunch-deeltijds",
       authorId: "e-jamie",
-      title: "Vertrekvakantiegeld bij een deeltijdse bediende",
+      title: "Departure holiday pay for a part-time employee",
       workingOn:
-        "Ik bereid de eindafrekening voor van een bediende bij Atelier Noord die halverwege het jaar van voltijds naar deeltijds ging. Hoe verwerk ik het vertrekvakantiegeld en wat komt er op het vakantieattest?",
+        "I'm preparing the final settlement for a white-collar employee at Atelier Noord who moved from full-time to part-time work halfway through the year. How do I handle departure holiday pay, and what goes on the holiday certificate?",
       status: "waiting",
       createdAt: ago(95),
       updatedAt: ago(90),
@@ -21,9 +21,9 @@ export function hunchDemoData() {
     {
       id: "hunch-api",
       authorId: "e-jamie",
-      title: "Loongegevens van een klant opvragen via de API",
+      title: "Retrieving a customer's payroll data through the API",
       workingOn:
-        "Een klant wil zijn loongegevens automatisch ophalen in zijn eigen HR-tool. Welke API gebruiken we daarvoor en wie regelt de toegang?",
+        "A customer wants to retrieve their payroll data automatically in their own HR tool. Which API do we use, and who arranges access?",
       status: "open",
       createdAt: ago(30),
       updatedAt: ago(30),
@@ -31,34 +31,34 @@ export function hunchDemoData() {
     {
       id: "hunch-rekenregel",
       authorId: "e-noah",
-      title: "Rekenregel vakantiegeld bij wisselend arbeidsregime",
+      title: "Holiday pay calculation rule when working hours change",
       workingOn:
-        "Ik werk aan PR 1842 in de loonmotor. Hoe hoort het vertrekvakantiegeld berekend te worden als een bediende tijdens het jaar deeltijds ging? Ik wil zeker zijn dat de testcases kloppen.",
+        "I'm working on PR 1842 in the payroll engine. How should departure holiday pay be calculated when a white-collar employee moved to part-time work during the year? I want to make sure the test cases are correct.",
       status: "waiting",
       source: "teams",
-      sourceLabel: "#loonmotor-dev",
+      sourceLabel: "#payroll-engine-dev",
       createdAt: ago(240),
       updatedAt: ago(20),
     },
     {
       id: "hunch-attest",
       authorId: "e-tom",
-      title: "Waarom komt het vakantieattest later dan de eindafrekening?",
+      title:
+        "Why does the holiday certificate arrive after the final settlement?",
       workingOn:
-        "Een klant belt omdat zijn vertrekkende bediende de eindafrekening al kreeg, maar het vakantieattest nog niet. Ik wil hem uitleggen hoe dat proces loopt.",
+        "A customer called because their departing white-collar employee has received the final settlement but not the holiday certificate. I want to explain how the process works.",
       status: "waiting",
       source: "outlook",
-      sourceLabel: "Vakantieattest Thomas",
+      sourceLabel: "Thomas's holiday certificate",
       createdAt: ago(50),
       updatedAt: ago(45),
     },
     {
       id: "hunch-praktijk",
       authorId: "e-lotte",
-      title:
-        "Hoe passen we de nieuwe richtlijn vakantiegeld in de praktijk toe?",
+      title: "How do we apply the new holiday pay guideline in practice?",
       workingOn:
-        "Ik schrijf een juridische nota over de nieuwe richtlijn rond vakantiegeld. Ik zoek iemand die dagelijks eindafrekeningen maakt om te toetsen of de nota werkbaar is.",
+        "I'm writing a legal note about the new holiday pay guideline. I'm looking for someone who prepares final settlements every day to check whether the note is practical.",
       status: "waiting",
       createdAt: ago(120),
       updatedAt: ago(8),
@@ -66,9 +66,9 @@ export function hunchDemoData() {
     {
       id: "hunch-webinar",
       authorId: "e-hanne",
-      title: "Voorbeelden van eindafrekeningen voor een webinar",
+      title: "Final settlement examples for a webinar",
       workingOn:
-        "Ik bereid een webinar voor HR-managers voor over uitdiensttreding. Klanten vroegen naar concrete voorbeelden van een eindafrekening met vertrekvakantiegeld. Welke voorbeelden mogen we tonen?",
+        "I'm preparing a webinar for HR managers on termination of employment. Customers asked for concrete examples of a final settlement with departure holiday pay. Which examples can we show?",
       status: "open",
       createdAt: ago(55),
       updatedAt: ago(55),
@@ -76,9 +76,9 @@ export function hunchDemoData() {
     {
       id: "hunch-nieuwsbrief",
       authorId: "e-jamie",
-      title: "Wijziging vakantiegeld uitleggen in de nieuwsbrief",
+      title: "Explaining holiday pay changes in the newsletter",
       workingOn:
-        "Ik schrijf een stuk voor de nieuwsbrief over de nieuwe regels rond vakantiegeld. Wat werkte vroeger bij klantcommunicatie over wetswijzigingen?",
+        "I'm writing a newsletter article about the new holiday pay rules. What has worked before when communicating legal changes to customers?",
       status: "resolved",
       createdAt: ago(60 * 24 * 3),
       updatedAt: ago(60 * 24 * 2),
@@ -113,7 +113,7 @@ export function hunchDemoData() {
       hunchId: "hunch-rekenregel",
       recipientId: "e-pieter",
       state: "passed",
-      note: "Jamie verwerkt deze casussen dagelijks.",
+      note: "Jamie handles these cases every day.",
       emailedAt: ago(199.9),
       createdAt: ago(199.9),
     },
@@ -191,14 +191,14 @@ function demoMessages(demo: (typeof hunches.$inferInsert)[]) {
   };
   const rows: Omit<typeof hunchMessages.$inferInsert, "id">[] = [
     opening("hunch-deeltijds", {
-      attachmentName: "Notities klantgesprek Atelier Noord.txt",
+      attachmentName: "Atelier Noord customer meeting notes.txt",
       attachmentText:
-        "FICTIEVE DEMONSTRATIENOTITIES — Klantgesprek Atelier Noord\n\n" +
-        "- Bediende Thomas gaat uit dienst op 30 september.\n" +
-        "- Van januari tot en met mei voltijds, vanaf juni 4/5de.\n" +
-        "- Nog 6 vakantiedagen niet opgenomen.\n" +
-        "- Klant wil weten wat er op het vakantieattest komt en of beide periodes apart staan.\n" +
-        "- Actie Jamie: berekening voorbereiden en terugkoppelen vóór vrijdag.",
+        "FICTIONAL DEMONSTRATION NOTES — Atelier Noord customer meeting\n\n" +
+        "- Thomas, a white-collar employee, leaves employment on 30 September.\n" +
+        "- Full-time from January through May, 80% working hours from June.\n" +
+        "- 6 days of holiday remain untaken.\n" +
+        "- The customer wants to know what goes on the holiday certificate and whether both periods are listed separately.\n" +
+        "- Jamie's action: prepare the calculation and respond before Friday.",
     }),
     opening("hunch-api"),
     opening("hunch-webinar"),
@@ -208,13 +208,13 @@ function demoMessages(demo: (typeof hunches.$inferInsert)[]) {
       hunchId: "hunch-nieuwsbrief",
       ...person("e-hanne"),
       content:
-        "Kijk zeker naar de evaluatie van de indexeringscampagne. Een korte checklist bovenaan werkte veel beter dan een lange uitleg.",
+        "Be sure to look at the indexation campaign review. A short checklist at the top worked much better than a lengthy explanation.",
       createdAt: ago(60 * 60),
     },
     {
       hunchId: "hunch-nieuwsbrief",
       ...person("e-jamie"),
-      content: "Top, dat neem ik mee. Dank je!",
+      content: "Great, I'll use that. Thank you!",
       createdAt: ago(60 * 48),
     },
     // Opened from a Teams thread with the Hunch plugin.
@@ -223,7 +223,7 @@ function demoMessages(demo: (typeof hunches.$inferInsert)[]) {
       ...person("e-ines"),
       source: "teams",
       content:
-        "Noah, kun je de testcases voor deeltijds werk nog nakijken voor we PR 1842 mergen?",
+        "Noah, can you check the part-time work test cases before we merge PR 1842?",
       createdAt: ago(260),
     },
     {
@@ -231,17 +231,17 @@ function demoMessages(demo: (typeof hunches.$inferInsert)[]) {
       ...person("e-noah"),
       source: "teams",
       content:
-        "Doe ik. Ik weet alleen niet zeker hoe de regel hoort te werken als iemand halverwege het jaar van voltijds naar deeltijds gaat. Wie kan dat bevestigen?",
+        "Will do. I'm just not sure how the rule should work when someone moves from full-time to part-time work halfway through the year. Who can confirm that?",
       createdAt: ago(245),
     },
     // Opened from a customer mail in Outlook with the Hunch plugin.
     {
       hunchId: "hunch-attest",
       authorName: "Sophie De Smet",
-      authorDetail: "HR manager · Atelier Noord (klant)",
+      authorDetail: "HR manager · Atelier Noord (customer)",
       source: "outlook",
       content:
-        "Dag Tom,\n\nThomas heeft zijn eindafrekening ontvangen, maar het vakantieattest nog niet. Hij heeft het nodig voor zijn nieuwe werkgever. Wanneer mogen we het verwachten?\n\nGroeten,\nSophie",
+        "Hi Tom,\n\nThomas has received his final settlement, but not his holiday certificate. He needs it for his new employer. When can we expect it?\n\nRegards,\nSophie",
       createdAt: ago(70),
     },
     {
@@ -249,7 +249,7 @@ function demoMessages(demo: (typeof hunches.$inferInsert)[]) {
       ...person("e-tom"),
       source: "outlook",
       content:
-        "Dag Sophie, ik zoek uit hoe dat proces precies loopt en kom er vandaag nog op terug.",
+        "Hi Sophie, I'll find out exactly how the process works and get back to you today.",
       createdAt: ago(52),
     },
   ];
@@ -283,48 +283,48 @@ function colleagueHunches(): (typeof hunches.$inferInsert)[] {
     hunch(
       "hunch-checklist",
       "e-pieter",
-      "Checklist eindafrekening bijwerken na de nieuwe richtlijn",
-      "De checklist eindafrekening moet aangepast worden aan de nieuwe richtlijn vakantiegeld. Wie heeft de laatste versie en wat moet er veranderen?",
+      "Updating the final settlement checklist after the new guideline",
+      "The final settlement checklist needs to be updated for the new holiday pay guideline. Who has the latest version, and what needs to change?",
       "open",
       180,
     ),
     hunch(
       "hunch-breaking",
       "e-bram",
-      "Breaking change in de publieke API aankondigen",
-      "We moeten een veld in de payroll-API hernoemen. Hoe hebben we zo'n wijziging vroeger aangekondigd aan integratiepartners?",
+      "Announcing a breaking change in the public API",
+      "We need to rename a field in the payroll API. How have we announced this kind of change to integration partners before?",
       "open",
       60 * 26,
     ),
     hunch(
       "hunch-indexering",
       "e-tom",
-      "Wat vertellen we klanten over de indexering 2027?",
-      "Klanten vragen al naar de indexering van volgend jaar. Is er een standaardantwoord of campagne in voorbereiding?",
+      "What do we tell customers about the 2027 indexation?",
+      "Customers are already asking about next year's indexation. Is a standard answer or campaign being prepared?",
       "open",
       60 * 48,
     ),
     hunch(
       "hunch-testomgeving",
       "e-noah",
-      "Lokale testomgeving voor de loonmotor opzetten",
-      "Ik ben nieuw in het team en wil de loonmotor lokaal draaien met testdata. Hoe doen we dat hier?",
+      "Setting up a local test environment for the payroll engine",
+      "I'm new to the team and want to run the payroll engine locally with test data. How do we do that here?",
       "resolved",
       60 * 24 * 4,
     ),
     hunch(
       "hunch-rekenregel-doc",
       "e-ines",
-      "Hoe documenteren we een nieuwe rekenregel?",
-      "Ik voeg een rekenregel toe aan de loonmotor. Waar en in welk formaat leggen we de functionele uitleg vast?",
+      "How do we document a new calculation rule?",
+      "I'm adding a calculation rule to the payroll engine. Where and in what format do we record the functional explanation?",
       "resolved",
       60 * 24 * 5,
     ),
     hunch(
       "hunch-testpanel",
       "e-yasmine",
-      "Welke klanten willen de nieuwe nieuwsbrief testen?",
-      "We vernieuwen de nieuwsbrief voor HR-professionals. Welke klanten gaven eerder aan mee te willen testen?",
+      "Which customers want to test the new newsletter?",
+      "We're refreshing the newsletter for HR professionals. Which customers previously said they wanted to help test it?",
       "resolved",
       60 * 24 * 6,
     ),

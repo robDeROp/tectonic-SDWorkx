@@ -28,9 +28,9 @@ const scenarios: Scenario[] = [
     author: "e-jamie",
     source: "hunch",
     status: "helping",
-    title: "Samen de checklist voor vertrekvakantiegeld afronden",
+    title: "Completing the departure holiday pay checklist together",
     question:
-      "Ik werk de checklist voor de eindafrekening bij. Welke gegevens over deeltijds werk moeten we nog opvragen?",
+      "I'm updating the final settlement checklist. What information about part-time work do we still need to request?",
     minutesAgo: 80,
     calls: [{ recipient: "e-lotte", state: "accepted" }],
     messages: [
@@ -38,7 +38,7 @@ const scenarios: Scenario[] = [
         author: "e-lotte",
         source: "hunch",
         content:
-          "Ik kijk mee. Laten we eerst de loonhistoriek en de wijziging van het arbeidsregime bevestigen. Daarna lopen we samen de checklist door.",
+          "I'll take a look. Let's confirm the salary history and the change in working hours first. Then we'll go through the checklist together.",
       },
     ],
   },
@@ -46,24 +46,24 @@ const scenarios: Scenario[] = [
     id: "hunch-teams-api",
     author: "e-jamie",
     source: "teams",
-    label: "#api-integraties",
+    label: "#api-integrations",
     status: "open",
-    title: "Teams: toegang tot de payroll-API voorbereiden",
+    title: "Teams: preparing access to the payroll API",
     question:
-      "In Teams vraagt een klantteam welke toegang nodig is voor de payroll-API. Ik zoek de documentatie en de juiste collega.",
+      "A customer team is asking in Teams what access is needed for the payroll API. I'm looking for the documentation and the right colleague.",
     minutesAgo: 25,
     messages: [
       {
         author: "e-noah",
         source: "teams",
         content:
-          "Heeft iemand de checklist voor API-toegang bij een nieuwe integratiepartner?",
+          "Does anyone have the API access checklist for a new integration partner?",
       },
       {
         author: "e-jamie",
         source: "teams",
         content:
-          "Ik zoek de onboardingdocumentatie erbij. We hebben nog geen toegang aangevraagd.",
+          "I'll find the onboarding documentation. We haven't requested access yet.",
       },
     ],
   },
@@ -71,11 +71,11 @@ const scenarios: Scenario[] = [
     id: "hunch-teams-hulp",
     author: "e-noah",
     source: "teams",
-    label: "#loonmotor-dev",
+    label: "#payroll-engine-dev",
     status: "helping",
-    title: "Teams: payroll controleert de testcasus voor deeltijds werk",
+    title: "Teams: payroll checks the part-time work test case",
     question:
-      "De rekenregel voor vertrekvakantiegeld heeft een extra testcasus nodig. Jamie helpt de functionele invoer na te kijken.",
+      "The departure holiday pay calculation rule needs an extra test case. Jamie is helping review the functional inputs.",
     minutesAgo: 110,
     calls: [{ recipient: "e-jamie", state: "accepted" }],
     messages: [
@@ -83,18 +83,18 @@ const scenarios: Scenario[] = [
         author: "e-noah",
         source: "teams",
         content:
-          "Ik heb een testcasus voor een overstap naar 4/5de klaar. Wie kan de invoer functioneel nakijken?",
+          "I have a test case ready for a move to 80% working hours. Who can review the functional inputs?",
       },
       {
         author: "e-jamie",
         source: "teams",
-        content: "Stuur de fictieve gegevens door, dan kijk ik mee.",
+        content: "Send over the fictional data and I'll take a look.",
       },
       {
         author: "e-jamie",
         source: "hunch",
         content:
-          "Ik heb de hulpvraag opgepakt. Ik vergelijk de periodes met de checklist voor eindafrekeningen.",
+          "I've taken on the help request. I'm comparing the periods with the final settlement checklist.",
       },
     ],
   },
@@ -102,34 +102,35 @@ const scenarios: Scenario[] = [
     id: "hunch-teams-opgelost",
     author: "e-jamie",
     source: "teams",
-    label: "#api-integraties",
+    label: "#api-integrations",
     status: "resolved",
-    title: "Teams: documentatie voor API-toegang gevonden",
+    title: "Teams: API access documentation found",
     question:
-      "We zochten de juiste API-onboarding voor een integratiepartner. De documentatie is gevonden en gedeeld.",
+      "We were looking for the right API onboarding for an integration partner. The documentation has been found and shared.",
     minutesAgo: 150,
     calls: [{ recipient: "e-ines", state: "accepted" }],
     messages: [
       {
         author: "e-jamie",
         source: "teams",
-        content: "Waar staat de actuele documentatie voor de payroll-API?",
+        content: "Where is the current documentation for the payroll API?",
       },
       {
         author: "e-ines",
         source: "teams",
-        content: "Die staat in de DevOps Wiki. Ik geef je de juiste ingang.",
+        content: "It's in the DevOps Wiki. I'll point you to the right place.",
       },
       {
         author: "e-ines",
         source: "hunch",
         content:
-          "De API-onboarding staat bij de relevante documenten. Begin met de toegang en het testaccount.",
+          "The API onboarding is listed under relevant documents. Start with access and the test account.",
       },
       {
         author: "e-jamie",
         source: "hunch",
-        content: "Gevonden, bedankt! Ik kan verder en sluit deze hunch.",
+        content:
+          "Found it, thanks! I can move forward and will close this hunch.",
       },
     ],
   },
@@ -137,31 +138,31 @@ const scenarios: Scenario[] = [
     id: "hunch-outlook-bijlage",
     author: "e-jamie",
     source: "outlook",
-    label: "Aanvullende gegevens eindafrekening",
+    label: "Additional final settlement information",
     status: "open",
-    title: "Outlook: klantmail met bijlage over de eindafrekening",
+    title: "Outlook: customer email with a final settlement attachment",
     question:
-      "De klant stuurde aanvullende notities voor een eindafrekening. Ik wil controleren welke gegevens nog ontbreken.",
+      "The customer sent additional notes for a final settlement. I want to check what information is still missing.",
     minutesAgo: 35,
     messages: [
       {
         external: {
           name: "Sophie De Smet",
-          detail: "HR manager · Atelier Noord (fictieve klant)",
+          detail: "HR manager · Atelier Noord (fictional customer)",
         },
         source: "outlook",
         content:
-          "Dag Jamie,\n\nIn de bijlage staan onze notities voor de eindafrekening. Kun je aangeven welke gegevens nog ontbreken?\n\nGroeten,\nSophie",
+          "Hi Jamie,\n\nOur notes for the final settlement are attached. Can you let us know what information is still missing?\n\nRegards,\nSophie",
         attachment: {
-          name: "Klantnotities eindafrekening.txt",
-          text: "FICTIEVE TESTDATA\n\nThomas vertrekt op 30 september. Vanaf juni werkt hij 4/5de. De loonhistoriek en het overzicht van opgenomen vakantiedagen moeten nog bevestigd worden. Deze notities bevatten geen berekening.",
+          name: "Customer final settlement notes.txt",
+          text: "FICTIONAL TEST DATA\n\nThomas leaves on 30 September. He has worked 80% hours since June. The salary history and the record of leave taken still need to be confirmed. These notes contain no calculation.",
         },
       },
       {
         author: "e-jamie",
         source: "outlook",
         content:
-          "Dag Sophie, bedankt voor de notities. Ik loop ze na en koppel terug welke gegevens nog nodig zijn.",
+          "Hi Sophie, thanks for the notes. I'll review them and let you know what information is still needed.",
       },
     ],
   },
@@ -169,34 +170,33 @@ const scenarios: Scenario[] = [
     id: "hunch-outlook-hulp",
     author: "e-jamie",
     source: "outlook",
-    label: "Controle vakantieattest",
+    label: "Holiday certificate check",
     status: "helping",
-    title: "Outlook: collega helpt bij de controle van een vakantieattest",
+    title: "Outlook: a colleague helps check a holiday certificate",
     question:
-      "Een klant vraagt of alle periodes correct op het vakantieattest staan. Pieter helpt de dossiergegevens te controleren.",
+      "A customer is asking whether all periods are correctly listed on the holiday certificate. Pieter is helping check the case details.",
     minutesAgo: 65,
     calls: [{ recipient: "e-pieter", state: "accepted" }],
     messages: [
       {
         external: {
           name: "Milan Verhoeven",
-          detail: "HR medewerker · Studio Rivier (fictieve klant)",
+          detail: "HR employee · Studio Rivier (fictional customer)",
         },
         source: "outlook",
         content:
-          "Dag Jamie,\n\nKun je controleren of de voltijdse en deeltijdse periode beide verwerkt zijn in het vakantieattest? We willen dit graag afronden.\n\nBedankt,\nMilan",
+          "Hi Jamie,\n\nCan you check whether both the full-time and part-time periods are included in the holiday certificate? We'd like to finalise this.\n\nThanks,\nMilan",
       },
       {
         author: "e-jamie",
         source: "outlook",
-        content:
-          "Ik laat de tewerkstellingshistoriek mee nakijken door mijn collega.",
+        content: "I'll ask my colleague to help check the employment history.",
       },
       {
         author: "e-pieter",
         source: "hunch",
         content:
-          "Ik heb dit opgepakt. Ik controleer de twee periodes en laat weten of er informatie ontbreekt.",
+          "I've taken this on. I'll check the two periods and let you know if any information is missing.",
       },
     ],
   },
@@ -204,39 +204,39 @@ const scenarios: Scenario[] = [
     id: "hunch-outlook-opgelost",
     author: "e-tom",
     source: "outlook",
-    label: "Re: benodigde gegevens voor eindafrekening",
+    label: "Re: information needed for the final settlement",
     status: "resolved",
-    title: "Outlook: ontbrekende dossiergegevens verduidelijkt",
+    title: "Outlook: missing case details clarified",
     question:
-      "De klant wist niet welke gegevens nodig waren voor de eindafrekening. Jamie hielp de checklist te verduidelijken.",
+      "The customer didn't know what information was needed for the final settlement. Jamie helped clarify the checklist.",
     minutesAgo: 200,
     calls: [{ recipient: "e-jamie", state: "accepted" }],
     messages: [
       {
         external: {
           name: "Sophie De Smet",
-          detail: "HR manager · Atelier Noord (fictieve klant)",
+          detail: "HR manager · Atelier Noord (fictional customer)",
         },
         source: "outlook",
         content:
-          "Dag Tom, welke gegevens moeten we nog bezorgen voordat jullie de eindafrekening kunnen voorbereiden?",
+          "Hi Tom, what information do we still need to provide before you can prepare the final settlement?",
       },
       {
         author: "e-tom",
         source: "outlook",
-        content: "Ik stem de checklist af met payroll en kom erop terug.",
+        content: "I'll check the checklist with payroll and get back to you.",
       },
       {
         author: "e-jamie",
         source: "hunch",
         content:
-          "Vraag de loonhistoriek, arbeidsregimes, opgenomen vakantiedagen en reeds betaald vakantiegeld op. De interne checklist staat bij de context.",
+          "Request the salary history, working hours, leave taken and holiday pay already paid. The internal checklist is in the context.",
       },
       {
         author: "e-tom",
         source: "hunch",
         content:
-          "De benodigde gegevens zijn duidelijk. Deze voorbeeldcase is afgerond.",
+          "The required information is clear. This sample case is complete.",
       },
     ],
   },
@@ -245,15 +245,15 @@ const scenarios: Scenario[] = [
     author: "e-jamie",
     source: "hunch",
     status: "open",
-    title: "Hulpvraag ingetrokken: checklist zelf teruggevonden",
+    title: "Help request withdrawn: found the checklist myself",
     question:
-      "Ik zocht de checklist eindafrekening en vroeg hulp. Intussen vond ik de juiste versie, dus de hulpvraag is ingetrokken.",
+      "I was looking for the final settlement checklist and asked for help. I've since found the right version, so the help request has been withdrawn.",
     minutesAgo: 100,
     calls: [
       {
         recipient: "e-pieter",
         state: "cancelled",
-        note: "Checklist zelf gevonden",
+        note: "Found the checklist myself",
       },
     ],
     messages: [
@@ -261,7 +261,7 @@ const scenarios: Scenario[] = [
         author: "e-jamie",
         source: "hunch",
         content:
-          "De hulpvraag is ingetrokken. Ik werk zelf verder met de gevonden checklist.",
+          "The help request has been withdrawn. I'll continue on my own with the checklist I found.",
       },
     ],
   },
@@ -270,20 +270,20 @@ const scenarios: Scenario[] = [
     author: "e-noah",
     source: "hunch",
     status: "waiting",
-    title: "Hulpvraag na twee keer doorgeven bij payroll",
+    title: "Help request reaches payroll after two handovers",
     question:
-      "Voor de rekenregel vertrekvakantiegeld zoek ik iemand die dagelijks eindafrekeningen verwerkt. De vraag is twee keer doorgegeven.",
+      "For the departure holiday pay calculation rule, I'm looking for someone who processes final settlements every day. The question has been passed on twice.",
     minutesAgo: 130,
     calls: [
       {
         recipient: "e-pieter",
         state: "passed",
-        note: "Lotte kan de functionele uitleg verduidelijken.",
+        note: "Lotte can clarify the functional explanation.",
       },
       {
         recipient: "e-lotte",
         state: "passed",
-        note: "Jamie verwerkt deze cases dagelijks.",
+        note: "Jamie handles these cases every day.",
       },
       { recipient: "e-jamie", state: "notified" },
     ],
@@ -292,7 +292,7 @@ const scenarios: Scenario[] = [
         author: "e-noah",
         source: "hunch",
         content:
-          "De vraag ligt nu bij Jamie. Dit voorbeeld toont de grens van twee keer doorgeven.",
+          "The question is now with Jamie. This example shows the limit of two handovers.",
       },
     ],
   },
@@ -301,9 +301,9 @@ const scenarios: Scenario[] = [
     author: "e-jamie",
     source: "hunch",
     status: "open",
-    title: "Nieuwe vraag zonder passende kennisbronnen",
+    title: "New question without matching knowledge sources",
     question:
-      "Ik organiseer een introductiemoment en zoek praktische ervaringen met de ontvangst van nieuwe bezoekers.",
+      "I'm organising an introductory session and looking for practical experiences of welcoming new visitors.",
     minutesAgo: 45,
     messages: [],
   },

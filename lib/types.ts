@@ -1,9 +1,9 @@
 import { z } from "zod";
 export const sourceKinds = [
-  "Wetgevingsgericht",
-  "Intern",
-  "Extern",
-  "Onbekend",
+  "Legislative",
+  "Internal",
+  "External",
+  "Unknown",
 ] as const;
 export const citationSchema = z.object({
   documentId: z.string(),
@@ -276,7 +276,7 @@ export type KnowledgeKind = "doc" | "chat" | "hunch" | "ticket";
 export type KnowledgeRel = "cites" | "supersedes" | "discusses" | "uses";
 export type Freshness = {
   k: "ok" | "warn" | "old";
-  label: "Actueel" | "Nakijken" | "Verouderd" | "Vervangen";
+  label: "Current" | "Needs review" | "Outdated" | "Superseded";
 };
 export type GraphPerson = {
   id: string;

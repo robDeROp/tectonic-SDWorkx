@@ -20,14 +20,14 @@ for (const entry of [
   {
     path: "/kennisbank",
     query: "?item=d-playbook",
-    nav: "Kennisbank",
-    selected: "Payroll playbook · uitdiensttreding",
-    overview: "Waar zit onze kennis?",
+    nav: "Knowledge base",
+    selected: "Payroll playbook · termination of employment",
+    overview: "Where is our knowledge?",
   },
   {
     path: "/organigram",
     query: "?person=e-emma",
-    nav: "Organigram",
+    nav: "Organisation chart",
     selected: "Emma Peeters",
     overview: "SD Worx",
   },
@@ -52,17 +52,19 @@ test("knowledge search, graph, filters and dialog navigation", async ({
   page,
 }) => {
   await page.goto("/kennisbank");
-  const search = page.getByRole("searchbox", { name: "Zoek in de kennisbank" });
+  const search = page.getByRole("searchbox", {
+    name: "Search the knowledge base",
+  });
   await search.fill("Payroll playbook");
   await page.locator(".kg-results").getByRole("button").first().click();
   await expect(page.locator(".kg-view > .kg-inspector h2")).toContainText(
     "Payroll playbook",
   );
-  await page.getByRole("button", { name: "Toon alle verbanden" }).click();
-  const dialog = page.getByRole("dialog", { name: "Details en verbanden" });
+  await page.getByRole("button", { name: "Show all connections" }).click();
+  const dialog = page.getByRole("dialog", { name: "Details and connections" });
   await expect(dialog.locator("g.kg-gnode").first()).toBeVisible();
   await dialog.locator(".kg-row").first().click();
-  await dialog.getByRole("button", { name: "← Terug", exact: true }).click();
+  await dialog.getByRole("button", { name: "← Back", exact: true }).click();
   for (const chip of await dialog.locator(".kg-chip").all()) {
     await chip.click();
     await expect(chip).toHaveAttribute("aria-pressed", "false");
@@ -71,21 +73,19 @@ test("knowledge search, graph, filters and dialog navigation", async ({
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   for (const name of [
-    "Waar ontbreekt kennis?",
-    "Verouderd maar gebruikt",
-    "Hangt af van één persoon",
-    "Overzicht",
+    "Where are the knowledge gaps?",
+    "Outdated but still used",
+    "Depends on one person",
+    "Overview",
   ]) {
     await page.getByRole("button", { name, exact: true }).click();
     await expect(
       page.getByRole("button", { name, exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
   }
-  await page.getByRole("button", { name: "Inzoomen", exact: true }).click();
-  await page.getByRole("button", { name: "Uitzoomen", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Passend maken", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await page.getByRole("button", { name: "Zoom out", exact: true }).click();
+  await page.getByRole("button", { name: "Fit to view", exact: true }).click();
 });
 
 test("organisation search opens people and their connections", async ({
@@ -93,7 +93,7 @@ test("organisation search opens people and their connections", async ({
 }) => {
   await page.goto("/organigram");
   const search = page.getByRole("searchbox", {
-    name: "Zoek een collega of team",
+    name: "Search for a colleague or team",
   });
   await search.fill("Emma");
   await page.locator(".kg-results").getByRole("button").first().click();
@@ -101,11 +101,13 @@ test("organisation search opens people and their connections", async ({
     "Emma Peeters",
   );
   await page
-    .getByRole("button", { name: "Toon verbanden", exact: true })
+    .getByRole("button", { name: "Show connections", exact: true })
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator("g.kg-gnode").first()).toBeVisible();
-  await dialog.getByRole("button", { name: "Toon in het organigram" }).click();
+  await dialog
+    .getByRole("button", { name: "Show in organisation chart" })
+    .click();
   await expect(dialog).not.toBeVisible();
   await expect(page.locator(".kg-view > .kg-inspector h2")).toHaveText(
     "Emma Peeters",
@@ -129,12 +131,12 @@ test("live graph has valid links and hunch context opens details", async ({
   expect(hunch).toBeDefined();
   await page.goto(hunch.href!);
   await page
-    .getByRole("button", { name: /^Details en verbanden van / })
+    .getByRole("button", { name: /^Details and connections for / })
     .first()
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator("g.kg-gnode").first()).toBeVisible();
-  await dialog.getByRole("button", { name: "Sluiten", exact: true }).click();
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).not.toBeVisible();
 });
 
@@ -150,11 +152,11 @@ test("mobile pages and graph dialogs fit the screen", async ({ page }) => {
     ).toBeLessThanOrEqual(390);
   }
   await page.goto("/kennisbank?item=d-playbook");
-  await page.getByRole("button", { name: "Toon alle verbanden" }).click();
+  await page.getByRole("button", { name: "Show all connections" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator("g.kg-gnode").first()).toBeVisible();
   const bounds = await dialog.boundingBox();
   expect(bounds!.width).toBeLessThanOrEqual(390);
-  await dialog.getByRole("button", { name: "Sluiten", exact: true }).click();
+  await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).not.toBeVisible();
 });

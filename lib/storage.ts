@@ -9,9 +9,9 @@ export async function extractDocument(
   name: string,
   buffer: Buffer,
 ): Promise<string> {
-  if (!buffer.length) throw new AppError("Dit bestand is leeg.");
+  if (!buffer.length) throw new AppError("This file is empty.");
   if (buffer.length > MAX_FILE_SIZE)
-    throw new AppError("Het bestand is groter dan 10 MB.");
+    throw new AppError("The file is larger than 10 MB.");
   const ext = path.extname(name).toLowerCase();
   let content = "";
   try {
@@ -51,21 +51,21 @@ export async function extractDocument(
       } finally {
         await loadingTask.destroy();
       }
-    } else throw new AppError("Kies een PDF-, TXT-, MD- of DOCX-bestand.");
+    } else throw new AppError("Choose a PDF, TXT, MD or DOCX file.");
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
-      "Dit bestand kon niet worden gelezen. Gebruik een leesbaar PDF-, UTF-8 TXT- of DOCX-bestand.",
+      "This file could not be read. Use a readable PDF, UTF-8 TXT or DOCX file.",
     );
   }
   content = content.replace(/\u0000/g, "").trim();
   if (content.replace(/--\s*\d+ of \d+\s*--/g, "").trim().length < 10)
     throw new AppError(
-      "Geen bruikbare tekst gevonden. Gescande PDF’s hebben eerst tekstherkenning nodig.",
+      "No usable text found. Scanned PDFs need text recognition first.",
     );
   if (content.length > 100000)
     throw new AppError(
-      "Dit document bevat te veel tekst. Gebruik maximaal 100.000 tekens per document.",
+      "This document contains too much text. Use no more than 100,000 characters per document.",
     );
   return content;
 }
@@ -76,7 +76,7 @@ export async function storeFile(
   const key = randomUUID() + path.extname(filename).toLowerCase();
   if (process.env.STORAGE_BACKEND === "gcs") {
     if (!process.env.GCS_BUCKET)
-      throw new AppError("De cloudopslag is nog niet geconfigureerd.", 503);
+      throw new AppError("Cloud storage is not configured yet.", 503);
     await new Storage()
       .bucket(process.env.GCS_BUCKET)
       .file(key)

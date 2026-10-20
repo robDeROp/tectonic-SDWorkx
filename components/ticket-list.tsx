@@ -57,36 +57,36 @@ export function TicketList() {
     <div className="page overview-page">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">Jouw werkplek, met meer zekerheid</div>
+          <div className="eyebrow">Your workspace, with more confidence</div>
           <h1>
-            Welkom terug, Jamie{" "}
+            Welcome back, Jamie{" "}
             <span className="greeting-mark" aria-hidden="true">
               <HunchIcon name="summary" size={22} />
             </span>
           </h1>
-          <p>Elke klantvraag verdient een antwoord dat klopt.</p>
+          <p>Every customer question deserves an accurate answer.</p>
         </div>
         <button className="button primary" onClick={() => setCreating(true)}>
           <Plus size={18} />
-          Nieuwe klantvraag
+          New customer question
         </button>
       </div>
       <section className="hero-panel">
         <div className="hero-copy">
           <span className="hero-kicker">
-            <span className="live-dot" /> Je kennisassistent
+            <span className="live-dot" /> Your knowledge assistant
           </span>
           <h2>
-            Van informatie
+            From information
             <br />
-            naar <mark>vertrouwen.</mark>
+            to <mark>confidence.</mark>
           </h2>
           <p>
-            De juiste bronnen. Een helder oordeel. Een sterker antwoord. <br />
-            Hunch helpt je bij elke stap van de klantvraag.
+            The right sources. A clear assessment. A stronger answer. <br />
+            Hunch helps you at every step of a customer question.
           </p>
           <Link href="/kennisbank" className="hero-link">
-            Ontdek de kennis achter je antwoord
+            Explore the knowledge behind your answer
             <ArrowUpRight size={16} />
           </Link>
         </div>
@@ -94,53 +94,54 @@ export function TicketList() {
       </section>
       <div className="stats-grid">
         <Stat
-          title="Openstaande vragen"
+          title="Open questions"
           value={open}
           icon={<Inbox size={20} />}
           tone="neutral"
-          detail="Klaar om op te pakken"
+          detail="Ready to take on"
         />
         <Stat
-          title="AI aan het werk"
+          title="AI at work"
           value={tickets.filter((t) => t.status === "working").length}
           icon={<HunchIcon name="summary" size={20} />}
           tone="spark"
-          detail="Kennis verzamelen & beoordelen"
+          detail="Gathering & assessing knowledge"
         />
         <Stat
-          title="Vraagt jouw aandacht"
+          title="Needs your attention"
           value={tickets.filter((t) => t.status === "attention").length}
           icon={<AlertCircle size={20} />}
           tone="attention"
-          detail="Jouw expertise maakt het verschil"
+          detail="Your expertise makes the difference"
         />
         <Stat
-          title="Afgehandeld"
+          title="Completed"
           value={tickets.filter((t) => t.status === "sent").length}
           icon={<CheckCheck size={20} />}
           tone="success"
-          detail="Antwoorden gecontroleerd"
+          detail="Answers checked"
         />
       </div>
       <section className="queue-section">
         <div className="section-title-row">
           <div>
             <h2>
-              Klantvragen <span className="count-badge">{tickets.length}</span>
+              Customer questions{" "}
+              <span className="count-badge">{tickets.length}</span>
             </h2>
-            <p>Van de eerste vraag tot een onderbouwd antwoord.</p>
+            <p>From the first question to an answer backed by evidence.</p>
           </div>
           <span className="subtle-label">
             <span className="live-dot" />
-            Live overzicht
+            Live overview
           </span>
         </div>
         <div className="queue-toolbar">
           <div className="tabs">
             {[
-              ["all", "Alle vragen"],
-              ["open", "Openstaand"],
-              ["sent", "Afgehandeld"],
+              ["all", "All questions"],
+              ["open", "Open"],
+              ["sent", "Completed"],
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -155,8 +156,8 @@ export function TicketList() {
           <label className="search-field">
             <Search size={17} />
             <input
-              aria-label="Zoek klantvragen"
-              placeholder="Zoek een klantvraag…"
+              aria-label="Search customer questions"
+              placeholder="Search for a customer question…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -165,18 +166,18 @@ export function TicketList() {
         {error && <ErrorNotice error={error} onRetry={load} />}
         <div className="ticket-table">
           <div className="table-heading">
-            <span>Klantvraag</span>
-            <span>Klant</span>
+            <span>Customer question</span>
+            <span>Customer</span>
             <span>Status</span>
             <span>
-              Ontvangen <ArrowDown size={12} />
+              Received <ArrowDown size={12} />
             </span>
             <span />
           </div>
           {loading ? (
             <div className="empty-state">
               <Spinner />
-              Klantvragen laden…
+              Loading customer questions…
             </div>
           ) : filtered.length ? (
             filtered.map((t) => (
@@ -189,12 +190,12 @@ export function TicketList() {
                         TKT-{String(t.number).padStart(4, "0")}
                       </span>
                       <span aria-hidden="true">·</span>
-                      Payroll België
+                      Payroll Belgium
                     </span>
                     <strong>{t.subject}</strong>
                     <span className="ticket-description">
                       {t.isDemo
-                        ? "Eindafrekening, vakantiedagen en vakantieattest"
+                        ? "Final settlement, holiday entitlement and holiday certificate"
                         : t.question.slice(0, 65)}
                     </span>
                   </div>
@@ -222,40 +223,38 @@ export function TicketList() {
           ) : (
             <div className="empty-state">
               <Pip state="idle" size={80} />
-              <strong>Niets gevonden</strong>
-              <span>
-                Pas je zoekopdracht aan of maak een nieuwe klantvraag.
-              </span>
+              <strong>Nothing found</strong>
+              <span>Adjust your search or create a new customer question.</span>
             </div>
           )}
         </div>
         <div className="table-footer">
           <span>
-            {filtered.length} van {tickets.length} klantvragen
+            {filtered.length} of {tickets.length} customer questions
           </span>
-          <span>Belgische payroll · Demonstratieomgeving</span>
+          <span>Belgian payroll · Demo environment</span>
         </div>
       </section>
       <div className="workflow-explainer">
         <div className="workflow-intro">
-          <span className="section-overline">Zo werkt Hunch</span>
+          <span className="section-overline">How Hunch works</span>
           <h3>
-            Jij houdt de regie. <br />
-            AI helpt je vooruit.
+            You stay in control. <br />
+            AI helps you move forward.
           </h3>
         </div>
         {[
           {
             n: "01",
             icon: <GlyphTile kind="docs" />,
-            title: "Vind de juiste kennis",
-            text: "Relevante documenten bij jouw klantvraag.",
+            title: "Find the right knowledge",
+            text: "Relevant documents for your customer's question.",
           },
           {
             n: "02",
             icon: <GlyphTile kind="summary" />,
-            title: "Begrijp wat je kunt vertrouwen",
-            text: "Bronnen, actualiteit en conflicten in beeld.",
+            title: "Understand what you can trust",
+            text: "See sources, freshness and conflicts at a glance.",
           },
           {
             n: "03",
@@ -264,8 +263,8 @@ export function TicketList() {
                 <ShieldCheck size={20} />
               </span>
             ),
-            title: "Antwoord met zekerheid",
-            text: "Een extra controle voor je op verzenden drukt.",
+            title: "Answer with confidence",
+            text: "An extra check before you press send.",
           },
         ].map(({ n, icon, title, text }) => (
           <div className="workflow-item" key={n}>
@@ -322,8 +321,8 @@ function NewTicket({
   const [error, setError] = useState("");
   return (
     <Modal
-      title="Nieuwe klantvraag"
-      subtitle="Hunch start het documentonderzoek automatisch."
+      title="New customer question"
+      subtitle="Hunch starts researching documents automatically."
       onClose={onClose}
     >
       <form
@@ -346,7 +345,7 @@ function NewTicket({
       >
         <div className="form-grid">
           <label>
-            Klantnaam
+            Customer name
             <input
               name="customer"
               required
@@ -356,7 +355,7 @@ function NewTicket({
             />
           </label>
           <label>
-            Organisatie
+            Organisation
             <input
               name="company"
               required
@@ -367,7 +366,7 @@ function NewTicket({
           </label>
         </div>
         <label>
-          E-mailadres
+          Email address
           <input
             name="email"
             type="email"
@@ -377,38 +376,38 @@ function NewTicket({
           />
         </label>
         <label>
-          Onderwerp
+          Subject
           <input
             name="subject"
             required
             minLength={3}
             maxLength={160}
-            placeholder="Waar gaat de klantvraag over?"
+            placeholder="What is the customer's question about?"
           />
         </label>
         <label>
-          Klantvraag
+          Customer question
           <textarea
             name="question"
             required
             minLength={10}
             maxLength={10000}
             rows={5}
-            placeholder="Voeg de volledige klantvraag toe…"
+            placeholder="Add the full customer question…"
           />
         </label>
         <div className="inline-info">
           <HunchIcon name="summary" size={16} />
-          Deze demo gebruikt drie fictieve bronnen over Belgisch
-          vertrekvakantiegeld.
+          This demo uses three fictional sources about Belgian departure holiday
+          pay.
         </div>
         {error && <ErrorNotice error={error} />}
         <div className="modal-actions">
           <button type="button" className="button secondary" onClick={onClose}>
-            Annuleren
+            Cancel
           </button>
           <button className="button primary" disabled={busy}>
-            {busy ? <Spinner /> : <Plus size={17} />}Klantvraag aanmaken
+            {busy ? <Spinner /> : <Plus size={17} />}Create customer question
           </button>
         </div>
       </form>

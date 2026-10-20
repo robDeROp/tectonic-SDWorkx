@@ -196,7 +196,7 @@ function OrgChart({
       .select(el)
       .insert("svg", ":first-child")
       .attr("role", "img")
-      .attr("aria-label", "Organigram") as d3.Selection<
+      .attr("aria-label", "Organisation chart") as d3.Selection<
       SVGSVGElement,
       unknown,
       null,
@@ -342,7 +342,7 @@ function OrgChart({
           .attr("stroke", "#fff")
           .attr("stroke-width", 1.5);
       g.append("title").text(
-        `${p.name} · ${p.role}${made ? ` · ${made} kennisitems` : ""}${p.awayUntil ? " · afwezig" : ""}`,
+        `${p.name} · ${p.role}${made ? ` · ${made} knowledge items` : ""}${p.awayUntil ? " · away" : ""}`,
       );
     };
     const card = (g: G, n: ONode) => {
@@ -401,7 +401,7 @@ function OrgChart({
         .attr("x", UW - 16)
         .attr("y", 19)
         .attr("text-anchor", "end")
-        .text(fmt(st.size) + " pers.");
+        .text(fmt(st.size) + "people");
       g.append("text")
         .attr("class", "kg-t1")
         .attr("x", 14)
@@ -415,8 +415,8 @@ function OrgChart({
         .text(
           trunc(
             head
-              ? "Leiding: " + head.name
-              : `${kids} ${u.level === 0 ? (kids === 1 ? "afdeling" : "afdelingen") : kids === 1 ? "team" : "teams"}`,
+              ? "Manager: " + head.name
+              : `${kids} ${u.level === 0 ? (kids === 1 ? "department" : "departments") : kids === 1 ? "team" : "teams"}`,
             34,
           ),
         );
@@ -449,7 +449,7 @@ function OrgChart({
       b.append("circle").attr("r", 14);
       b.append("text").attr("text-anchor", "middle").attr("dy", "0.36em");
       g.append("title").text(
-        `${u.name} · ${fmt(st.size)} medewerkers${head ? ` · leiding: ${head.name}` : ""}`,
+        `${u.name} · ${fmt(st.size)} employees${head ? ` · manager: ${head.name}` : ""}`,
       );
     };
     const selN = o.gn
@@ -632,26 +632,26 @@ function OrgChart({
           <div className="kg-stats">
             <div className="kg-stat">
               <b>{fmt(st.size)}</b>
-              <span>mensen</span>
+              <span>people</span>
             </div>
             <div className="kg-stat">
               <b>{kids.length || model.membersOf(u.id).length}</b>
               <span>
                 {kids.length
                   ? u.level === 0
-                    ? "afdelingen"
+                    ? "departments"
                     : "teams"
-                  : "teamleden"}
+                  : "team members"}
               </span>
             </div>
             <div className="kg-stat">
               <b>{fmt(tot)}</b>
-              <span>kennisitems</span>
+              <span>knowledge items</span>
             </div>
           </div>
           {tot > 0 && (
             <>
-              <h3>Kennismix</h3>
+              <h3>Knowledge mix</h3>
               <div className="kg-mix">
                 {ITEM_TYPES.map((t) => (
                   <i
@@ -675,9 +675,7 @@ function OrgChart({
           )}
           {tops.length > 0 && (
             <>
-              <h3>
-                Waar dit {u.level === 2 ? "team" : "onderdeel"} over schrijft
-              </h3>
+              <h3>What this {u.level === 2 ? "team" : "unit"} writes about</h3>
               <div className="kg-rows">
                 {tops.map(([id, k]) => {
                   const t = model.topic(id);
@@ -707,7 +705,7 @@ function OrgChart({
           )}
           {sharers.length > 0 && (
             <>
-              <h3>Grootste kennisdelers</h3>
+              <h3>Top knowledge contributors</h3>
               <div className="kg-rows">
                 {sharers.map((p) => (
                   <button
@@ -736,7 +734,7 @@ function OrgChart({
                 className="kg-btn kg-primary"
                 onClick={() => onDetails({ kind: "person", id: head.id })}
               >
-                Verbanden van {head.first}
+                Connections for {head.first}
               </button>
             </div>
           )}
@@ -768,9 +766,9 @@ function OrgChart({
               </svg>
               <input
                 type="search"
-                placeholder="Zoek een collega of team"
+                placeholder="Search for a colleague or team"
                 autoComplete="off"
-                aria-label="Zoek een collega of team"
+                aria-label="Search for a colleague or team"
                 value={q}
                 onChange={(e) => {
                   setQ(e.target.value);
@@ -819,20 +817,19 @@ function OrgChart({
                     </button>
                   ))
                 ) : (
-                  <div className="kg-empty">Niemand gevonden voor “{q}”.</div>
+                  <div className="kg-empty">No one found for “{q}”.</div>
                 )}
               </div>
             )}
           </div>
           <div className="kg-org-stats">
-            <b>{fmt(model.people.length)}</b> medewerkers · <b>{nDepts}</b>{" "}
-            afdelingen · <b>{nTeams}</b> teams
+            <b>{fmt(model.people.length)}</b> employees · <b>{nDepts}</b>{" "}
+            departments · <b>{nTeams}</b> teams
           </div>
         </div>
         <div className="kg-canvas kg-dotgrid" ref={stage}>
           <div className="kg-legend-note">
-            Klik op een kaart om open te klappen · de gekleurde lijn toont de
-            kennismix
+            Click a card to expand · the coloured line shows the knowledge mix
           </div>
           <ZoomControls
             onZoom={(z) => {
@@ -870,7 +867,7 @@ export function KnowledgeOrgChart({ start }: { start: Sel | null }) {
               <ErrorNotice error={error} onRetry={retry} />
             ) : (
               <>
-                <Spinner /> Organigram laden…
+                <Spinner /> Loading organisation chart…
               </>
             )}
           </div>

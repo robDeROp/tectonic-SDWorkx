@@ -33,7 +33,7 @@ export function hrefFor(g: Go): string | null {
 
 const label = (m: Model, f: Focus) =>
   (f.kind === "person" ? m.person(f.id)?.name : m.item(f.id)?.title) ??
-  "Onbekend";
+  "Unknown";
 
 /**
  * Graph on the left, details on the right. Clicking a node or a row jumps to
@@ -77,9 +77,9 @@ function Explorer({
   if (!ego)
     return (
       <div className="kg-modal-empty">
-        <p>Voor dit item zijn nog geen details in de kennisgraaf.</p>
+        <p>There are no details for this item in the knowledge graph yet.</p>
         <button type="button" className="kg-btn" onClick={onClose}>
-          Sluiten
+          Close
         </button>
       </div>
     );
@@ -108,7 +108,7 @@ function Explorer({
               </div>
             </div>
           )}
-          <div className="kg-chips" aria-label="Toon of verberg soorten">
+          <div className="kg-chips" aria-label="Show or hide types">
             {GROUP_ORDER.filter((g) => counts[g]).map((g) => (
               <button
                 key={g}
@@ -138,7 +138,7 @@ function Explorer({
               className="kg-back"
               onClick={() => back(history.length - 1)}
             >
-              ← Terug
+              ← Back
             </button>
           )}
           {skipped > 0 && (
@@ -156,7 +156,7 @@ function Explorer({
             </span>
           ))}
           {!history.length && (
-            <span className="kg-sep kg-muted">Je bekijkt</span>
+            <span className="kg-sep kg-muted">You're viewing</span>
           )}
           <span className="kg-cur">{trunc(label(model, current), 44)}</span>
           {!atStart && (
@@ -168,7 +168,7 @@ function Explorer({
                 setCurrent(start);
               }}
             >
-              Terug naar het startpunt
+              Back to the starting point
             </button>
           )}
         </div>
@@ -187,7 +187,7 @@ function Explorer({
         <button
           type="button"
           className="kg-close"
-          aria-label="Sluiten"
+          aria-label="Close"
           onClick={onClose}
         >
           <X size={18} />
@@ -233,7 +233,7 @@ export function KnowledgeDetailsModal({
     <dialog
       ref={dialog}
       className="kg-modal"
-      aria-label="Details en verbanden"
+      aria-label="Details and connections"
       onCancel={(e) => {
         e.preventDefault();
         onClose();
@@ -256,13 +256,13 @@ export function KnowledgeDetailsModal({
             <ErrorNotice error={error} onRetry={retry} />
           ) : (
             <>
-              <Spinner /> Kennisgraaf laden…
+              <Spinner /> Loading knowledge graph…
             </>
           )}
           <button
             type="button"
             className="kg-close kg-close-static"
-            aria-label="Sluiten"
+            aria-label="Close"
             onClick={onClose}
           >
             <X size={18} />

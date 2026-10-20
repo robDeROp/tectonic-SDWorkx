@@ -55,7 +55,7 @@ const source: KnowledgeSource = {
       number: 1042,
       customer: "Sophie De Smet",
       company: "Atelier Noord",
-      subject: "Vakantiegeld bij uitdiensttreding",
+      subject: "Holiday pay on termination of employment",
       question: "Beste SD Worx,\n\nHoe verwerken we zijn vertrekvakantiegeld?",
       status: "open",
       updatedAt: at,
@@ -75,7 +75,9 @@ const source: KnowledgeSource = {
 };
 const graph = buildKnowledgeGraph(source, now);
 const item = (id: string) => graph.items.find((i) => i.id === id)!;
-const archive = graph.items.find((i) => i.title.startsWith("FAQ vakantie"))!;
+const archive = graph.items.find((i) =>
+  i.title.startsWith("Holiday & departure FAQ"),
+)!;
 
 describe("kennisgraaf", () => {
   it("builds the organisation from the directory: org, departments, teams", () => {
@@ -103,8 +105,8 @@ describe("kennisgraaf", () => {
       to: archive.id,
       rel: "supersedes",
     });
-    expect(archive.fresh.label).toBe("Vervangen");
-    expect(item("d-playbook").fresh.label).toBe("Actueel");
+    expect(archive.fresh.label).toBe("Superseded");
+    expect(item("d-playbook").fresh.label).toBe("Current");
   });
   it("links a hunch to its sources, helpers and suggested experts", () => {
     const h = item("h1");
@@ -158,13 +160,20 @@ describe("kennisgraaf", () => {
 
 describe("kennisgraaf helpers", () => {
   it("rates freshness by age", () => {
-    expect(freshness("2026-01-01", false, now).label).toBe("Actueel");
-    expect(freshness("2024-06-01", false, now).label).toBe("Nakijken");
-    expect(freshness("2021-02-12", false, now).label).toBe("Verouderd");
-    expect(freshness("2026-01-01", true, now).label).toBe("Vervangen");
+    expect(freshness("2026-01-01", false, now).label).toBe("Current");
+    expect(freshness("2024-06-01", false, now).label).toBe("Needs review");
+    expect(freshness("2021-02-12", false, now).label).toBe("Outdated");
+    expect(freshness("2026-01-01", true, now).label).toBe("Superseded");
   });
   it("recognises topics and strips document disclaimers", () => {
     expect(topicFor("Toegang tot de payroll-API")).toBe("api");
+    expect(topicFor("Accessing payroll data through the API")).toBe("api");
+    expect(topicFor("Holiday certificate for a part-time employee")).toBe(
+      "vertrek",
+    );
+    expect(topicFor("Final settlement and salary history")).toBe("eind");
+    expect(topicFor("Payroll engine calculation rule")).toBe("loonmotor");
+    expect(topicFor("Customer communication and newsletter")).toBe("comms");
     expect(topicFor("Iets heel anders")).toBe("overig");
     expect(excerpt("FICTIEF MATERIAAL — geen advies. De kern.")).toBe(
       "De kern.",

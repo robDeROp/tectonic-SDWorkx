@@ -58,23 +58,20 @@ export function HunchProposedActions({ hunch }: { hunch: HunchDetail }) {
     }
   }
   return (
-    <section
-      className="panel proposed-actions"
-      aria-label="Voorgestelde acties"
-    >
+    <section className="panel proposed-actions" aria-label="Suggested actions">
       <div className="panel-head">
         <h2>
-          <Sparkles size={20} /> Voorgestelde acties
+          <Sparkles size={20} /> Suggested actions
         </h2>
-        {plan && <span className="section-overline">Opgesteld met Gemini</span>}
+        {plan && <span className="section-overline">Created with Gemini</span>}
       </div>
       <p className="panel-intro">
-        Concrete volgende stappen op basis van de mensen, documenten, gesprekken
-        en eerdere hunches bij je vraag.
+        Concrete next steps based on the people, documents, conversations and
+        previous hunches related to your question.
       </p>
       {loading && (
         <p role="status">
-          <Spinner /> Voorstellen laden…
+          <Spinner /> Loading suggestions…
         </p>
       )}
       {error && <ErrorNotice error={error} />}
@@ -85,7 +82,9 @@ export function HunchProposedActions({ hunch }: { hunch: HunchDetail }) {
           onClick={() => void generate()}
         >
           {busy ? <Spinner /> : <Sparkles size={16} />}
-          {busy ? "Gemini stelt acties voor…" : "Acties voorstellen met Gemini"}
+          {busy
+            ? "Gemini is suggesting actions…"
+            : "Suggest actions with Gemini"}
         </button>
       )}
       {plan && (
@@ -100,13 +99,13 @@ export function HunchProposedActions({ hunch }: { hunch: HunchDetail }) {
                   <p className="proposed-contact">
                     {action.person.name}
                     {action.person.awayUntil &&
-                      ` · Afwezig tot ${new Date(action.person.awayUntil).toLocaleDateString("nl-BE")}`}
+                      ` · Away until ${new Date(action.person.awayUntil).toLocaleDateString("en-GB")}`}
                   </p>
                 )}
                 <details>
                   <summary>
-                    Gebaseerd op {action.evidence.length}{" "}
-                    {action.evidence.length === 1 ? "bron" : "bronnen"}
+                    Based on {action.evidence.length}{" "}
+                    {action.evidence.length === 1 ? "source" : "sources"}
                   </summary>
                   {action.evidence.map((evidence, evidenceIndex) => {
                     const source = plan.sources.find(
@@ -132,8 +131,8 @@ export function HunchProposedActions({ hunch }: { hunch: HunchDetail }) {
         </ol>
       )}
       <p className="help-footnote">
-        Jij kiest wat je doet. Deze voorstellen versturen geen berichten en
-        wijzigen niets aan je hunch.
+        You choose what to do. These suggestions don't send messages or change
+        your hunch.
       </p>
     </section>
   );

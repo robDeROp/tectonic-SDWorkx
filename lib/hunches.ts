@@ -15,6 +15,7 @@ import {
   type Employee,
 } from "./directory";
 import type { ContextLink, HunchContextView, PersonView } from "./types";
+import { matchesKeyword } from "./keywords";
 
 /** How often a call for help may be passed on before it stops. */
 export const MAX_PASSES = 2;
@@ -76,15 +77,10 @@ export function outsiderView(name: string, detail: string | null): PersonView {
 
 /** Keywords found in the text, matched at the start of a word. */
 function hitsIn(text: string, keywords: string[]) {
-  return [...new Set(keywords)].filter((k) =>
-    new RegExp(
-      `(^|[^\\p{L}])${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`,
-      "iu",
-    ).test(text),
-  );
+  return [...new Set(keywords)].filter((k) => matchesKeyword(text, k));
 }
 const recognised = (hits: string[]) =>
-  `Herkend: ${hits.slice(0, 3).join(", ")}`;
+  `Matched: ${hits.slice(0, 3).join(", ")}`;
 const top = <T extends { relevance: number }>(items: T[], n: number) =>
   items.sort((a, b) => b.relevance - a.relevance).slice(0, n);
 
@@ -131,7 +127,7 @@ export function findContext(
           kind: "person",
           refId: e.id,
           relevance: 40,
-          reason: "Werkt in je team volgens Entra",
+          reason: "Works in your team according to Entra",
         });
 
   const items = <T extends { id: string; keywords: string[] }>(

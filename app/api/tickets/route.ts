@@ -5,14 +5,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const GET = () => api(listTickets);
 const schema = z.object({
-  customer: z.string().trim().min(2, "Vul een klantnaam in.").max(100),
-  company: z.string().trim().min(2, "Vul een organisatie in.").max(120),
-  email: z.email("Vul een geldig e-mailadres in.").max(254),
-  subject: z.string().trim().min(3, "Vul een onderwerp in.").max(160),
+  customer: z.string().trim().min(2, "Enter a customer name.").max(100),
+  company: z.string().trim().min(2, "Enter an organisation.").max(120),
+  email: z.email("Enter a valid email address.").max(254),
+  subject: z.string().trim().min(3, "Enter a subject.").max(160),
   question: z
     .string()
     .trim()
-    .min(10, "Beschrijf de klantvraag in minstens 10 tekens.")
+    .min(10, "Describe the customer's question in at least 10 characters.")
     .max(10000),
 });
 export const POST = (request: Request) =>

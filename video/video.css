@@ -1,0 +1,52 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.hunch-film {
+  font-family: "Figtree Variable", sans-serif;
+  font-size: 30px;
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hunch-film h1,
+.hunch-film h2,
+.hunch-film h3,
+.hunch-film p {
+  margin: 0;
+}
+
+.hunch-film h1,
+.hunch-film h2,
+.hunch-film h3,
+.hunch-film .display {
+  font-family: "Bricolage Grotesque Variable", sans-serif;
+  font-weight: 750;
+  font-variation-settings: "opsz" 48;
+}
+
+.hunch-film svg {
+  flex-shrink: 0;
+}
+
+.hunch-film .eyebrow {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.hunch-film .muted {
+  color: #4f666b;
+}
+
+.hunch-film .card {
+  border: 2px solid #e6d5be;
+  background: white;
+  border-radius: 26px;
+  box-shadow: 0 12px 36px rgba(18, 52, 59, 0.055);
+}

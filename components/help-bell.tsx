@@ -39,7 +39,7 @@ export function HelpBell() {
     <div className="help-bell" ref={root}>
       <button
         className="icon-button"
-        aria-label={`Hulpvragen voor jou: ${items.length}`}
+        aria-label={`Help requests for you: ${items.length}`}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
@@ -47,8 +47,8 @@ export function HelpBell() {
         {!!items.length && <span className="bell-count">{items.length}</span>}
       </button>
       {open && (
-        <div className="bell-popover" role="dialog" aria-label="Hulpvragen">
-          <strong className="bell-title">Hulpvragen voor jou</strong>
+        <div className="bell-popover" role="dialog" aria-label="Help requests">
+          <strong className="bell-title">Help requests for you</strong>
           {items.length ? (
             items.map((n) => (
               <Link
@@ -58,7 +58,7 @@ export function HelpBell() {
               >
                 <Avatar person={n.from} small />
                 <span>
-                  <strong>{n.from.name} vraagt je hulp</strong>
+                  <strong>{n.from.name} is asking for your help</strong>
                   <span>{n.title}</span>
                   <small>
                     {hunchNumber(n.number)} · {n.from.team} ·{" "}
@@ -70,7 +70,7 @@ export function HelpBell() {
           ) : (
             <div className="bell-empty">
               <Pip state="idle" size={56} />
-              Niemand wacht op je. Rustig.
+              No one is waiting for you. Take a breather.
             </div>
           )}
         </div>

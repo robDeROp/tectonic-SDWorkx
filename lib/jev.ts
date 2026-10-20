@@ -69,7 +69,7 @@ export async function assessWithJev(
   const config = jevConfiguration();
   if (!config.configured)
     throw new AppError(
-      "Jev is nog niet verbonden. Stel JEV_KEY in en probeer opnieuw.",
+      "Jev is not connected yet. Set JEV_KEY and try again.",
       503,
     );
   const assessedAt = new Date().toISOString();
@@ -116,16 +116,16 @@ export async function assessWithJev(
           if (!response.ok) {
             if (response.status === 401 || response.status === 403)
               throw new AppError(
-                "Jev weigert de verbinding. Controleer de JEV_KEY en TypeSafe-toegang.",
+                "Jev refused the connection. Check JEV_KEY and TypeSafe access.",
                 503,
               );
             if (response.status === 429 || response.status >= 500)
               throw new AppError(
-                "Jev is tijdelijk niet beschikbaar of de aanvraaglimiet is bereikt. Probeer later opnieuw.",
+                "Jev is temporarily unavailable or the request limit has been reached. Please try again later.",
                 503,
               );
             throw new AppError(
-              "Jev kon de documenten niet beoordelen. Controleer de modelconfiguratie en documentgrootte.",
+              "Jev could not assess the documents. Check the model configuration and document size.",
               502,
             );
           }
@@ -147,7 +147,7 @@ export async function assessWithJev(
           if (error instanceof AppError) throw error;
           // Never log request headers, keys, source content or upstream response bodies.
           throw new AppError(
-            "Jev kon geen volledige, geldige beoordeling leveren. Probeer opnieuw.",
+            "Jev could not return a complete, valid assessment. Please try again.",
             502,
           );
         }

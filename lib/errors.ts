@@ -8,5 +8,5 @@ export class AppError extends Error {
 }
 export function publicError(error: unknown): string {
   if (error instanceof AppError) return error.message;
-  return "De verwerking is mislukt. Controleer de verbinding en probeer opnieuw.";
+  return "Processing failed. Check the connection and try again.";
 }

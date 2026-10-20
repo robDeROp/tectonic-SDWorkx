@@ -8,8 +8,8 @@ const input: JobInput = {
   documents: [
     {
       id: "doc-1",
-      name: "Bron",
-      kind: "Intern",
+      name: "Source",
+      kind: "Internal",
       date: null,
       content: "Bezorg een vakantieattest. Controleer de loonhistoriek.",
       fictional: true,
@@ -20,8 +20,8 @@ const assessment = {
   documentId: "doc-1",
   score: 90,
   summary: "Relevant",
-  source: "Intern",
-  age: "Onbekend",
+  source: "Internal",
+  age: "Unknown",
   relevance: "Belgische bediende",
   contradictions: [],
 };

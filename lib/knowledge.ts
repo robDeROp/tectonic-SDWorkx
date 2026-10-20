@@ -18,6 +18,7 @@ import {
 } from "./directory";
 import { findContext, personView } from "./hunches";
 import { hunchStatusLabel, statusLabel } from "./client";
+import { matchesKeyword } from "./keywords";
 import type {
   ContextLink,
   Freshness,
@@ -74,99 +75,96 @@ export type KnowledgeSource = {
 const TOPICS: (GraphTopic & { keywords: string[] })[] = [
   {
     id: "vertrek",
-    name: "Vakantiegeld & vertrek",
-    short: "vakantiegeld bij vertrek",
+    name: "Holiday pay & departure",
+    short: "departure holiday pay",
     c: [-0.62, -0.12],
     keywords: [
-      "vakantiegeld",
-      "vertrekvakantiegeld",
-      "vakantieattest",
-      "vakantiedagen",
-      "vakantie",
-      "bediende",
-      "deeltijds",
+      "holiday pay",
+      "departure holiday pay",
+      "holiday certificate",
+      "holiday entitlement",
+      "holiday",
+      "white-collar employee",
+      "part-time",
     ],
   },
   {
     id: "eind",
-    name: "Eindafrekening",
-    short: "eindafrekening",
+    name: "Final settlement",
+    short: "final settlement",
     c: [-0.18, -0.6],
     keywords: [
-      "eindafrekening",
-      "uitdiensttreding",
-      "uit dienst",
-      "ontslag",
+      "final settlement",
+      "termination of employment",
+      "leaving employment",
+      "dismissal",
       "checklist",
-      "loonhistoriek",
+      "salary history",
     ],
   },
   {
     id: "loonmotor",
-    name: "Loonmotor & rekenregels",
-    short: "loonmotor",
+    name: "Payroll engine & calculation rules",
+    short: "payroll engine",
     c: [0.42, -0.34],
     keywords: [
-      "loonmotor",
-      "rekenregel",
+      "payroll engine",
+      "calculation rule",
       "code",
       "pipeline",
       "devops",
       "deploy",
       "pull request",
-      "architectuur",
-      "testcas",
+      "architecture",
+      "test case",
       "pr 1842",
     ],
   },
   {
     id: "api",
-    name: "API & integraties",
-    short: "API-koppeling",
+    name: "API & integrations",
+    short: "API integration",
     c: [0.56, 0.36],
     keywords: [
       "api",
       "endpoint",
-      "integratie",
-      "versiebeheer",
+      "integration",
+      "versioning",
       "breaking",
-      "loongegevens",
-      "testomgeving",
-      "koppel",
+      "payroll data",
+      "test environment",
+      "connect",
     ],
   },
   {
     id: "comms",
-    name: "Klantcommunicatie",
-    short: "klantcommunicatie",
+    name: "Customer communications",
+    short: "customer communications",
     c: [-0.32, 0.52],
     keywords: [
-      "campagne",
-      "nieuwsbrief",
-      "communicatie",
-      "klantcommunicatie",
-      "doelgroep",
+      "campaign",
+      "newsletter",
+      "communication",
+      "customer communication",
+      "audience",
       "marketing",
       "mailing",
       "webinar",
       "content",
-      "indexering",
+      "indexation",
       "tone of voice",
     ],
   },
 ];
 const OTHER: GraphTopic = {
   id: "overig",
-  name: "Overige vragen",
-  short: "overige vragen",
+  name: "Other questions",
+  short: "other questions",
   c: [0.08, 0.04],
 };
 
-const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const hits = (text: string, keywords: string[]) =>
-  keywords.filter((k) =>
-    new RegExp(`(^|[^\\p{L}])${escape(k)}`, "iu").test(text),
-  ).length;
+  keywords.filter((k) => matchesKeyword(text, k)).length;
 
 export function topicFor(text: string) {
   let best: GraphTopic = OTHER;
@@ -184,11 +182,11 @@ export function freshness(
   superseded: boolean,
   now: Date,
 ): Freshness {
-  if (superseded) return { k: "old", label: "Vervangen" };
+  if (superseded) return { k: "old", label: "Superseded" };
   const age = (now.getTime() - Date.parse(date)) / YEAR;
-  if (age < 1) return { k: "ok", label: "Actueel" };
-  if (age < 3) return { k: "warn", label: "Nakijken" };
-  return { k: "old", label: "Verouderd" };
+  if (age < 1) return { k: "ok", label: "Current" };
+  if (age < 3) return { k: "warn", label: "Needs review" };
+  return { k: "old", label: "Outdated" };
 }
 
 /** Document names as people write them: without extension or case. */
@@ -307,12 +305,11 @@ export function buildKnowledgeGraph(
         title: row.name.replace(/\.(txt|pdf|docx?|md)$/i, ""),
         date: row.date ?? day(row.createdAt),
         authorId: null,
-        authorLabel: "Bron bij een klantvraag",
+        authorLabel: "Source for a customer question",
         participants: [],
         experts: [],
-        source:
-          row.kind === "Wetgevingsgericht" ? "Regelgeving" : "Bronbestand",
-        location: "Klantvragen",
+        source: row.kind === "Legislative" ? "Legislation" : "Source file",
+        location: "Customer questions",
         summary: "",
         refs: [],
         fictional: row.fictional,
@@ -367,7 +364,7 @@ export function buildKnowledgeGraph(
       refs: discussed.map(({ d, shared }) => ({
         to: d.id,
         rel: "discusses" as const,
-        reason: `Gedeelde trefwoorden: ${shared.slice(0, 3).join(", ")}`,
+        reason: `Shared keywords: ${shared.slice(0, 3).join(", ")}`,
       })),
       fictional: true,
       status: null,
@@ -449,10 +446,10 @@ export function buildKnowledgeGraph(
       authorLabel: `${t.customer} · ${t.company}`,
       participants: [...new Set(helpers)],
       experts: [],
-      source: "Klantvragen",
-      location: `Klantvraag #${t.number}`,
+      source: "Customer questions",
+      location: `Customer question #${t.number}`,
       summary: excerpt(
-        t.question.replace(/^(beste|dag|hallo)[^,\n]*,?\s*/i, ""),
+        t.question.replace(/^(dear|hi|hello|beste|dag|hallo)[^,\n]*,?\s*/i, ""),
         220,
       ),
       refs: [...new Set(ticketDocs.get(t.id) ?? [])].map((to) => ({
@@ -487,7 +484,7 @@ export function buildKnowledgeGraph(
       refs,
       summary:
         d.summary ||
-        `Staat in ${d.source} › ${d.location}.${owner ? ` Eigenaar: ${owner.displayName}.` : ""}`,
+        `Located in ${d.source} › ${d.location}.${owner ? ` Owner: ${owner.displayName}.` : ""}`,
       topic: docTopic.get(source?.to ?? d.id) ?? topicFor(text),
       fresh: freshness(d.date, superseded.has(d.id), now),
     };

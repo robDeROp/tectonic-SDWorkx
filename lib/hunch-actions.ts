@@ -40,7 +40,7 @@ export function hunchActionInput(hunch: HunchDetail) {
         .map((item) => item.signal)
         .join(
           ". ",
-        )}${person.awayUntil ? ` Afwezig tot ${person.awayUntil.slice(0, 10)}.` : " Beschikbaar."}`,
+        )}${person.awayUntil ? ` Away until ${person.awayUntil.slice(0, 10)}.` : " Available."}`,
     });
   for (const document of hunch.context.documents) {
     const ownerId = findDocument(document.id)?.ownerId;
@@ -49,7 +49,7 @@ export function hunchActionInput(hunch: HunchDetail) {
       label: document.name,
       kind: "document",
       personIds: ownerId ? [ownerId] : [],
-      detail: `Document: ${document.name}. Eigenaar: ${document.owner}. Bron: ${document.source}. Locatie: ${document.location}. ${document.reason}. Alleen metadata beschikbaar; de documentinhoud is niet meegeleverd.`,
+      detail: `Document: ${document.name}. Owner: ${document.owner}. Source: ${document.source}. Location: ${document.location}. ${document.reason}. Only metadata is available; the document contents were not supplied.`,
     });
   }
   for (const conversation of hunch.context.conversations)
@@ -58,7 +58,7 @@ export function hunchActionInput(hunch: HunchDetail) {
       label: conversation.title,
       kind: "conversation",
       personIds: conversation.participants.map((person) => person.id),
-      detail: `${conversation.title} · ${conversation.channel} · ${conversation.location}. Deelnemers: ${conversation.participants.map((person) => person.name).join(", ")}. ${conversation.snippet}`,
+      detail: `${conversation.title} · ${conversation.channel} · ${conversation.location}. Participants: ${conversation.participants.map((person) => person.name).join(", ")}. ${conversation.snippet}`,
     });
   for (const related of hunch.relatedHunches)
     sources.push({
@@ -70,12 +70,12 @@ export function hunchActionInput(hunch: HunchDetail) {
         ...(related.helper ? [related.helper.id] : []),
       ],
       href: `/hunches/${related.id}`,
-      detail: `${related.title}. Vraag: ${related.workingOn}. Auteur: ${related.author.name}. Status: ${related.status}.${related.helper ? ` Helper: ${related.helper.name}.` : ""}`,
+      detail: `${related.title}. Question: ${related.workingOn}. Author: ${related.author.name}. Status: ${related.status}.${related.helper ? ` Helper: ${related.helper.name}.` : ""}`,
     });
   for (const message of hunch.messages.slice(-20))
     sources.push({
       id: `message:${message.id}`,
-      label: `Bericht van ${message.author.name}`,
+      label: `Message from ${message.author.name}`,
       kind: "message",
       personIds: message.external ? [] : [message.author.id],
       detail: `${message.author.name}: ${message.content}${message.attachment ? `\nBijlage ${message.attachment.name} (tekstvoorbeeld): ${message.attachment.text}` : ""}`,
@@ -115,7 +115,7 @@ export function validateHunchActions(
       );
       if (!source || !source.detail.includes(evidence.quote))
         throw new AppError(
-          "Een bronverwijzing van Gemini klopt niet. Stel de voorstellen opnieuw op.",
+          "A Gemini citation is incorrect. Generate the suggestions again.",
           502,
         );
     }
@@ -132,11 +132,11 @@ export function validateHunchActions(
         )
       )
         throw new AppError(
-          "Gemini verwijst naar een collega zonder onderbouwde koppeling aan deze hunch.",
+          "Gemini refers to a colleague without an evidenced connection to this hunch.",
           502,
         );
     } else if (action.personId !== null) {
-      throw new AppError("Gemini gaf een ongeldige actie terug.", 502);
+      throw new AppError("Gemini returned an invalid action.", 502);
     }
     const { personId: _, ...rest } = action;
     return { ...rest, person: person ?? null };

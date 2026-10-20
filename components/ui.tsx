@@ -75,7 +75,7 @@ export function ErrorNotice({
       <span>{error}</span>
       {onRetry && (
         <button className="text-button" onClick={onRetry}>
-          Opnieuw proberen
+          Try again
         </button>
       )}
     </div>
@@ -116,7 +116,7 @@ export function Modal({
           <h2 id={titleId}>{title}</h2>
           {subtitle && <p id={subtitleId}>{subtitle}</p>}
         </div>
-        <button className="icon-button" aria-label="Sluiten" onClick={onClose}>
+        <button className="icon-button" aria-label="Close" onClick={onClose}>
           <X size={20} />
         </button>
       </div>

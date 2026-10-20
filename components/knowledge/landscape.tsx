@@ -39,31 +39,31 @@ const LENSES: {
 }[] = [
   {
     id: "health",
-    label: "Overzicht",
+    label: "Overview",
     col: "#12343B",
     on: "#FFF3E4",
-    help: "De gekleurde ring rond elk onderwerp toont hoe actueel de kennis is: groen is actueel, geel moet nagekeken worden, rood is verouderd of vervangen.",
+    help: "The coloured ring around each topic shows how current the knowledge is: green is current, yellow needs review, red is outdated or superseded.",
   },
   {
     id: "gaps",
-    label: "Waar ontbreekt kennis?",
+    label: "Where are the knowledge gaps?",
     col: "#FF7A50",
     on: "#12343B",
-    help: "Hunches, klantvragen en gesprekken die naar geen enkel document verwijzen. Daar ontbreekt een bron, of is ze niet vindbaar.",
+    help: "Hunches, customer questions and conversations that don't reference any documents. A source is missing or cannot be found.",
   },
   {
     id: "risk",
-    label: "Verouderd maar gebruikt",
+    label: "Outdated but still used",
     col: "#B3261E",
     on: "#FFFFFF",
-    help: "Verouderde of vervangen documenten die het afgelopen jaar nog als bron gebruikt zijn.",
+    help: "Outdated or superseded documents that have still been used as sources in the past year.",
   },
   {
     id: "expert",
-    label: "Hangt af van één persoon",
+    label: "Depends on one person",
     col: "#C04A88",
     on: "#FFFFFF",
-    help: "Onderwerpen waar één persoon het grootste deel van de documenten beheert. Valt die persoon weg, dan verdwijnt de kennis mee.",
+    help: "Topics where one person manages most of the documents. If that person leaves, the knowledge goes with them.",
   },
 ];
 const lensById = new Map(LENSES.map((l) => [l.id, l]));
@@ -74,21 +74,21 @@ function lensMetric(s: TopicStruct, lens: LensId) {
     return {
       v,
       on: s.gaps.length > 0,
-      text: `${s.gaps.length} zonder bron · ${Math.round(v * 100)}%`,
+      text: `${s.gaps.length} without a source · ${Math.round(v * 100)}%`,
     };
   }
   if (lens === "risk")
     return {
       v: s.risk.length,
       on: s.risk.length > 0,
-      text: `${s.risk.length} ${s.risk.length === 1 ? "risicobron" : "risicobronnen"}`,
+      text: `${s.risk.length} ${s.risk.length === 1 ? "source at risk" : "sources at risk"}`,
     };
   if (lens === "expert") {
     const e = s.expert;
     return {
       v: e?.share ?? 0,
       on: !!e && e.share >= 0.5 && s.docs.length >= 2,
-      text: e ? `${Math.round(e.share * 100)}% door ${e.p.first}` : "",
+      text: e ? `${Math.round(e.share * 100)}% by ${e.p.first}` : "",
     };
   }
   return { v: s.list.length, on: true, text: "" };
@@ -421,11 +421,11 @@ function drawK(g: G, n: KNode, v: View) {
         .attr("class", "kg-kcnt")
         .attr("text-anchor", "middle")
         .attr("y", y0 + (lines.length - 1) * lh + 32)
-        .text(`${s.stars.length} kernbronnen`);
+        .text(`${s.stars.length} core sources`);
     const m = lensMetric(s, v.lens);
     if (v.lens !== "health" && m.on) lensPill(g, v.lens, m.text, -r - 2);
     g.append("title").text(
-      `${n.t!.name} · ${fmt(s.list.length)} items · klik om te openen`,
+      `${n.t!.name} · ${fmt(s.list.length)} items · click to open`,
     );
     return;
   }
@@ -468,8 +468,8 @@ function drawK(g: G, n: KNode, v: View) {
       rn.kind === "star"
         ? rn.doc.title
         : rn.kind === "rest"
-          ? "Overige documenten"
-          : "Zonder bron";
+          ? "Other documents"
+          : "Without a source";
     const y = captionLines(g, wrapLines(title, 22, 2), r + 20);
     let sub: string;
     if (rn.kind === "star") {
@@ -478,16 +478,16 @@ function drawK(g: G, n: KNode, v: View) {
       sub =
         [
           c.hunch && `${c.hunch} hunches`,
-          c.ticket && `${c.ticket} klantvr.`,
-          c.chat && `${c.chat} gespr.`,
+          c.ticket && `${c.ticket} questions`,
+          c.chat && `${c.chat} chats`,
         ]
           .filter(Boolean)
-          .join(" · ") || "aangehaald door documenten";
+          .join(" · ") || "cited by documents";
     } else if (rn.kind === "rest")
-      sub = `${rn.docs.length} · ${s.unused} nooit gebruikt`;
+      sub = `${rn.docs.length} · ${s.unused} never used`;
     else {
       const c = rn.orbit.filter((i) => i.type === "chat").length;
-      sub = `${rn.orbit.length - c} vragen · ${c} gesprekken`;
+      sub = `${rn.orbit.length - c} questions · ${c} conversations`;
     }
     g.append("text")
       .attr("class", "kg-kcnt")
@@ -508,7 +508,7 @@ function drawK(g: G, n: KNode, v: View) {
       lensPill(
         g,
         v.lens,
-        rn.doc.fresh.label.toLowerCase() + " · nog gebruikt",
+        rn.doc.fresh.label.toLowerCase() + " · still used",
         -r - 18,
       );
     if (
@@ -519,9 +519,9 @@ function drawK(g: G, n: KNode, v: View) {
     )
       lensPill(g, v.lens, s.expert.p.name, -r - 18);
     if (rn.kind === "gap" && v.lens === "gaps")
-      lensPill(g, v.lens, "hier ontbreekt een bron", -r - 16);
+      lensPill(g, v.lens, "a source is missing here", -r - 16);
     g.append("title").text(
-      `${title} · klik om ${open ? "dicht" : "open"} te klappen`,
+      `${title} · click to ${open ? "collapse" : "expand"}`,
     );
     return;
   }
@@ -591,7 +591,7 @@ function drawK(g: G, n: KNode, v: View) {
       .attr("class", "kg-ps")
       .attr("x", -w / 2 + 42)
       .attr("y", 13)
-      .text("Klik voor de volledige lijst");
+      .text("Click for the full list");
   }
 }
 function kDim(n: KNode, v: View) {
@@ -631,15 +631,15 @@ function freshBar(f: { ok: number; warn: number; old: number }) {
       <div className="kg-mix-legend">
         <span>
           <Dot color={FRESH_COL.ok} />
-          Actueel {fmt(f.ok)}
+          Current {fmt(f.ok)}
         </span>
         <span>
           <Dot color={FRESH_COL.warn} />
-          Nakijken {fmt(f.warn)}
+          Needs review {fmt(f.warn)}
         </span>
         <span>
           <Dot color={FRESH_COL.old} />
-          Verouderd {fmt(f.old)}
+          Outdated {fmt(f.old)}
         </span>
       </div>
     </>
@@ -665,7 +665,7 @@ function Legend() {
           />
         </svg>
         <span>
-          <b>Onderwerp</b> · groter = meer kennis, de ring toont hoe actueel ze
+          <b>Topic</b> · larger = more knowledge, the ring shows how current it
           is
         </span>
       </div>
@@ -682,7 +682,7 @@ function Legend() {
           />
         </svg>
         <span>
-          <b>Kernbron</b> · een document waar veel naar verwezen wordt
+          <b>Core source</b> · a document that is frequently referenced
         </span>
       </div>
       <div>
@@ -706,8 +706,8 @@ function Legend() {
           />
         </svg>
         <span>
-          <b>Hunch, klantvraag of gesprek</b> dat de bron gebruikt. Herhalingen
-          worden gestapeld.
+          <b>Hunch, customer question or conversation</b> that uses the source.
+          Repeated items are stacked.
         </span>
       </div>
       <div>
@@ -728,7 +728,7 @@ function Legend() {
           </text>
         </svg>
         <span>
-          <b>Zonder bron</b> · vragen waar geen document achter zit
+          <b>Without a source</b> · questions without a supporting document
         </span>
       </div>
     </div>
@@ -930,7 +930,7 @@ function Landscape({
       .select(el)
       .insert("svg", ":first-child")
       .attr("role", "img")
-      .attr("aria-label", "Kennislandschap") as d3.Selection<
+      .attr("aria-label", "Knowledge landscape") as d3.Selection<
       SVGSVGElement,
       unknown,
       null,
@@ -1079,7 +1079,7 @@ function Landscape({
         kind: "topic" as const,
         id: t.id,
         name: t.name,
-        sub: `Onderwerp · ${structs.get(t.id)!.list.length} items`,
+        sub: `Topic · ${structs.get(t.id)!.list.length} items`,
       }));
     const its = model.items
       .filter(
@@ -1125,7 +1125,7 @@ function Landscape({
     <button
       type="button"
       className="kg-close"
-      aria-label="Sluiten"
+      aria-label="Close"
       onClick={close}
     >
       ×
@@ -1150,14 +1150,14 @@ function Landscape({
     model.items.forEach((i) => counts[i.type]++);
     insp = (
       <>
-        <div className="kg-eyebrow">Kennisbank</div>
-        <h2>Waar zit onze kennis?</h2>
+        <div className="kg-eyebrow">Knowledge base</div>
+        <h2>Where is our knowledge?</h2>
         <p>
-          {fmt(model.items.length)} kennisitems uit SharePoint, Teams, Outlook,
-          DevOps en Hunch: {counts.doc} documenten, {counts.chat} gesprekken,{" "}
-          {counts.hunch} hunches en {counts.ticket} klantvragen, gegroepeerd per
-          onderwerp. Klik op een onderwerp om de kernbronnen te zien, en op een
-          bron om te zien wie en wat ernaar verwijst.
+          {fmt(model.items.length)} knowledge items from SharePoint, Teams,
+          Outlook, DevOps and Hunch: {counts.doc} documents, {counts.chat}{" "}
+          conversations, {counts.hunch} hunches and {counts.ticket} customer
+          questions, grouped by topic. Click a topic to see its core sources,
+          and a source to see who and what references it.
         </p>
         <Legend />
         <h3>{L.label}</h3>
@@ -1186,7 +1186,7 @@ function Landscape({
                   </span>
                   <span className="kg-sub">
                     {view.lens === "health"
-                      ? `${Math.round(old * 100)}% verouderd of vervangen`
+                      ? `${Math.round(old * 100)}% outdated or superseded`
                       : m.text}
                   </span>
                 </span>
@@ -1207,34 +1207,34 @@ function Landscape({
     if (st.gaps.length)
       sig.push({
         tone: "warn",
-        text: `${st.gaps.length} ${st.gaps.length === 1 ? "vraag of gesprek verwijst" : "vragen en gesprekken verwijzen"} naar geen enkel document.`,
+        text: `${st.gaps.length} ${st.gaps.length === 1 ? "question or conversation has no reference" : "questions and conversations have no references"} to any document.`,
         act: () => openRing("gap:" + st.t.id),
       });
     if (st.risk.length)
       sig.push({
         tone: "danger",
-        text: `${st.risk.length} verouderde ${st.risk.length === 1 ? "bron wordt" : "bronnen worden"} nog gebruikt.`,
+        text: `${st.risk.length} outdated ${st.risk.length === 1 ? "source is" : "sources are"} still being used.`,
         act: () => reveal(st.risk[0].id),
       });
     if (st.expert && st.expert.share >= 0.5 && st.docs.length >= 2)
       sig.push({
         tone: "warn",
-        text: `${Math.round(st.expert.share * 100)}% van de documenten komt van ${st.expert.p.name}.`,
+        text: `${Math.round(st.expert.share * 100)}% of the documents come from ${st.expert.p.name}.`,
         act: () => onGo({ to: "org", kind: "person", id: st.expert!.p.id }),
       });
     if (st.stars.length)
       sig.push({
         tone: "ok",
-        text: `${Math.round(st.share * 100)}% van de hunches, klantvragen en gesprekken steunt op de ${st.stars.length} ${st.stars.length === 1 ? "kernbron" : "kernbronnen"}.`,
+        text: `${Math.round(st.share * 100)}% of hunches, customer questions and conversations rely on the ${st.stars.length} ${st.stars.length === 1 ? "core source" : "core sources"}.`,
       });
     insp = (
       <>
         {closeBtn}
-        <div className="kg-eyebrow">Onderwerp</div>
+        <div className="kg-eyebrow">Topic</div>
         <h2>{st.t.name}</h2>
         <p>
-          {fmt(st.list.length)} items · {fmt(st.docs.length)} documenten,
-          waarvan {fmt(st.unused)} nooit gebruikt.
+          {fmt(st.list.length)} items · {fmt(st.docs.length)} documents, of
+          which {fmt(st.unused)} have never been used.
         </p>
         {freshBar(st.fresh)}
         <div className="kg-signals">
@@ -1258,7 +1258,7 @@ function Landscape({
         {st.stars.length > 0 && (
           <>
             <h3>
-              Kernbronnen <span className="kg-count">{st.stars.length}</span>
+              Core sources <span className="kg-count">{st.stars.length}</span>
             </h3>
             <div className="kg-rows">
               {st.stars.map((d) => (
@@ -1272,7 +1272,7 @@ function Landscape({
                   <span className="kg-main">
                     <span className="kg-name">{d.title}</span>
                     <span className="kg-sub">
-                      {st.score.get(d.id)} verwijzingen ·{" "}
+                      {st.score.get(d.id)} references ·{" "}
                       {d.fresh.label.toLowerCase()}
                     </span>
                   </span>
@@ -1283,7 +1283,7 @@ function Landscape({
         )}
         {st.authors.length > 0 && (
           <>
-            <h3>Wie schrijft hierover?</h3>
+            <h3>Who writes about this?</h3>
             <div className="kg-rows">
               {st.authors.slice(0, 3).map((x) => (
                 <button
@@ -1313,12 +1313,12 @@ function Landscape({
       insp = (
         <>
           {closeBtn}
-          <div className="kg-eyebrow">Zonder bron</div>
-          <h2>{rn.orbit.length} vragen zonder document</h2>
+          <div className="kg-eyebrow">Without a source</div>
+          <h2>{rn.orbit.length} questions without a document</h2>
           <p>
-            Deze hunches, klantvragen en gesprekken verwijzen naar geen enkel
-            document in dit onderwerp. Vaak ontbreekt hier een bron, of is ze
-            niet vindbaar.
+            These hunches, customer questions and conversations don't reference
+            any documents on this topic. Often a source is missing or cannot be
+            found.
           </p>
           <div className="kg-stats">
             <div className="kg-stat">
@@ -1327,14 +1327,14 @@ function Landscape({
             </div>
             <div className="kg-stat">
               <b>{c.ticket}</b>
-              <span>klantvragen</span>
+              <span>customer questions</span>
             </div>
             <div className="kg-stat">
               <b>{c.chat}</b>
-              <span>gesprekken</span>
+              <span>conversations</span>
             </div>
           </div>
-          <h3>Meest recent</h3>
+          <h3>Most recent</h3>
           <div className="kg-rows">
             {rn.orbit.slice(0, 25).map((it) => (
               <ItemRow key={it.id} it={it} onClick={() => reveal(it.id)} />
@@ -1346,13 +1346,13 @@ function Landscape({
       insp = (
         <>
           {closeBtn}
-          <div className="kg-eyebrow">Overige documenten</div>
-          <h2>{rn.docs.length} documenten buiten de kern</h2>
+          <div className="kg-eyebrow">Other documents</div>
+          <h2>{rn.docs.length} documents outside the core</h2>
           <p>
-            Documenten waar weinig of niets naar verwijst.{" "}
-            {structs.get(view.focus!)!.unused} ervan werden nooit gebruikt in
-            een hunch, klantvraag of gesprek: kandidaten om te archiveren of
-            samen te voegen.
+            Documents with few or no references.{" "}
+            {structs.get(view.focus!)!.unused} have never been used in a hunch,
+            customer question or conversation: candidates for archiving or
+            merging.
           </p>
           <div className="kg-rows">
             {rn.docs.slice(0, 30).map((it) => (
@@ -1374,16 +1374,16 @@ function Landscape({
       owner?.kind === "star"
         ? owner.doc.title
         : owner?.kind === "gap"
-          ? "Zonder bron"
-          : "Overige documenten";
+          ? "Without a source"
+          : "Other documents";
     insp = (
       <>
         {closeBtn}
-        <div className="kg-eyebrow">{KIND[sel.type].plural} · gestapeld</div>
+        <div className="kg-eyebrow">{KIND[sel.type].plural} · stacked</div>
         <h2>
           {sel.items.length} {KIND[sel.type].plural.toLowerCase()}
         </h2>
-        <p>Bij “{ol}”. Klik op een item om het naast de bron te tonen.</p>
+        <p>For “{ol}”. Click an item to show it alongside the source.</p>
         <div className="kg-rows">
           {sel.items.slice(0, 60).map((it) => (
             <ItemRow key={it.id} it={it} onClick={() => reveal(it.id)} />
@@ -1418,13 +1418,13 @@ function Landscape({
                     .length
                 }
               </b>
-              <span>klantvragen</span>
+              <span>customer questions</span>
             </div>
             <div className="kg-stat">
               <b>
                 {used.filter((r) => model.item(r.from)?.type === "chat").length}
               </b>
-              <span>gesprekken</span>
+              <span>conversations</span>
             </div>
           </div>
         );
@@ -1454,8 +1454,8 @@ function Landscape({
     ? openRn.kind === "star"
       ? openRn.doc.title
       : openRn.kind === "rest"
-        ? "Overige documenten"
-        : "Zonder bron"
+        ? "Other documents"
+        : "Without a source"
     : "";
 
   return (
@@ -1479,10 +1479,10 @@ function Landscape({
               </svg>
               <input
                 type="search"
-                placeholder="Zoek een document, gesprek of onderwerp"
+                placeholder="Search for a document, conversation or topic"
                 autoComplete="off"
                 value={q}
-                aria-label="Zoek in de kennisbank"
+                aria-label="Search the knowledge base"
                 onChange={(e) => {
                   setQ(e.target.value);
                   setShowResults(true);
@@ -1526,7 +1526,7 @@ function Landscape({
                     </button>
                   ))
                 ) : (
-                  <div className="kg-empty">Niets gevonden voor “{q}”.</div>
+                  <div className="kg-empty">Nothing found for “{q}”.</div>
                 )}
               </div>
             )}
@@ -1534,7 +1534,7 @@ function Landscape({
           <div
             className="kg-chips"
             role="group"
-            aria-label="Bekijk de kaart vanuit een vraag"
+            aria-label="Explore the map through a question"
           >
             {LENSES.map((l) => (
               <button
@@ -1553,9 +1553,9 @@ function Landscape({
         <div className="kg-trail">
           {!t ? (
             <>
-              <span className="kg-cur">Alle onderwerpen</span>
+              <span className="kg-cur">All topics</span>
               <span className="kg-sep kg-muted">
-                · klik op een onderwerp om het te openen
+                · click a topic to open it
               </span>
             </>
           ) : (
@@ -1565,10 +1565,10 @@ function Landscape({
                 className="kg-back"
                 onClick={() => (view.open ? focusTopic(t.id) : overview())}
               >
-                ← Terug
+                ← Back
               </button>
               <button type="button" onClick={overview}>
-                Alle onderwerpen
+                All topics
               </button>
               <span className="kg-sep">›</span>
               {view.open ? (
@@ -1587,7 +1587,7 @@ function Landscape({
         </div>
         <div className="kg-canvas kg-dotgrid" ref={stage}>
           <div className="kg-legend-note">
-            Klik om open te klappen · het beeld past zich automatisch aan
+            Click to expand · the view adjusts automatically
           </div>
           <ZoomControls
             onZoom={(z) => {
@@ -1626,7 +1626,7 @@ export function KnowledgeLandscape({ start }: { start: LandscapeStart }) {
               <ErrorNotice error={error} onRetry={retry} />
             ) : (
               <>
-                <Spinner /> Kennisbank laden…
+                <Spinner /> Loading knowledge base…
               </>
             )}
           </div>

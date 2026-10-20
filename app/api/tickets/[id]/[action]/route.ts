@@ -49,18 +49,18 @@ export const POST = (
         Number(request.headers.get("content-length")) >
         MAX_FILE_SIZE + 100000
       )
-        throw new AppError("Het bestand is groter dan 10 MB.");
+        throw new AppError("The file is larger than 10 MB.");
       const form = await request.formData();
       const file = form.get("file");
-      if (!(file instanceof File)) throw new AppError("Kies een bestand.");
+      if (!(file instanceof File)) throw new AppError("Choose a file.");
       if (file.size > MAX_FILE_SIZE)
-        throw new AppError("Het bestand is groter dan 10 MB.");
+        throw new AppError("The file is larger than 10 MB.");
       const name = z
         .string()
         .min(1)
         .max(255)
         .parse(file.name.replace(/[\/\\]/g, "_"));
-      const kind = z.enum(sourceKinds).parse(form.get("kind") || "Onbekend");
+      const kind = z.enum(sourceKinds).parse(form.get("kind") || "Unknown");
       const rawDate = form.get("date");
       const date = rawDate ? z.iso.date().parse(rawDate) : null;
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -110,5 +110,5 @@ export const POST = (
       await overrideReview(id, data.reviewId);
       return { ok: true };
     }
-    throw new AppError("Onbekende actie.", 404);
+    throw new AppError("Unknown action.", 404);
   });

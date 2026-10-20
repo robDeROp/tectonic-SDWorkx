@@ -20,7 +20,7 @@ const statusSchema = z.object({
   toId: z.string().max(100).optional(),
 });
 const messageSchema = z.object({
-  content: z.string().trim().min(1, "Schrijf eerst een bericht.").max(5000),
+  content: z.string().trim().min(1, "Write a message first.").max(5000),
 });
 const passSchema = z.object({
   toId: z.string().max(100).optional(),
@@ -61,6 +61,6 @@ export const POST = (
         CURRENT_USER_ID,
         statusSchema.parse(await request.json()),
       );
-    else throw new AppError("Onbekende actie.", 404);
+    else throw new AppError("Unknown action.", 404);
     return { ok: true };
   });

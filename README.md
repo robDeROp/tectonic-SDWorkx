@@ -165,6 +165,8 @@ Officiële documentatie: [Vertex AI quickstart](https://cloud.google.com/vertex-
 
 Routes zijn interne app-interfaces zonder gebruikersbeheer. De cloudomgeving blijft daarom standaard achter Cloud Run IAM; gebruik de lokale app niet als openbare productieomgeving.
 
+De app stuurt een Content Security Policy, HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY` en `X-Content-Type-Options: nosniff` mee en schakelt `X-Powered-By` uit. Pagina's krijgen per response een willekeurige nonce voor de Next.js-scripts; de rootlayout rendert daarom per aanvraag en gebruikt geen statische HTML-cache. Inline stijlen blijven toegestaan voor React en de grafieken. Alleen de ontwikkelomgeving staat script-evaluatie en WebSockets toe en laat het upgraden naar HTTPS achterwege. De browsercontroles verifiëren de headers, nonce-vernieuwing, navigatie en het blokkeren van geïnjecteerde scripts tegen een productiebuild.
+
 | Route                                   | Functie                                                                                  |
 | --------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `GET /api/tickets`                      | Ticketoverzicht; maakt het startticket indien nodig aan                                  |

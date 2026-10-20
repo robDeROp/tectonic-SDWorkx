@@ -30,8 +30,8 @@ export function SourceTag({
   return (
     <span
       className={`source-tag source-${source}${compact ? " compact" : ""}`}
-      title={compact ? `Geopend vanuit ${label}` : undefined}
-      aria-label={compact ? `Geopend vanuit ${label}` : undefined}
+      title={compact ? `Opened from ${label}` : undefined}
+      aria-label={compact ? `Opened from ${label}` : undefined}
     >
       <Icon size={13} />
       {!compact && label}
@@ -58,7 +58,7 @@ export function HunchConversation({
   // Where the plugin thread ends and the conversation in Hunch begins.
   const imported = messages.findIndex((m) => m.source === "hunch");
   const openedAt = imported === -1 ? messages.length : imported;
-  const opener = hunch.viewer.isAuthor ? "Jij" : author.name.split(" ")[0];
+  const opener = hunch.viewer.isAuthor ? "You" : author.name.split(" ")[0];
 
   const send = async () => {
     setBusy(true);
@@ -78,19 +78,19 @@ export function HunchConversation({
   };
 
   return (
-    <section className="panel conversation-panel" aria-label="Gesprek">
+    <section className="panel conversation-panel" aria-label="Conversation">
       <div className="panel-head">
-        <SourceChip kind="chats">Gesprek</SourceChip>
+        <SourceChip kind="chats">Conversation</SourceChip>
         <span className="panel-meta">
-          {messages.length} {messages.length === 1 ? "bericht" : "berichten"}
+          {messages.length} {messages.length === 1 ? "message" : "messages"}
         </span>
       </div>
       {source !== "hunch" && (
         <div className={`import-banner source-${source}`}>
           <SourceTag source={source} where={sourceLabel} />
           <span>
-            {opener} opende deze hunch met de Hunch-plugin. Dit gesprek komt uit{" "}
-            {source === "teams" ? "Teams" : "Outlook"}.
+            {opener} opened this hunch with the Hunch plugin. This conversation
+            comes from {source === "teams" ? "Teams" : "Outlook"}.
           </span>
         </div>
       )}
@@ -101,14 +101,14 @@ export function HunchConversation({
             message={m}
             divider={
               source !== "hunch" && i === openedAt && i > 0
-                ? `${opener} opende de hunch · ${timeLabel(hunch.createdAt)}`
+                ? `${opener} opened the hunch · ${timeLabel(hunch.createdAt)}`
                 : null
             }
           />
         ))}
         {source !== "hunch" && openedAt === messages.length && (
           <li className="message-divider">
-            {opener} opende de hunch · {timeLabel(hunch.createdAt)}
+            {opener} opened the hunch · {timeLabel(hunch.createdAt)}
           </li>
         )}
       </ol>
@@ -120,8 +120,8 @@ export function HunchConversation({
         }}
       >
         <textarea
-          aria-label="Reageer op deze hunch"
-          placeholder="Reageer of deel wat je weet…"
+          aria-label="Reply to this hunch"
+          placeholder="Reply or share what you know…"
           rows={1}
           maxLength={5000}
           value={draft}
@@ -136,7 +136,7 @@ export function HunchConversation({
           disabled={busy || !draft.trim()}
         >
           {busy ? <Spinner size={15} /> : <SendHorizontal size={15} />}
-          Versturen
+          Send
         </button>
       </form>
       {error && <ErrorNotice error={error} />}
@@ -175,7 +175,7 @@ function MessageItem({
                 <Paperclip size={15} />
                 <strong>{m.attachment.name}</strong>
                 <span>
-                  {m.attachment.length.toLocaleString("nl-BE")} tekens
+                  {m.attachment.length.toLocaleString("en-GB")} characters
                 </span>
               </summary>
               <pre>

@@ -11,7 +11,7 @@ export async function api<T>(fn: () => Promise<T>) {
       return NextResponse.json(
         {
           error:
-            error.issues[0]?.message || "Controleer de ingevoerde gegevens.",
+            error.issues[0]?.message || "Check the information you entered.",
         },
         { status: 400 },
       );
@@ -42,5 +42,5 @@ export function sameOrigin(request: Request) {
   } catch {
     /* Reject malformed or opaque origins. */
   }
-  throw new AppError("Deze aanvraag is niet toegestaan.", 403);
+  throw new AppError("This request is not allowed.", 403);
 }

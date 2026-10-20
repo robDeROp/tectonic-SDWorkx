@@ -139,7 +139,7 @@ async function main() {
     const badId = await requestAI(id, "review", 3);
     await runNextJob(badId, negative, false);
     assert.equal((await getDetail(id)).deliveries.length, 1);
-    await assert.rejects(() => sendReviewedAnswer(id, badId), /actueel/);
+    await assert.rejects(() => sendReviewedAnswer(id, badId), /current/);
     await Promise.all([overrideReview(id, badId), overrideReview(id, badId)]);
     detail = await getDetail(id);
     assert.equal(detail.deliveries.length, 2);
@@ -148,7 +148,7 @@ async function main() {
       "Negative review blocks automatic send; deliberate override is idempotent",
     );
     await saveAnswer(id, "Een ander antwoord.", 3);
-    await assert.rejects(() => overrideReview(id, badId), /actueel/);
+    await assert.rejects(() => overrideReview(id, badId), /current/);
     ok("Old answer reviews cannot be overridden");
     const staleReviewId = await requestAI(id, "review", 4);
     await runNextJob(
@@ -169,7 +169,7 @@ async function main() {
         await addDocument(id, {
           name: "Aanvulling.txt",
           content: "Aanvullende informatie voor de payrollcasus.",
-          kind: "Onbekend",
+          kind: "Unknown",
           date: null,
           storageKey: "test-key",
         });
@@ -231,7 +231,7 @@ async function main() {
     assert.equal(detail.ticket.documentVersion, 3);
     assert.equal(detail.ticket.contextVersion, 1);
     assert.equal(detail.ticket.answer, answerBefore);
-    await assert.rejects(() => sendReviewedAnswer(id, leaseId), /actueel/);
+    await assert.rejects(() => sendReviewedAnswer(id, leaseId), /current/);
     await runNextJob((await latest(id)).id, provider, false);
     assert(
       (await getDetail(id)).documents.every((d) => d.assessedVersion === 3),
@@ -250,7 +250,7 @@ async function main() {
     assert.equal(detail.messages.length, 2);
     assert.equal(detail.ticket.contextVersion, 2);
     assert.equal(detail.ticket.answer, answerBefore);
-    await assert.rejects(() => sendReviewedAnswer(id, noteReview), /actueel/);
+    await assert.rejects(() => sendReviewedAnswer(id, noteReview), /current/);
     const contextReview = await requestAI(id, "review", 6);
     assert.notEqual(contextReview, noteReview);
     await runNextJob(
@@ -272,7 +272,7 @@ async function main() {
     );
     await assert.rejects(
       () => sendReviewedAnswer(id, contextReview),
-      /actueel/,
+      /current/,
     );
     assert.equal((await getDetail(id)).deliveries.length, 4);
     ok(

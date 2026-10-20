@@ -43,198 +43,198 @@ const initialActivities: Activity[] = [
   {
     id: "move-document",
     time: "10:22",
-    title: "Document verplaatsen naar Teams",
+    title: "Move document to Teams",
     project: "Project Phoenix",
     tone: "phoenix",
     source: "word",
     priority: "high",
     action: "move",
     description:
-      "Pip heeft het architectuurdocument herkend als onderdeel van Project Phoenix. Zet het op de juiste plek, zodat je team ermee verder kan.",
+      "Pip recognised the architecture document as part of Project Phoenix. Put it in the right place so your team can move forward.",
   },
   {
     id: "review-documents",
     time: "09:14",
-    title: "5 documenten gevonden",
-    project: "Klantenservice",
+    title: "5 documents found",
+    project: "Customer service",
     tone: "support",
     source: "docs",
     priority: "normal",
     action: "review",
     description:
-      "Pip heeft vijf documenten gevonden die je klantenservice kunnen helpen. Bekijk de inhoud voordat je ze als context gebruikt.",
+      "Pip found five documents that could help your customer service team. Review their contents before using them as context.",
   },
   {
     id: "meeting",
     time: "09:02",
-    title: "Vergadering geanalyseerd",
-    project: "Productstrategie",
+    title: "Meeting analysed",
+    project: "Product strategy",
     tone: "strategy",
     source: "teams",
     priority: "normal",
     action: "create",
     description:
-      "De belangrijkste besluiten en open vragen uit het productoverleg staan klaar. Bundel ze in een Hunch om samen de volgende stap te zetten.",
-    hunchTitle: "Vervolgacties productstrategie",
+      "The key decisions and open questions from the product meeting are ready. Bring them together in a Hunch to take the next step together.",
+    hunchTitle: "Product strategy next steps",
   },
   {
     id: "email",
     time: "08:45",
-    title: "E-mailgesprek geanalyseerd",
-    project: "Klantenservice",
+    title: "Email conversation analysed",
+    project: "Customer service",
     tone: "support",
     source: "mail",
     priority: "normal",
     action: "create",
     description:
-      "Pip heeft terugkerende klantvragen uit het e-mailgesprek verzameld. Maak er een Hunch van om de opvolging met je team af te stemmen.",
-    hunchTitle: "Opvolging klantvragen",
+      "Pip collected recurring customer questions from the email conversation. Create a Hunch to coordinate follow-up with your team.",
+    hunchTitle: "Customer question follow-up",
   },
   {
     id: "phoenix-standup",
     time: "08:32",
-    title: "Actiepunten uit teamoverleg",
+    title: "Action items from the team meeting",
     project: "Project Phoenix",
     tone: "phoenix",
     source: "teams",
     priority: "high",
     action: "create",
     description:
-      "Pip heeft de actiepunten uit de dagelijkse stand-up verzameld. Bundel de afspraken en open vragen in een Hunch om de opvolging met je team af te stemmen.",
-    hunchTitle: "Actiepunten Project Phoenix",
+      "Pip collected the action items from the daily stand-up. Bring the decisions and open questions together in a Hunch to coordinate follow-up with your team.",
+    hunchTitle: "Project Phoenix action items",
   },
   {
     id: "customer-feedback",
     time: "08:18",
-    title: "Nieuwe klantfeedback gebundeld",
-    project: "Klantenservice",
+    title: "New customer feedback collected",
+    project: "Customer service",
     tone: "support",
     source: "mail",
     priority: "normal",
     action: "create",
     description:
-      "Pip heeft feedback uit recente klantmails samengebracht. Maak een Hunch om de belangrijkste verbeterpunten met je collega's te bespreken.",
-    hunchTitle: "Verbeterpunten uit klantfeedback",
+      "Pip brought together feedback from recent customer emails. Create a Hunch to discuss the key improvements with your colleagues.",
+    hunchTitle: "Improvements from customer feedback",
   },
   {
     id: "roadmap-planning",
     time: "08:05",
-    title: "Planningsoverleg samengevat",
-    project: "Productstrategie",
+    title: "Planning meeting summarised",
+    project: "Product strategy",
     tone: "strategy",
     source: "teams",
     priority: "normal",
     action: "create",
     description:
-      "De prioriteiten en afhankelijkheden uit het planningsoverleg staan klaar. Zet ze in een Hunch om samen de volgende productstappen te bepalen.",
-    hunchTitle: "Prioriteiten voor de productplanning",
+      "The priorities and dependencies from the planning meeting are ready. Put them in a Hunch to decide the next product steps together.",
+    hunchTitle: "Product planning priorities",
   },
 ];
 
 const additionalActivities: Activity[] = [
-  ["Klantoverleg samengevat", "Afspraken klantoverleg"],
-  ["Open klantvragen verzameld", "Openstaande klantvragen"],
-  ["Sprintbespreking geanalyseerd", "Vervolgacties sprintbespreking"],
-  ["Overdracht per e-mail ontvangen", "Opvolging teamoverdracht"],
-  ["Projectrisico's besproken", "Risico's en vervolgstappen"],
-  ["Feedback op voorstel ontvangen", "Verwerking feedback voorstel"],
-  ["Werkafspraken bijgewerkt", "Nieuwe werkafspraken"],
-  ["Nieuwe aanvraag geanalyseerd", "Opvolging nieuwe aanvraag"],
-  ["Kennissessie samengevat", "Inzichten uit de kennissessie"],
-  ["Vragen over onboarding gebundeld", "Verbeteringen onboarding"],
-  ["Teamprioriteiten afgestemd", "Prioriteiten voor deze week"],
-  ["Klantbevestiging ontvangen", "Opvolging klantbevestiging"],
-  ["Retrospectief geanalyseerd", "Verbeteracties uit het retrospectief"],
+  ["Customer meeting summarised", "Customer meeting decisions"],
+  ["Open customer questions collected", "Open customer questions"],
+  ["Sprint meeting analysed", "Sprint meeting next steps"],
+  ["Handover received by email", "Team handover follow-up"],
+  ["Project risks discussed", "Risks and next steps"],
+  ["Proposal feedback received", "Addressing proposal feedback"],
+  ["Working agreements updated", "New working agreements"],
+  ["New request analysed", "New request follow-up"],
+  ["Knowledge session summarised", "Insights from the knowledge session"],
+  ["Onboarding questions collected", "Onboarding improvements"],
+  ["Team priorities agreed", "This week's priorities"],
+  ["Customer confirmation received", "Customer confirmation follow-up"],
+  ["Retrospective analysed", "Improvements from the retrospective"],
 ].map(([title, hunchTitle], index) => ({
   id: `extra-activity-${index + 1}`,
   time: `07:${String(55 - index * 4).padStart(2, "0")}`,
   title,
   hunchTitle,
-  project: index % 2 === 0 ? "Productstrategie" : "Klantenservice",
+  project: index % 2 === 0 ? "Product strategy" : "Customer service",
   tone: index % 2 === 0 ? "strategy" : "support",
   source: index % 2 === 0 ? "teams" : "mail",
   priority: "normal",
   action: "create",
-  description: `Pip heeft de context verzameld: ${title.toLowerCase()}. Bundel de inzichten en open vragen in een Hunch om samen de volgende stap te zetten.`,
+  description: `Pip collected the context: ${title.toLowerCase()}. Bring the insights and open questions together in a Hunch to take the next step together.`,
 }));
 
 const activityPool = [...initialActivities, ...additionalActivities];
 const pipStages = [
-  { count: 1, image: "1-happy", label: "vrolijk" },
-  { count: 3, image: "2-busy", label: "druk bezig" },
-  { count: 6, image: "3-overworked", label: "overwerkt" },
-  { count: 10, image: "4-overwhelmed", label: "overweldigd" },
-  { count: 20, image: "5-drowning", label: "overspoeld" },
-  { count: 0, image: "1-happy", label: "ontspannen" },
+  { count: 1, image: "1-happy", label: "happy" },
+  { count: 3, image: "2-busy", label: "busy" },
+  { count: 6, image: "3-overworked", label: "overworked" },
+  { count: 10, image: "4-overwhelmed", label: "overwhelmed" },
+  { count: 20, image: "5-drowning", label: "swamped" },
+  { count: 0, image: "1-happy", label: "relaxed" },
 ];
 
 const initialHunches: Hunch[] = [
   {
     id: "assistant",
-    title: "AI-assistent voor klantenservice",
+    title: "AI assistant for customer service",
     priority: "high",
     members: ["Jamie De Clercq", "Emma Jacobs", "Thomas Peeters"],
     status: "working",
     description:
-      "Samen werken aan een AI-assistent die het team helpt om klantvragen met de juiste context te beantwoorden.",
+      "Working together on an AI assistant that helps the team answer customer questions with the right context.",
   },
   {
     id: "phoenix",
-    title: "Project Phoenix – Data-architectuur",
+    title: "Project Phoenix – Data architecture",
     priority: "normal",
     members: ["Emma Jacobs", "Jamie De Clercq"],
     status: "input",
     description:
-      "De voorgestelde data-architectuur is klaar voor jouw input. Stem de open vragen af voordat het team verdergaat.",
+      "The proposed data architecture is ready for your input. Resolve the open questions before the team moves forward.",
   },
   {
     id: "knowledge",
-    title: "Verbeteringen kennisbank",
+    title: "Knowledge base improvements",
     priority: "normal",
     members: ["Thomas Peeters", "Noah Willems"],
     status: "review",
     description:
-      "De verbeteringen aan de kennisbank liggen ter beoordeling bij het team. Bekijk de voorgestelde structuur en inhoud.",
+      "The knowledge base improvements are ready for the team's review. Review the proposed structure and content.",
   },
 ];
 
 const documents = [
   {
-    title: "Handleiding klantenservice",
+    title: "Customer service guide",
     content:
-      "Begin met het vaststellen van de klantvraag. Verzamel relevante context en laat de voorgestelde oplossing controleren voordat je antwoordt.",
+      "Start by identifying the customer's question. Gather relevant context and have the proposed solution checked before replying.",
   },
   {
-    title: "Veelgestelde klantvragen",
+    title: "Frequently asked customer questions",
     content:
-      "Klanten vragen regelmatig naar de status van hun aanvraag, benodigde documenten en de volgende stap. Geef per antwoord aan wat al bekend is en welke informatie nog ontbreekt.",
+      "Customers often ask about the status of their request, required documents and the next step. In each answer, explain what is known and what information is still missing.",
   },
   {
-    title: "Werkafspraken supportteam",
+    title: "Support team working agreements",
     content:
-      "Wijs iedere vraag toe aan een eigenaar. Bespreek ontbrekende informatie met de klant en draag complexe vragen met een korte samenvatting over aan een collega.",
+      "Assign an owner to each question. Discuss missing information with the customer and hand complex questions over to a colleague with a brief summary.",
   },
   {
-    title: "Escalatieprocedure",
+    title: "Escalation procedure",
     content:
-      "Leg bij een escalatie de aanleiding, impact en eerdere acties vast. Deel alleen de context die nodig is en spreek af wie de klant op de hoogte houdt.",
+      "When escalating, record the reason, impact and previous actions. Share only the necessary context and agree on who will keep the customer informed.",
   },
   {
-    title: "Checklist antwoordkwaliteit",
+    title: "Answer quality checklist",
     content:
-      "Controleer of het antwoord aansluit op de vraag, of bronnen actueel zijn en of onzekerheden duidelijk worden benoemd. Laat de verantwoordelijke medewerker het antwoord goedkeuren.",
+      "Check that the answer addresses the question, the sources are current and uncertainties are clearly stated. Have the responsible colleague approve the answer.",
   },
 ];
 
 const actionLabels = {
-  move: "Verplaatsen",
-  review: "Beoordelen",
-  create: "Hunch maken",
+  move: "Move",
+  review: "Review",
+  create: "Create Hunch",
 };
 const statusLabels = {
-  working: "In uitvoering",
-  input: "Input nodig",
-  review: "Ter beoordeling",
+  working: "In progress",
+  input: "Input needed",
+  review: "Awaiting review",
 };
 type DialogState =
   | { kind: "activity"; item: Activity; execute: boolean }
@@ -309,13 +309,13 @@ export function Overview() {
             ],
       );
       setFeedback(
-        `Je Hunch ‘${cleanTitle}’ staat klaar. Samen maken we de volgende stap helder.`,
+        `Your Hunch ‘${cleanTitle}’ is ready. Let's work out the next step together.`,
       );
     } else {
       setFeedback(
         item.action === "move"
-          ? "Het document is in deze demo verplaatst naar Project Phoenix. Alles op de juiste plek!"
-          : "Je hebt de vijf voorbeelddocumenten beoordeeld. De context is klaar voor de volgende stap.",
+          ? "The document has been moved to Project Phoenix in this demo. Everything in the right place!"
+          : "You've reviewed the five sample documents. The context is ready for the next step.",
       );
     }
     setCompleted((current) => [...current, item.id]);
@@ -353,19 +353,19 @@ export function Overview() {
     <div className="page hunch-overview">
       <div className="page-heading overview-heading">
         <div>
-          <div className="eyebrow">Jouw werkplek, met meer zekerheid</div>
+          <div className="eyebrow">Your workspace, with more confidence</div>
           <h1>
-            Welkom terug, Jamie{" "}
+            Welcome back, Jamie{" "}
             <Sparkles
               className="overview-greeting"
               size={25}
               aria-hidden="true"
             />
           </h1>
-          <p>Je dag in beeld. De volgende stap binnen handbereik.</p>
+          <p>Your day at a glance. Your next step within reach.</p>
         </div>
         <Link href="/tickets" className="text-button overview-queue-link">
-          <Inbox size={17} /> Maak een Hunch <ArrowRight size={16} />
+          <Inbox size={17} /> Create a Hunch <ArrowRight size={16} />
         </Link>
       </div>
 
@@ -379,10 +379,10 @@ export function Overview() {
           >
             <div className="overview-card-heading">
               <h2 id="activity-title" tabIndex={-1}>
-                {isLastAction ? "Je laatste actie" : "Activiteiten van de dag"}{" "}
+                {isLastAction ? "Your latest action" : "Today's activities"}{" "}
                 <span
                   className="overview-count"
-                  aria-label={`${pending} openstaande activiteiten`}
+                  aria-label={`${pending} open activities`}
                 >
                   {pending}
                 </span>
@@ -391,7 +391,7 @@ export function Overview() {
                 className="text-button"
                 onClick={() => open({ kind: "all-activities" })}
               >
-                Alles bekijken <ChevronRight size={19} />
+                View all <ChevronRight size={19} />
               </button>
             </div>
             {lastActivity ? (
@@ -430,7 +430,7 @@ export function Overview() {
                       })
                     }
                   >
-                    Context bekijken <ChevronRight size={17} />
+                    View context <ChevronRight size={17} />
                   </button>
                 </div>
               </article>
@@ -465,7 +465,7 @@ export function Overview() {
                       </button>
                       <button
                         className="icon-button overview-more"
-                        aria-label={`Meer opties voor ${item.title}`}
+                        aria-label={`More options for ${item.title}`}
                         onClick={() =>
                           open({ kind: "activity", item, execute: false })
                         }
@@ -480,17 +480,20 @@ export function Overview() {
           </section>
         )}
 
-        <section className="overview-guide" aria-label="Pip helpt je op weg">
+        <section
+          className="overview-guide"
+          aria-label="Pip helps you get started"
+        >
           <button
             type="button"
             className="overview-mascot-stage"
             onClick={cyclePip}
-            aria-label={`Pip is ${isClear ? "ontspannen" : mascotStage.label}. Toon ${nextPipStage.count} openstaande ${nextPipStage.count === 1 ? "activiteit" : "activiteiten"}.`}
+            aria-label={`Pip is ${isClear ? "relaxed" : mascotStage.label}. Show ${nextPipStage.count} open ${nextPipStage.count === 1 ? "activity" : "activities"}.`}
           >
             <Image
               className="overview-mascot"
               src={`/hunch-mascot-${mascotStage.image}.png`}
-              alt={`Pip, ${isClear ? "ontspannen" : mascotStage.label}`}
+              alt={`Pip, ${isClear ? "relaxed" : mascotStage.label}`}
               width={1280}
               height={1280}
               sizes={
@@ -509,45 +512,45 @@ export function Overview() {
               {isClear ? (
                 <>
                   <Check size={15} aria-hidden="true" />{" "}
-                  {hasCompleted ? "Alles afgehandeld" : "Helemaal bij"}
+                  {hasCompleted ? "All completed" : "All caught up"}
                 </>
               ) : isLastAction ? (
-                "De laatste stap"
+                "The final step"
               ) : (
-                "Pip denkt met je mee"
+                "Pip is here to help"
               )}
             </span>
             <h2 id="overview-guide-title" tabIndex={-1}>
               {isClear ? (
                 hasCompleted ? (
                   <>
-                    Goed gedaan, Jamie. <span>Je bent helemaal bij.</span>
+                    Well done, Jamie. <span>You're all caught up.</span>
                   </>
                 ) : (
-                  "Alles is rustig, Jamie."
+                  "All is quiet, Jamie."
                 )
               ) : isLastAction ? (
-                "Nog één actie. Je bent er bijna."
+                "One action left. You're almost there."
               ) : isCompact ? (
                 hasCompleted ? (
-                  "Goed bezig, Jamie."
+                  "You're doing well, Jamie."
                 ) : (
-                  "Nog een paar kleine stappen."
+                  "Just a few small steps left."
                 )
               ) : (
-                "Een helder begin van je dag."
+                "A clear start to your day."
               )}
             </h2>
             <p aria-live="polite" aria-atomic="true">
               {isClear
                 ? hasCompleted
-                  ? "Alle activiteiten zijn afgehandeld. Tijd om even adem te halen."
-                  : "Je hebt op dit moment geen nieuwe activiteiten. Zodra er iets binnenkomt, zet ik het hier voor je klaar."
+                  ? "All activities are complete. Time to take a breather."
+                  : "You have no new activities right now. As soon as something comes in, I'll have it ready for you here."
                 : isLastAction
-                  ? "De context staat klaar. Pak deze laatste actie op, dan ben je weer helemaal bij."
+                  ? "The context is ready. Take care of this last action and you'll be all caught up."
                   : isCompact
-                    ? `Nog ${pending} acties, dan ben je weer helemaal bij. Eén stap tegelijk.`
-                    : `Ik heb ${pending} activiteiten voor je klaargezet. Bekijk de context en kies je volgende stap.`}
+                    ? `Just ${pending} more actions and you'll be all caught up. One step at a time.`
+                    : `I've prepared ${pending} activities for you. Review the context and choose your next step.`}
             </p>
             {isClear && (
               <div className="overview-clear-actions">
@@ -557,7 +560,7 @@ export function Overview() {
                     className="button overview-action"
                     onClick={scrollToHunches}
                   >
-                    Bekijk je {hunches.length} open{" "}
+                    View your {hunches.length} open{" "}
                     {hunches.length === 1 ? "Hunch" : "Hunches"}{" "}
                     <ArrowDown size={17} />
                   </a>
@@ -567,7 +570,7 @@ export function Overview() {
                     className="text-button"
                     onClick={() => open({ kind: "all-activities" })}
                   >
-                    Afgeronde activiteiten <ChevronRight size={17} />
+                    Completed activities <ChevronRight size={17} />
                   </button>
                 )}
               </div>
@@ -593,14 +596,14 @@ export function Overview() {
         >
           <div className="overview-card-heading">
             <h2 ref={hunchesHeading} id="hunches-title" tabIndex={-1}>
-              Mijn Hunches{" "}
+              My Hunches{" "}
               <span className="overview-hunch-count">{hunches.length}</span>
             </h2>
             <button
               className="text-button"
               onClick={() => open({ kind: "all-hunches" })}
             >
-              Alles bekijken <ChevronRight size={19} />
+              View all <ChevronRight size={19} />
             </button>
           </div>
           <ul className="overview-list">
@@ -617,7 +620,7 @@ export function Overview() {
                 <HunchStatus status={item.status} />
                 <button
                   className="icon-button overview-more"
-                  aria-label={`Meer opties voor ${item.title}`}
+                  aria-label={`More options for ${item.title}`}
                   onClick={() => open({ kind: "hunch", item })}
                 >
                   <MoreHorizontal size={20} />
@@ -643,10 +646,10 @@ export function Overview() {
               : dialog.kind === "hunch"
                 ? dialog.item.title
                 : dialog.kind === "all-activities"
-                  ? "Alle activiteiten van vandaag"
-                  : "Alle Hunches"
+                  ? "All of today's activities"
+                  : "All Hunches"
           }
-          subtitle="Demo · Voorbeeldgegevens. Wijzigingen worden bij herladen teruggezet."
+          subtitle="Demo · Sample data. Changes reset when you reload."
           onClose={close}
         >
           {activeActivity && (
@@ -665,7 +668,7 @@ export function Overview() {
               </p>
               {completed.includes(activeActivity.id) ? (
                 <div className="overview-completed-note">
-                  <Check size={18} /> Deze activiteit is afgerond.
+                  <Check size={18} /> This activity is complete.
                 </div>
               ) : dialog.kind === "activity" && dialog.execute ? (
                 <form
@@ -676,12 +679,9 @@ export function Overview() {
                 >
                   {activeActivity.action === "move" && (
                     <div className="overview-destination">
-                      <span className="section-overline">Bestemming</span>
-                      <strong>Teams / Project Phoenix / Documenten</strong>
-                      <p>
-                        Deze actie simuleert het verplaatsen van het
-                        voorbeelddocument.
-                      </p>
+                      <span className="section-overline">Destination</span>
+                      <strong>Teams / Project Phoenix / Documents</strong>
+                      <p>This action simulates moving the sample document.</p>
                     </div>
                   )}
                   {activeActivity.action === "review" && (
@@ -694,8 +694,7 @@ export function Overview() {
                           </summary>
                           <p>{doc.content}</p>
                           <small>
-                            Voorbeelddocument {index + 1} van 5 · Fictieve
-                            inhoud
+                            Sample document {index + 1} of 5 · Fictional content
                           </small>
                         </details>
                       ))}
@@ -704,7 +703,7 @@ export function Overview() {
                   {activeActivity.action === "create" && (
                     <>
                       <label>
-                        Naam van je Hunch
+                        Name your Hunch
                         <input
                           value={title}
                           onChange={(event) => setTitle(event.target.value)}
@@ -713,11 +712,11 @@ export function Overview() {
                         />
                       </label>
                       <p>
-                        Pip bundelt de context uit{" "}
+                        Pip brings together the context from{" "}
                         {activeActivity.source === "teams"
-                          ? "het overleg"
-                          : "het e-mailgesprek"}{" "}
-                        in je nieuwe demo-Hunch.
+                          ? "the meeting"
+                          : "the email conversation"}{" "}
+                        in your new demo Hunch.
                       </p>
                     </>
                   )}
@@ -727,7 +726,7 @@ export function Overview() {
                       className="button secondary"
                       onClick={close}
                     >
-                      Annuleren
+                      Cancel
                     </button>
                     <button
                       className="button overview-action"
@@ -737,10 +736,10 @@ export function Overview() {
                       }
                     >
                       {activeActivity.action === "move"
-                        ? "Verplaatsen bevestigen"
+                        ? "Confirm move"
                         : activeActivity.action === "review"
-                          ? "Beoordeling afronden"
-                          : "Hunch maken"}
+                          ? "Complete review"
+                          : "Create Hunch"}
                     </button>
                   </div>
                 </form>
@@ -771,13 +770,13 @@ export function Overview() {
               </div>
               <p className="overview-detail-copy">{dialog.item.description}</p>
               <div className="overview-destination">
-                <span className="section-overline">Samen aan de slag</span>
+                <span className="section-overline">Working together</span>
                 <p>
                   {dialog.item.status === "input"
-                    ? "Deel je input over de open vragen met je team."
+                    ? "Share your input on the open questions with your team."
                     : dialog.item.status === "review"
-                      ? "Neem de voorgestelde verbeteringen samen met je team door."
-                      : "Het team verzamelt context en werkt aan de volgende stap."}
+                      ? "Review the proposed improvements with your team."
+                      : "The team is gathering context and working on the next step."}
                 </p>
               </div>
             </>
@@ -785,7 +784,7 @@ export function Overview() {
           {dialog.kind === "all-activities" &&
             (activities.length === 0 ? (
               <p className="overview-detail-copy">
-                Je hebt op dit moment geen nieuwe activiteiten.
+                You have no new activities right now.
               </p>
             ) : (
               <ul className="overview-dialog-list">
@@ -799,7 +798,7 @@ export function Overview() {
                       </p>
                     </div>
                     <span className="overview-list-state">
-                      {completed.includes(item.id) ? "Afgerond" : "Openstaand"}
+                      {completed.includes(item.id) ? "Completed" : "Open"}
                     </span>
                   </li>
                 ))}
@@ -821,7 +820,7 @@ export function Overview() {
           {(!activeActivity || completed.includes(activeActivity.id)) && (
             <div className="modal-actions">
               <button className="button secondary" onClick={close}>
-                Sluiten
+                Close
               </button>
             </div>
           )}
@@ -844,10 +843,10 @@ function Priority({
       role="img"
       aria-label={
         done
-          ? "Afgerond"
+          ? "Completed"
           : priority === "high"
-            ? "Hoge prioriteit"
-            : "Normale prioriteit"
+            ? "High priority"
+            : "Normal priority"
       }
     >
       {done && <Check size={12} />}
@@ -858,9 +857,9 @@ function Priority({
 function SourceIcon({ source }: { source: Activity["source"] }) {
   const labels = {
     word: "Word",
-    docs: "Documenten",
+    docs: "Documents",
     teams: "Teams",
-    mail: "E-mail",
+    mail: "Email",
   };
   return (
     <span

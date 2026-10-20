@@ -11,21 +11,21 @@ describe("Document text extraction", () => {
   });
   it("rejects empty files", async () => {
     await expect(extractDocument("empty.txt", Buffer.from(""))).rejects.toThrow(
-      "leeg",
+      "empty",
     );
   });
   it("rejects unsupported and disguised formats", async () => {
     await expect(
       extractDocument("bad.exe", Buffer.from("not a document")),
-    ).rejects.toThrow("Kies");
+    ).rejects.toThrow("Choose");
     await expect(
       extractDocument("bad.pdf", Buffer.from("not a pdf")),
-    ).rejects.toThrow("gelezen");
+    ).rejects.toThrow("read");
   });
   it("rejects PDFs without usable text", async () => {
     await expect(
       extractDocument("empty.pdf", await readFile("tests/fixtures/empty.pdf")),
-    ).rejects.toThrow("tekstherkenning");
+    ).rejects.toThrow("text recognition");
   });
   it("rejects oversized uploads", async () => {
     await expect(
@@ -35,6 +35,6 @@ describe("Document text extraction", () => {
   it("rejects excessive extracted text", async () => {
     await expect(
       extractDocument("big.txt", Buffer.from("a".repeat(100001))),
-    ).rejects.toThrow("100.000");
+    ).rejects.toThrow("100,000");
   });
 });

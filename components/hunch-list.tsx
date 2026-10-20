@@ -92,19 +92,19 @@ export function HunchList() {
         <div>
           <div className="eyebrow">Hunches</div>
           <h1>
-            Welkom terug, Jamie{" "}
+            Welcome back, Jamie{" "}
             <span className="greeting-mark" aria-hidden="true">
               <HunchIcon name="summary" size={22} />
             </span>
           </h1>
           <p>
-            Waar loop je op vast? Hunch vindt de mensen, documenten en
-            gesprekken die je verder helpen.
+            What are you stuck on? Hunch finds the people, documents and
+            conversations that help you move forward.
           </p>
         </div>
         <button className="button primary" onClick={() => setCreating(true)}>
           <Plus size={18} />
-          Nieuwe hunch
+          New hunch
         </button>
       </div>
 
@@ -115,12 +115,12 @@ export function HunchList() {
 
       <section className="queue-section">
         <div className="queue-toolbar">
-          <div className="tabs" role="tablist" aria-label="Welke hunches">
+          <div className="tabs" role="tablist" aria-label="Which hunches">
             {(
               [
-                ["mine", "Van mij"],
-                ["help", "Hulp gevraagd"],
-                ["all", "Alle"],
+                ["mine", "Mine"],
+                ["help", "Help requested"],
+                ["all", "All"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -142,24 +142,24 @@ export function HunchList() {
           <div className="toolbar-right">
             <span className="status-filter">
               <select
-                aria-label="Filter op status"
+                aria-label="Filter by status"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value as StatusFilter);
                   setPage(0);
                 }}
               >
-                <option value="any">Elke status</option>
-                <option value="open">Lopend</option>
-                <option value="resolved">Opgelost</option>
+                <option value="any">Any status</option>
+                <option value="open">In progress</option>
+                <option value="resolved">Resolved</option>
               </select>
               <ChevronDown size={16} aria-hidden="true" />
             </span>
             <label className="search-field">
               <Search size={17} />
               <input
-                aria-label="Zoek hunches"
-                placeholder="Zoek een hunch of collega…"
+                aria-label="Search hunches"
+                placeholder="Search for a hunch or colleague…"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -173,16 +173,16 @@ export function HunchList() {
         <div className="ticket-table hunch-table">
           <div className="table-heading">
             <span>Hunch</span>
-            <span>Geopend door</span>
+            <span>Opened by</span>
             <span>Status</span>
-            <span>Hulp van</span>
-            <span>Laatst bijgewerkt</span>
+            <span>Help from</span>
+            <span>Last updated</span>
             <span />
           </div>
           {loading ? (
             <div className="empty-state">
               <Spinner />
-              Hunches laden…
+              Loading hunches…
             </div>
           ) : visible.length ? (
             visible.map((h) => (
@@ -202,7 +202,7 @@ export function HunchList() {
                 <div className="customer-cell author-cell">
                   <Avatar person={h.author} small />
                   <span>
-                    {h.author.id === CURRENT_USER_ID ? "Jij" : h.author.name}
+                    {h.author.id === CURRENT_USER_ID ? "You" : h.author.name}
                   </span>
                 </div>
                 <HunchStatus status={h.status} />
@@ -212,7 +212,7 @@ export function HunchList() {
                       <Avatar person={h.helper} small />
                       <span>
                         {h.helper.id === CURRENT_USER_ID
-                          ? "Jij"
+                          ? "You"
                           : h.helper.name}
                       </span>
                     </>
@@ -232,7 +232,7 @@ export function HunchList() {
               <strong>{EMPTY[scope].title}</strong>
               <span>
                 {scoped[scope].length
-                  ? "Pas je zoekopdracht of filter aan."
+                  ? "Adjust your search or filter."
                   : EMPTY[scope].text}
               </span>
             </div>
@@ -259,14 +259,14 @@ export function HunchList() {
 
 const EMPTY: Record<Scope, { title: string; text: string }> = {
   mine: {
-    title: "Nog geen hunches",
-    text: "Open een hunch zodra je ergens op vastloopt.",
+    title: "No hunches yet",
+    text: "Open a hunch whenever you get stuck.",
   },
   help: {
-    title: "Niemand vraagt nu jouw hulp",
-    text: "Pip laat het je weten zodra iemand je nodig heeft.",
+    title: "No one needs your help right now",
+    text: "Pip will let you know when someone needs you.",
   },
-  all: { title: "Nog geen hunches", text: "Er zijn nog geen hunches." },
+  all: { title: "No hunches yet", text: "There are no hunches yet." },
 };
 
 /** "1–8 van 14" with previous, page numbers and next. */
@@ -284,15 +284,15 @@ function Pager({
   const from = page * PAGE_SIZE + 1;
   const to = Math.min(total, (page + 1) * PAGE_SIZE);
   return (
-    <nav className="table-footer pager" aria-label="Paginering">
+    <nav className="table-footer pager" aria-label="Pagination">
       <span>
-        {from}–{to} van {total}
+        {from}–{to} of {total}
       </span>
       {pages > 1 && (
         <div className="pager-buttons">
           <button
             className="icon-button"
-            aria-label="Vorige pagina"
+            aria-label="Previous page"
             disabled={page === 0}
             onClick={() => onPage(page - 1)}
           >
@@ -310,7 +310,7 @@ function Pager({
           ))}
           <button
             className="icon-button"
-            aria-label="Volgende pagina"
+            aria-label="Next page"
             disabled={page === pages - 1}
             onClick={() => onPage(page + 1)}
           >
@@ -351,8 +351,8 @@ function NewHunch({
   const leaveOut = (key: string) => setExcluded((x) => [...x, key]);
   return (
     <Modal
-      title="Nieuwe hunch"
-      subtitle="Vertel waar je aan werkt. Hunch zoekt de mensen, documenten en gesprekken die je verder helpen."
+      title="New hunch"
+      subtitle="Tell us what you're working on. Hunch finds the people, documents and conversations that help you move forward."
       onClose={onClose}
     >
       <form
@@ -375,7 +375,7 @@ function NewHunch({
         }}
       >
         <label>
-          Je vraag in één zin
+          Your question in one sentence
           <input
             name="title"
             required
@@ -383,11 +383,11 @@ function NewHunch({
             maxLength={160}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Hoe verwerk ik vertrekvakantiegeld bij deeltijds werk?"
+            placeholder="How do I handle departure holiday pay for part-time work?"
           />
         </label>
         <label>
-          Waar werk je aan?
+          What are you working on?
           <textarea
             name="workingOn"
             required
@@ -396,7 +396,7 @@ function NewHunch({
             rows={4}
             value={workingOn}
             onChange={(e) => setWorkingOn(e.target.value)}
-            placeholder="Ik bereid een eindafrekening voor en…"
+            placeholder="I'm preparing a final settlement and…"
           />
         </label>
         <div className="attach-field">
@@ -408,7 +408,7 @@ function NewHunch({
               <button
                 type="button"
                 className="icon-button"
-                aria-label="Document verwijderen"
+                aria-label="Remove document"
                 onClick={() => setFile(null)}
               >
                 <X size={15} />
@@ -417,8 +417,8 @@ function NewHunch({
           ) : (
             <label className="attach-pick">
               <Paperclip size={15} />
-              Document toevoegen
-              <small>Notities, Word, PDF of tekst · optioneel</small>
+              Add document
+              <small>Notes, Word, PDF or text · optional</small>
               <input
                 type="file"
                 accept=".txt,.md,.docx,.pdf"
@@ -428,7 +428,7 @@ function NewHunch({
           )}
         </div>
         <fieldset className="context-choice">
-          <legend className="section-overline">Wat Hunch vindt</legend>
+          <legend className="section-overline">What Hunch finds</legend>
           {found ? (
             <>
               <div className="found-summary">
@@ -438,8 +438,8 @@ function NewHunch({
                   ))}
                 </span>
                 <span>
-                  {found.people.length} mensen · {found.documents.length}{" "}
-                  documenten · {found.conversations.length} gesprekken
+                  {found.people.length} people · {found.documents.length}{" "}
+                  documents · {found.conversations.length} conversations
                 </span>
                 <button
                   type="button"
@@ -447,7 +447,7 @@ function NewHunch({
                   aria-expanded={reviewing}
                   onClick={() => setReviewing((r) => !r)}
                 >
-                  {reviewing ? "Klaar" : "Bekijk en pas aan"}
+                  {reviewing ? "Done" : "Review and adjust"}
                 </button>
               </div>
               {reviewing && (
@@ -487,25 +487,25 @@ function NewHunch({
                   className="text-button more-link"
                   onClick={() => setExcluded([])}
                 >
-                  {excluded.length} weggelaten · herstel
+                  {excluded.length} omitted · restore
                 </button>
               )}
             </>
           ) : (
             <div className="inline-info">
               <HunchIcon name="summary" size={16} />
-              Hunch zoekt relevante mensen, documenten en gesprekken zodra je
-              beschrijft waar je aan werkt.
+              Hunch looks for relevant people, documents and conversations as
+              soon as you describe what you're working on.
             </div>
           )}
         </fieldset>
         {error && <ErrorNotice error={error} />}
         <div className="modal-actions">
           <button type="button" className="button secondary" onClick={onClose}>
-            Annuleren
+            Cancel
           </button>
           <button className="button primary" disabled={busy}>
-            {busy ? <Spinner /> : <Plus size={17} />}Hunch openen
+            {busy ? <Spinner /> : <Plus size={17} />}Open hunch
           </button>
         </div>
       </form>
@@ -534,7 +534,7 @@ function FoundItem({
       <button
         type="button"
         className="icon-button"
-        aria-label={`${name} weglaten`}
+        aria-label={`${name} omit`}
         onClick={onRemove}
       >
         <X size={15} />

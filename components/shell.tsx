@@ -32,25 +32,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
     },
     {
       href: "/tickets",
-      label: "Klantvragen",
+      label: "Customer questions",
       icon: Inbox,
       active: path.startsWith("/tickets"),
     },
     {
       href: "/kennisbank",
-      label: "Kennisbank",
+      label: "Knowledge base",
       icon: BookOpen,
       active: path === "/kennisbank",
     },
     {
       href: "/organigram",
-      label: "Organigram",
+      label: "Organisation chart",
       icon: Network,
       active: path === "/organigram",
     },
     {
       href: "/instellingen",
-      label: "Verbindingen",
+      label: "Connections",
       icon: Settings2,
       active: path === "/instellingen",
     },
@@ -58,7 +58,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className={`app-shell${isHunchPage ? " hunch-shell" : ""}`}>
       <aside className="sidebar">
-        <Link href="/" className="brand" aria-label="Hunch startpagina">
+        <Link href="/" className="brand" aria-label="Hunch home">
           <HunchLogo size={34} />
         </Link>
         <div className="workspace">
@@ -70,7 +70,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
           <ChevronDown size={16} />
         </div>
-        <div className="nav-caption">Werkplek</div>
+        <div className="nav-caption">Workspace</div>
         <nav>
           {nav.map(({ href, label, icon: Icon, active }) => (
             <Link
@@ -88,13 +88,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="tiny-spark">
             <HunchIcon name="summary" size={18} />
           </span>
-          <strong>Kennis wordt vertrouwen.</strong>
+          <strong>Knowledge builds confidence.</strong>
           <p>
-            Vind de juiste bronnen.
+            Find the right sources.
             <br />
-            Begrijp het verschil.
+            Understand the difference.
             <br />
-            Antwoord met vertrouwen.
+            Answer with confidence.
           </p>
           <div className="note-rule" />
           <span>Find it. Understand it. Trust it.</span>
@@ -116,18 +116,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <header className="topbar">
           <div className="topbar-context">
             Customer care <span className="topbar-slash">/</span>
-            <strong>Payroll België</strong>
+            <strong>Payroll Belgium</strong>
           </div>
           <div className="topbar-right">
             <span className="safe-tag">
               <ShieldCheck size={16} />
-              Verzending in demomodus
+              Sending in demo mode
             </span>
             {isHunchPage && <HelpBell />}
             <Link
               href="/instellingen"
               className="icon-button"
-              aria-label="Hulp en verbindingen"
+              aria-label="Help and connections"
             >
               <CircleHelp size={20} />
             </Link>
@@ -136,8 +136,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </header>
         <main>{children}</main>
         <footer className="page-footer">
-          <span>Hunch · Een SD Worx proof of concept</span>
-          <span>Gebouwd rond kennis. Ontworpen voor vertrouwen.</span>
+          <span>Hunch · An SD Worx proof of concept</span>
+          <span>Built around knowledge. Designed for confidence.</span>
         </footer>
       </div>
     </div>

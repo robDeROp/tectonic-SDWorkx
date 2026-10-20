@@ -29,8 +29,7 @@ type Call = typeof helpCalls.$inferSelect;
 
 const employee = (id: string) => {
   const e = findEmployee(id);
-  if (!e)
-    throw new AppError("Deze medewerker staat niet in de directory.", 404);
+  if (!e) throw new AppError("This employee is not in the directory.", 404);
   return e;
 };
 /**
@@ -148,7 +147,7 @@ export async function getHunch(
   viewerId: string,
 ): Promise<HunchDetail> {
   const [hunch] = await db.select().from(hunches).where(eq(hunches.id, id));
-  if (!hunch) throw new AppError("Deze hunch bestaat niet.", 404);
+  if (!hunch) throw new AppError("This hunch does not exist.", 404);
   const calls = (await callsFor([id])).get(id) ?? [];
   const messages = await db
     .select()
@@ -310,7 +309,7 @@ async function lockHunch(tx: Transaction, id: string) {
     .from(hunches)
     .where(eq(hunches.id, id))
     .for("update");
-  if (!hunch) throw new AppError("Deze hunch bestaat niet.", 404);
+  if (!hunch) throw new AppError("This hunch does not exist.", 404);
   const calls = await tx
     .select()
     .from(helpCalls)
@@ -360,11 +359,11 @@ async function notify(
 function pickedRecipient(toId: string, authorId: string) {
   const person = employee(toId);
   if (person.id === authorId)
-    throw new AppError("Je kunt jezelf geen hulpvraag sturen.", 400);
+    throw new AppError("You cannot send yourself a help request.", 400);
   const until = awayUntil(person);
   if (until)
     throw new AppError(
-      `${person.displayName} is afwezig tot ${new Intl.DateTimeFormat("nl-BE", { day: "numeric", month: "long" }).format(new Date(until))}.`,
+      `${person.displayName} is away until ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long" }).format(new Date(until))}.`,
       409,
     );
   return person;
@@ -383,20 +382,29 @@ export async function callForHelp(
   await db.transaction(async (tx) => {
     const { hunch, calls } = await lockHunch(tx, id);
     if (hunch.authorId !== viewerId)
-      throw new AppError("Alleen wie de hunch opende, kan hulp inroepen.", 403);
+      throw new AppError(
+        "Only the person who opened the hunch can request help.",
+        403,
+      );
     if (hunch.status === "resolved")
-      throw new AppError("Deze hunch is al opgelost.", 409);
+      throw new AppError("This hunch is already resolved.", 409);
     const active = activeCall(calls);
     if (active && !input.toId)
-      throw new AppError("Voor deze hunch loopt al een hulpvraag.", 409);
+      throw new AppError(
+        "A help request is already active for this hunch.",
+        409,
+      );
     if (input.toId) {
       if (active?.recipientId === input.toId)
-        throw new AppError("Deze collega heeft je hulpvraag al.", 409);
+        throw new AppError(
+          "This colleague already has your help request.",
+          409,
+        );
       const recipient = pickedRecipient(input.toId, hunch.authorId);
       if (active)
         await tx
           .update(helpCalls)
-          .set({ state: "cancelled", note: "Omgeleid" })
+          .set({ state: "cancelled", note: "Redirected" })
           .where(eq(helpCalls.id, active.id));
       await notify(tx, id, { skipped: [], recipient });
       return;
@@ -411,7 +419,7 @@ export async function callForHelp(
     });
     if (!route.recipient)
       throw new AppError(
-        "Niemand die Hunch bij deze hunch vond, is nu beschikbaar. Kies zelf een collega.",
+        "None of the people Hunch found for this hunch are available now. Choose a colleague yourself.",
         409,
       );
     await notify(tx, id, { ...route, recipient: route.recipient });
@@ -424,12 +432,12 @@ export async function cancelCall(id: string, viewerId: string) {
     const { hunch, calls } = await lockHunch(tx, id);
     if (hunch.authorId !== viewerId)
       throw new AppError(
-        "Alleen wie de hunch opende, kan de hulpvraag intrekken.",
+        "Only the person who opened the hunch can withdraw the help request.",
         403,
       );
     const active = activeCall(calls);
     if (!active || hunch.status === "resolved")
-      throw new AppError("Er loopt geen hulpvraag om in te trekken.", 409);
+      throw new AppError("There is no active help request to withdraw.", 409);
     await tx
       .update(helpCalls)
       .set({ state: "cancelled", note: null })
@@ -450,7 +458,10 @@ export async function acceptCall(id: string, viewerId: string) {
       active.recipientId !== viewerId ||
       active.state !== "notified"
     )
-      throw new AppError("Deze hulpvraag staat niet (meer) op jouw naam.", 409);
+      throw new AppError(
+        "This help request is not assigned to you, or is no longer assigned to you.",
+        409,
+      );
     await tx
       .update(helpCalls)
       .set({ state: "accepted" })
@@ -470,15 +481,15 @@ export async function volunteer(id: string, viewerId: string) {
   await db.transaction(async (tx) => {
     const { hunch } = await lockHunch(tx, id);
     if (hunch.authorId === viewerId)
-      throw new AppError("Je kunt je eigen hunch niet oppakken.", 400);
+      throw new AppError("You cannot take on your own hunch.", 400);
     if (hunch.status !== "open")
-      throw new AppError("Iemand anders helpt hier al mee.", 409);
+      throw new AppError("Someone else is already helping with this.", 409);
     await tx.insert(helpCalls).values({
       id: randomUUID(),
       hunchId: id,
       recipientId: viewerId,
       state: "accepted",
-      note: "Bood zelf hulp aan",
+      note: "Volunteered to help",
     });
     await tx
       .update(hunches)
@@ -496,9 +507,15 @@ export async function passCall(
     const { hunch, calls } = await lockHunch(tx, id);
     const active = activeCall(calls);
     if (!active || active.recipientId !== viewerId)
-      throw new AppError("Deze hulpvraag staat niet (meer) op jouw naam.", 409);
+      throw new AppError(
+        "This help request is not assigned to you, or is no longer assigned to you.",
+        409,
+      );
     if (calls.filter((c) => c.state === "passed").length >= MAX_PASSES)
-      throw new AppError("Deze hulpvraag werd al te vaak doorgegeven.", 409);
+      throw new AppError(
+        "This help request has already been passed on too many times.",
+        409,
+      );
     const route = input.toId
       ? { skipped: [], recipient: pickedRecipient(input.toId, hunch.authorId) }
       : routeCall({
@@ -509,10 +526,10 @@ export async function passCall(
             .map((c) => c.recipientId),
         });
     if (route.recipient?.id === viewerId)
-      throw new AppError("Kies iemand anders dan jezelf.", 400);
+      throw new AppError("Choose someone other than yourself.", 400);
     if (!route.recipient)
       throw new AppError(
-        "Er is niemand anders beschikbaar. Kies zelf een collega.",
+        "No one else is available. Choose a colleague yourself.",
         409,
       );
     await tx
@@ -537,12 +554,12 @@ export async function updateHunchStatus(
     const { hunch, calls } = await lockHunch(tx, id);
     if (hunch.authorId !== viewerId)
       throw new AppError(
-        "Alleen wie de hunch opende, kan de status wijzigen.",
+        "Only the person who opened the hunch can change its status.",
         403,
       );
     if (input.expectedStatus && input.expectedStatus !== hunch.status)
       throw new AppError(
-        "De status is intussen gewijzigd. Vernieuw de hunch en probeer opnieuw.",
+        "The status has changed. Refresh the hunch and try again.",
         409,
       );
     const active = activeCall(calls);
@@ -557,7 +574,7 @@ export async function updateHunchStatus(
         .set({
           state: "cancelled",
           note:
-            input.status === "resolved" ? "Hunch opgelost" : "Hunch heropend",
+            input.status === "resolved" ? "Hunch resolved" : "Hunch reopened",
         })
         .where(
           and(
@@ -567,28 +584,32 @@ export async function updateHunchStatus(
         );
     } else {
       const toId = input.toId ?? active?.recipientId;
-      if (!toId) throw new AppError("Kies eerst de collega die je helpt.", 400);
+      if (!toId)
+        throw new AppError(
+          "First choose the colleague who is helping you.",
+          400,
+        );
       const recipient = pickedRecipient(toId, hunch.authorId);
       if (active?.recipientId === recipient.id) {
         await tx
           .update(helpCalls)
           .set({
             state: input.status === "waiting" ? "notified" : "accepted",
-            note: "Status bijgewerkt door de auteur",
+            note: "Status updated by the author",
           })
           .where(eq(helpCalls.id, active.id));
       } else {
         if (active)
           await tx
             .update(helpCalls)
-            .set({ state: "cancelled", note: "Omgeleid" })
+            .set({ state: "cancelled", note: "Redirected" })
             .where(eq(helpCalls.id, active.id));
         await tx.insert(helpCalls).values({
           id: randomUUID(),
           hunchId: id,
           recipientId: recipient.id,
           state: input.status === "waiting" ? "notified" : "accepted",
-          note: "Status ingesteld door de auteur",
+          note: "Status set by the author",
           emailedAt: input.status === "waiting" ? new Date() : null,
         });
       }
