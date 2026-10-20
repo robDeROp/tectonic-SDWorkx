@@ -15,6 +15,34 @@
       "when": 1790794976339,
       "tag": "0001_dusty_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792491315635,
+      "tag": "0002_hunches",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792494772755,
+      "tag": "0003_hunch_conversation",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792495759305,
+      "tag": "0004_hunch_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792498092633,
+      "tag": "0005_hunch_action_plans",
+      "breakpoints": true
     }
   ]
 }

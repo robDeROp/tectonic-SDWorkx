@@ -15,7 +15,7 @@ import uuid
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--project', required=True)
-parser.add_argument('--region', default='europe-west1')
+parser.add_argument('--region', default='us-central1')
 parser.add_argument('--report', default='.data/cloud-validation.json')
 args = parser.parse_args()
 report = {'project': args.project, 'checkedAt': datetime.now(timezone.utc).isoformat(), 'checks': []}

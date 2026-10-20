@@ -41,6 +41,7 @@ jobs:
       - run: npm test
       - run: npm run db:migrate
       - run: npm run test:integration
+      - run: npm run test:hunches
       - run: npm run build
       - name: Test standalone health endpoint
         run: |
@@ -74,6 +75,8 @@ jobs:
       - run: terraform -chdir=infra/bootstrap validate
       - run: bash -n scripts/bootstrap-cloud.sh scripts/deploy.sh
       - run: python3 scripts/test-deploy.py
+      - run: python3 scripts/test-bootstrap.py
+      - run: node --test scripts/test-proxy.mjs
   deploy:
     name: Deploy to Google Cloud
     needs: [verify, infrastructure]

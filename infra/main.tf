@@ -28,8 +28,14 @@ variable "project_id" {
 
 variable "region" {
   type    = string
-  default = "europe-west1"
+  default = "us-central1"
 
+}
+
+variable "zone" {
+  type        = string
+  default     = null
+  description = "Preferred Cloud SQL zone; Cloud Run and Cloud Tasks use the region."
 }
 
 variable "gemini_location" {
@@ -170,6 +176,9 @@ resource "google_sql_database_instance" "db" {
     edition                     = "ENTERPRISE"
     availability_type           = "ZONAL"
     deletion_protection_enabled = true
+    location_preference {
+      zone = var.zone
+    }
     backup_configuration {
       enabled                        = true
       point_in_time_recovery_enabled = true

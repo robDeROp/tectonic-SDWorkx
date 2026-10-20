@@ -15,7 +15,7 @@ export async function extractDocument(
   const ext = path.extname(name).toLowerCase();
   let content = "";
   try {
-    if (ext === ".txt")
+    if (ext === ".txt" || ext === ".md")
       content = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
     else if (ext === ".docx") {
       if (buffer.readUInt16LE(0) !== 0x4b50) throw new Error("Invalid DOCX");
@@ -51,7 +51,7 @@ export async function extractDocument(
       } finally {
         await loadingTask.destroy();
       }
-    } else throw new AppError("Kies een PDF-, TXT- of DOCX-bestand.");
+    } else throw new AppError("Kies een PDF-, TXT-, MD- of DOCX-bestand.");
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(

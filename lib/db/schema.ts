@@ -8,8 +8,14 @@ import {
   serial,
   uniqueIndex,
   index,
+  primaryKey,
 } from "drizzle-orm/pg-core";
-import type { DocumentAssessment, JobInput, JobResult } from "../types";
+import type {
+  DocumentAssessment,
+  JobInput,
+  JobResult,
+  HunchActionPlan,
+} from "../types";
 const time = (name: string) =>
   timestamp(name, { withTimezone: true }).notNull().defaultNow();
 export const tickets = pgTable("tickets", {
@@ -149,3 +155,91 @@ export const messages = pgTable(
   },
   (t) => [index("messages_ticket_idx").on(t.ticketId)],
 );
+
+/* Hunches: an employee's question and everything Hunch linked to it. */
+export const hunches = pgTable("hunches", {
+  id: text("id").primaryKey(),
+  number: serial("number").notNull(),
+  authorId: text("author_id").notNull(),
+  title: text("title").notNull(),
+  workingOn: text("working_on").notNull(),
+  status: text("status").notNull().default("open"),
+  /** Where the hunch was opened: the platform, or a Teams/Outlook plugin. */
+  source: text("source").notNull().default("hunch"),
+  /** Teams channel or mail subject the plugin was called from. */
+  sourceLabel: text("source_label"),
+  createdAt: time("created_at"),
+  updatedAt: time("updated_at"),
+});
+
+/*
+ * The people, documents and conversations linked directly to a hunch. Found
+ * by Hunch when the hunch is opened; the author can leave items out first.
+ */
+export const hunchContext = pgTable(
+  "hunch_context",
+  {
+    hunchId: text("hunch_id")
+      .notNull()
+      .references(() => hunches.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    refId: text("ref_id").notNull(),
+    relevance: integer("relevance").notNull(),
+    reason: text("reason").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.hunchId, t.kind, t.refId] })],
+);
+
+/*
+ * The hunch conversation. The first message is the author's description, or
+ * the Teams/Outlook thread a plugin opened the hunch from. Senders outside
+ * the directory (a customer mailing in) have no author id, only a name.
+ */
+export const hunchMessages = pgTable(
+  "hunch_messages",
+  {
+    id: text("id").primaryKey(),
+    hunchId: text("hunch_id")
+      .notNull()
+      .references(() => hunches.id, { onDelete: "cascade" }),
+    authorId: text("author_id"),
+    authorName: text("author_name").notNull(),
+    authorDetail: text("author_detail"),
+    source: text("source").notNull().default("hunch"),
+    content: text("content").notNull(),
+    attachmentName: text("attachment_name"),
+    attachmentText: text("attachment_text"),
+    createdAt: time("created_at"),
+  },
+  (t) => [index("hunch_messages_hunch_idx").on(t.hunchId, t.createdAt)],
+);
+
+/* Every routing step of a call for help, in order: skipped, notified, … */
+export const helpCalls = pgTable(
+  "help_calls",
+  {
+    id: text("id").primaryKey(),
+    hunchId: text("hunch_id")
+      .notNull()
+      .references(() => hunches.id, { onDelete: "cascade" }),
+    recipientId: text("recipient_id").notNull(),
+    state: text("state").notNull(),
+    note: text("note"),
+    /** Simulated: no e-mail ever leaves the demo. */
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    createdAt: time("created_at"),
+  },
+  (t) => [
+    index("help_calls_hunch_idx").on(t.hunchId),
+    index("help_calls_recipient_idx").on(t.recipientId, t.state),
+  ],
+);
+
+export const hunchActionPlans = pgTable("hunch_action_plans", {
+  hunchId: text("hunch_id")
+    .primaryKey()
+    .references(() => hunches.id, { onDelete: "cascade" }),
+  contextHash: text("context_hash").notNull(),
+  plan: jsonb("plan").$type<HunchActionPlan>().notNull(),
+  createdAt: time("created_at"),
+});

@@ -1,7 +1,8 @@
 project_id = "your-project-id"
-region = "europe-west1"
+region = "us-central1"
+zone = "us-central1-c"
 gemini_model = "your-enabled-gemini-model"
-app_image = "europe-west1-docker.pkg.dev/your-project-id/clarity/app:v1"
-tools_image = "europe-west1-docker.pkg.dev/your-project-id/clarity/tools:v1"
+app_image = "us-central1-docker.pkg.dev/your-project-id/clarity/app:v1"
+tools_image = "us-central1-docker.pkg.dev/your-project-id/clarity/tools:v1"
 viewer_members = ["user:you@example.com"]
 deployer_service_account = "clarity-deployer@your-project-id.iam.gserviceaccount.com"
