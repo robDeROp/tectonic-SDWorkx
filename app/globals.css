@@ -565,23 +565,6 @@ code {
 .sidebar-bottom {
   margin-top: auto;
 }
-.demo-label {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-2);
-  font: 600 12px/16px var(--font-sans);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--on-header-muted);
-  padding-bottom: var(--space-4);
-}
-.demo-label > span {
-  width: 6px;
-  height: 6px;
-  background: var(--sunflower);
-  border-radius: var(--radius-pill);
-}
 .profile {
   display: flex;
   align-items: center;
@@ -3384,7 +3367,6 @@ button.thread-attachment:hover {
   .workspace,
   .nav-caption,
   .sidebar-note,
-  .demo-label,
   .profile > div {
     display: none;
   }
