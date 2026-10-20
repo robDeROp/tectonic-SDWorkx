@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import {
   AlertCircle,
+  Archive,
   ArrowRight,
   Check,
   CheckCheck,
@@ -17,6 +18,8 @@ const statusGlyph: Record<string, React.ReactNode> = {
   attention: <AlertCircle size={13} strokeWidth={2.5} />,
   reviewed: <Check size={13} strokeWidth={2.5} />,
   sent: <CheckCheck size={13} strokeWidth={2.5} />,
+  closed: <CheckCheck size={13} strokeWidth={2.5} />,
+  archived: <Archive size={13} strokeWidth={2.5} />,
 };
 export function Status({ status }: { status: string }) {
   return (

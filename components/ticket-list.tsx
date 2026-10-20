@@ -17,7 +17,7 @@ import { dateLabel, request } from "@/lib/client";
 import type { TicketSummary } from "@/lib/types";
 import { GlyphTile, HunchIcon, Pip } from "./hunch";
 import { ErrorNotice, Modal, Spinner, Status } from "./ui";
-export function TicketList() {
+export function HunchList() {
   const router = useRouter();
   const [tickets, setTickets] = useState<TicketSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,15 +44,14 @@ export function TicketList() {
     () =>
       tickets.filter(
         (t) =>
-          (filter === "all" ||
-            (filter === "open" ? t.status !== "sent" : t.status === filter)) &&
+          (filter === "all" || t.lifecycle === filter) &&
           `${t.subject} ${t.customer} ${t.company}`
             .toLowerCase()
             .includes(query.toLowerCase()),
       ),
     [tickets, query, filter],
   );
-  const open = tickets.filter((t) => t.status !== "sent").length;
+  const open = tickets.filter((t) => t.lifecycle === "open").length;
   return (
     <div className="page overview-page">
       <div className="page-heading">
@@ -64,11 +63,11 @@ export function TicketList() {
               <HunchIcon name="summary" size={22} />
             </span>
           </h1>
-          <p>Elke klantvraag verdient een antwoord dat klopt.</p>
+          <p>Elke vraag brengt kennis, mensen en volgende stappen samen.</p>
         </div>
         <button className="button primary" onClick={() => setCreating(true)}>
           <Plus size={18} />
-          Nieuwe klantvraag
+          Nieuwe Hunch
         </button>
       </div>
       <section className="hero-panel">
@@ -83,7 +82,7 @@ export function TicketList() {
           </h2>
           <p>
             De juiste bronnen. Een helder oordeel. Een sterker antwoord. <br />
-            Hunch helpt je bij elke stap van de klantvraag.
+            Hunch brengt je van de eerste vraag naar de volgende stap.
           </p>
           <Link href="/kennisbank" className="hero-link">
             Ontdek de kennis achter je antwoord
@@ -94,7 +93,7 @@ export function TicketList() {
       </section>
       <div className="stats-grid">
         <Stat
-          title="Openstaande vragen"
+          title="Open Hunches"
           value={open}
           icon={<Inbox size={20} />}
           tone="neutral"
@@ -102,31 +101,39 @@ export function TicketList() {
         />
         <Stat
           title="AI aan het werk"
-          value={tickets.filter((t) => t.status === "working").length}
+          value={
+            tickets.filter(
+              (t) => t.lifecycle === "open" && t.status === "working",
+            ).length
+          }
           icon={<HunchIcon name="summary" size={20} />}
           tone="spark"
           detail="Kennis verzamelen & beoordelen"
         />
         <Stat
           title="Vraagt jouw aandacht"
-          value={tickets.filter((t) => t.status === "attention").length}
+          value={
+            tickets.filter(
+              (t) => t.lifecycle === "open" && t.status === "attention",
+            ).length
+          }
           icon={<AlertCircle size={20} />}
           tone="attention"
           detail="Jouw expertise maakt het verschil"
         />
         <Stat
-          title="Afgehandeld"
-          value={tickets.filter((t) => t.status === "sent").length}
+          title="Gesloten"
+          value={tickets.filter((t) => t.lifecycle === "closed").length}
           icon={<CheckCheck size={20} />}
           tone="success"
-          detail="Antwoorden gecontroleerd"
+          detail="Kennis afgerond en beoordeeld"
         />
       </div>
       <section className="queue-section">
         <div className="section-title-row">
           <div>
             <h2>
-              Klantvragen <span className="count-badge">{tickets.length}</span>
+              Hunches <span className="count-badge">{tickets.length}</span>
             </h2>
             <p>Van de eerste vraag tot een onderbouwd antwoord.</p>
           </div>
@@ -138,9 +145,10 @@ export function TicketList() {
         <div className="queue-toolbar">
           <div className="tabs">
             {[
-              ["all", "Alle vragen"],
-              ["open", "Openstaand"],
-              ["sent", "Afgehandeld"],
+              ["all", "Alle Hunches"],
+              ["open", "Open"],
+              ["closed", "Gesloten"],
+              ["archived", "Gearchiveerd"],
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -155,8 +163,8 @@ export function TicketList() {
           <label className="search-field">
             <Search size={17} />
             <input
-              aria-label="Zoek klantvragen"
-              placeholder="Zoek een klantvraag…"
+              aria-label="Zoek Hunches"
+              placeholder="Zoek een Hunch…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -165,7 +173,7 @@ export function TicketList() {
         {error && <ErrorNotice error={error} onRetry={load} />}
         <div className="ticket-table">
           <div className="table-heading">
-            <span>Klantvraag</span>
+            <span>Hunch</span>
             <span>Klant</span>
             <span>Status</span>
             <span>
@@ -176,17 +184,17 @@ export function TicketList() {
           {loading ? (
             <div className="empty-state">
               <Spinner />
-              Klantvragen laden…
+              Hunches laden…
             </div>
           ) : filtered.length ? (
             filtered.map((t) => (
-              <Link href={`/tickets/${t.id}`} className="ticket-row" key={t.id}>
+              <Link href={`/hunches/${t.id}`} className="ticket-row" key={t.id}>
                 <div className="ticket-subject">
                   <GlyphTile kind="chats" size={40} />
                   <div>
                     <span className="ticket-number">
                       <span className="mono">
-                        TKT-{String(t.number).padStart(4, "0")}
+                        HNG-{String(t.number).padStart(4, "0")}
                       </span>
                       <span aria-hidden="true">·</span>
                       Payroll België
@@ -212,7 +220,14 @@ export function TicketList() {
                     <small>{t.company}</small>
                   </div>
                 </div>
-                <Status status={t.status} />
+                <div>
+                  <Status status={t.lifecycle} />
+                  {t.completion && (
+                    <small className="hunch-list-score">
+                      Eindscore {t.completion.score}/100
+                    </small>
+                  )}
+                </div>
                 <span className="date-cell">
                   {dateLabel(t.createdAt, true)}
                 </span>
@@ -223,15 +238,13 @@ export function TicketList() {
             <div className="empty-state">
               <Pip state="idle" size={80} />
               <strong>Niets gevonden</strong>
-              <span>
-                Pas je zoekopdracht aan of maak een nieuwe klantvraag.
-              </span>
+              <span>Pas je zoekopdracht aan of maak een nieuwe Hunch.</span>
             </div>
           )}
         </div>
         <div className="table-footer">
           <span>
-            {filtered.length} van {tickets.length} klantvragen
+            {filtered.length} van {tickets.length} Hunches
           </span>
           <span>Belgische payroll · Demonstratieomgeving</span>
         </div>
@@ -249,7 +262,7 @@ export function TicketList() {
             n: "01",
             icon: <GlyphTile kind="docs" />,
             title: "Vind de juiste kennis",
-            text: "Relevante documenten bij jouw klantvraag.",
+            text: "Relevante documenten bij jouw Hunch.",
           },
           {
             n: "02",
@@ -277,9 +290,9 @@ export function TicketList() {
         ))}
       </div>
       {creating && (
-        <NewTicket
+        <NewHunch
           onClose={() => setCreating(false)}
-          onCreated={(id) => router.push(`/tickets/${id}`)}
+          onCreated={(id) => router.push(`/hunches/${id}`)}
         />
       )}
     </div>
@@ -311,7 +324,7 @@ function Stat({
     </div>
   );
 }
-function NewTicket({
+function NewHunch({
   onClose,
   onCreated,
 }: {
@@ -322,8 +335,8 @@ function NewTicket({
   const [error, setError] = useState("");
   return (
     <Modal
-      title="Nieuwe klantvraag"
-      subtitle="Hunch start het documentonderzoek automatisch."
+      title="Nieuwe Hunch"
+      subtitle="Begin met een e-mail, Teams-bericht of een andere vraag."
       onClose={onClose}
     >
       <form
@@ -346,7 +359,7 @@ function NewTicket({
       >
         <div className="form-grid">
           <label>
-            Klantnaam
+            Naam van de afzender
             <input
               name="customer"
               required
@@ -367,6 +380,14 @@ function NewTicket({
           </label>
         </div>
         <label>
+          Waar komt de vraag vandaan?
+          <select name="intakeChannel" defaultValue="email">
+            <option value="email">E-mail</option>
+            <option value="teams">Teams-bericht</option>
+            <option value="other">Andere vraag</option>
+          </select>
+        </label>
+        <label>
           E-mailadres
           <input
             name="email"
@@ -383,18 +404,18 @@ function NewTicket({
             required
             minLength={3}
             maxLength={160}
-            placeholder="Waar gaat de klantvraag over?"
+            placeholder="Waar gaat de Hunch over?"
           />
         </label>
         <label>
-          Klantvraag
+          Oorspronkelijke vraag
           <textarea
             name="question"
             required
             minLength={10}
             maxLength={10000}
             rows={5}
-            placeholder="Voeg de volledige klantvraag toe…"
+            placeholder="Plak de oorspronkelijke e-mail, het Teams-bericht of je vraag…"
           />
         </label>
         <div className="inline-info">
@@ -408,7 +429,7 @@ function NewTicket({
             Annuleren
           </button>
           <button className="button primary" disabled={busy}>
-            {busy ? <Spinner /> : <Plus size={17} />}Klantvraag aanmaken
+            {busy ? <Spinner /> : <Plus size={17} />}Hunch starten
           </button>
         </div>
       </form>

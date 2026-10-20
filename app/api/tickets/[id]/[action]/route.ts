@@ -12,6 +12,8 @@ import {
   retryTicket,
   saveAnswer,
   startTicket,
+  setHunchLifecycle,
+  linkHunch,
 } from "@/lib/service";
 import {
   extractDocument,
@@ -75,6 +77,20 @@ export const POST = (
       return { ok: true };
     }
     const body = await request.json();
+    if (action === "lifecycle") {
+      const { lifecycle } = z
+        .object({ lifecycle: z.enum(["open", "closed", "archived"]) })
+        .parse(body);
+      await setHunchLifecycle(id, lifecycle);
+      return { ok: true };
+    }
+    if (action === "link") {
+      const { sourceId } = z
+        .object({ sourceId: z.string().min(1).max(200) })
+        .parse(body);
+      await linkHunch(id, sourceId);
+      return { ok: true };
+    }
     if (action === "message") {
       const data = z
         .object({

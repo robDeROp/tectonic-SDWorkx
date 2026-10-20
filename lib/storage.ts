@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Storage } from "@google-cloud/storage";
 import mammoth from "mammoth";
 import { AppError } from "./errors";
+import { extractOffice } from "./office";
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export async function extractDocument(
   name: string,
@@ -20,6 +21,8 @@ export async function extractDocument(
     else if (ext === ".docx") {
       if (buffer.readUInt16LE(0) !== 0x4b50) throw new Error("Invalid DOCX");
       content = (await mammoth.extractRawText({ buffer })).value;
+    } else if (ext === ".pptx" || ext === ".xlsx") {
+      content = await extractOffice(buffer, ext);
     } else if (ext === ".pdf") {
       if (!buffer.subarray(0, 5).equals(Buffer.from("%PDF-")))
         throw new Error("Invalid PDF");
@@ -51,11 +54,11 @@ export async function extractDocument(
       } finally {
         await loadingTask.destroy();
       }
-    } else throw new AppError("Kies een PDF-, TXT- of DOCX-bestand.");
+    } else throw new AppError("Kies een PDF-, TXT-, DOCX-, PPTX- of XLSX-bestand.");
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(
-      "Dit bestand kon niet worden gelezen. Gebruik een leesbaar PDF-, UTF-8 TXT- of DOCX-bestand.",
+      "Dit bestand kon niet worden gelezen. Gebruik een leesbaar PDF-, TXT-, Word-, PowerPoint- of Excel-bestand.",
     );
   }
   content = content.replace(/\u0000/g, "").trim();

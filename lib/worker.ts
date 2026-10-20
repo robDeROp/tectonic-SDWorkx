@@ -5,8 +5,9 @@ import { answers, documents, jobs, tickets } from "./db/schema";
 import { callAI, validateResult, type AIProvider } from "./ai";
 import { demoDocuments } from "./fixtures";
 import { addEvent, lockTicket, type Ticket } from "./service";
-import { publicError } from "./errors";
+import { AppError, publicError } from "./errors";
 import type { JobInput } from "./types";
+import { relevanceMatch } from "./hunch";
 type Job = typeof jobs.$inferSelect;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export function currentJob(
@@ -87,7 +88,19 @@ export async function runNextJob(
   heartbeat.unref();
   try {
     if (job.kind === "documents") {
-      for (const fixture of demoDocuments) {
+      // The PoC's searchable corpus is the explicitly labelled demo knowledge
+      // bank. Only retrieve sources that overlap the incoming question.
+      const relevant = demoDocuments
+        .map((fixture) => ({
+          fixture,
+          score: relevanceMatch(
+            job.input.question,
+            `${fixture.name} ${fixture.content}`,
+          ).score,
+        }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score);
+      for (const { fixture } of relevant) {
         const alive = await db.transaction(async (tx) => {
           const ticket = await lockTicket(tx, job.ticketId);
           if (!(await ownsJob(tx, job, ticket))) return false;
@@ -129,6 +142,10 @@ export async function runNextJob(
           .from(documents)
           .where(eq(documents.ticketId, job.ticketId))
           .orderBy(asc(documents.createdAt));
+        if (!docs.length)
+          throw new AppError(
+            "Geen passende bronnen gevonden. Voeg een document toe om deze Hunch te onderbouwen.",
+          );
         input = {
           question: ticket.question,
           answer: ticket.answer,

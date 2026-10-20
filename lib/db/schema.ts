@@ -9,7 +9,12 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import type { DocumentAssessment, JobInput, JobResult } from "../types";
+import type {
+  DocumentAssessment,
+  HunchCompletion,
+  JobInput,
+  JobResult,
+} from "../types";
 const time = (name: string) =>
   timestamp(name, { withTimezone: true }).notNull().defaultNow();
 export const tickets = pgTable("tickets", {
@@ -21,6 +26,15 @@ export const tickets = pgTable("tickets", {
   subject: text("subject").notNull(),
   question: text("question").notNull(),
   status: text("status").notNull().default("new"),
+  lifecycle: text("lifecycle")
+    .$type<"open" | "closed" | "archived">()
+    .notNull()
+    .default("open"),
+  intakeChannel: text("intake_channel")
+    .$type<"email" | "teams" | "other">()
+    .notNull()
+    .default("email"),
+  completion: jsonb("completion").$type<HunchCompletion>(),
   phase: text("phase").notNull().default("idle"),
   isDemo: boolean("is_demo").notNull().default(false),
   generation: integer("generation").notNull().default(1),
@@ -44,6 +58,8 @@ export const documents = pgTable(
     date: text("date"),
     content: text("content").notNull(),
     fictional: boolean("fictional").notNull().default(false),
+    origin: text("origin").notNull().default("knowledge"),
+    sourceTicketId: text("source_ticket_id"),
     storageKey: text("storage_key"),
     assessment: jsonb("assessment").$type<DocumentAssessment>(),
     assessedVersion: integer("assessed_version"),

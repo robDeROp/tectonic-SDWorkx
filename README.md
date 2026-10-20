@@ -1,4 +1,39 @@
-# Clarity · SD Worx ticketdemo
+# Hunch · SD Worx
+
+De werkplek heet nu **Hunches**. Open `/hunches` voor het overzicht en
+`/hunches/:id` voor een Hunch. Oude `/hunges`-links worden doorgestuurd.
+Bestaande `/tickets`-links en de interne
+`/api/tickets`-interfaces blijven werken.
+
+Een Hunch begint met een geplakte e-mail, een Teams-bericht of een andere
+vraag. Het overzicht toont documenten, personen met relevante bijdragen,
+gesprekken en gerelateerde Hunches. De demo doorzoekt de drie fictieve
+kennisbankdocumenten op termen uit de oorspronkelijke vraag; niet-passende
+bronnen worden niet automatisch toegevoegd. Personen en gesprekken komen uit
+opgeslagen e-mailbijdragen, gerelateerde Hunches uit maximaal de 200 recentst
+bijgewerkte Hunches. Hun matchscore is het aandeel gedeelde zoektermen;
+documenten behouden de bestaande Jev/Gemini-beoordeling. Er is geen live
+e-mail- of Teams-koppeling en er worden geen personen of scores verzonnen.
+
+De voorgestelde stappen volgen uit de beschikbare bronnen, conflicten en
+antwoordbeoordeling. Alleen aanvullende documenten en gekoppelde Hunches
+verschijnen in de werktijdlijn. Een gekoppelde Hunch wordt als momentopname
+meegenomen en beoordeeld. Word, PowerPoint, Excel, PDF en TXT zijn
+ondersteund; PowerPoint levert diatekst en Excel opgeslagen celwaarden
+(geen herberekening of uitlezen van afbeeldingen).
+
+**Open, Gesloten en Gearchiveerd** worden afzonderlijk van de AI-verwerking
+opgeslagen. Sluiten vereist actuele bronbeoordelingen en een gecontroleerd
+antwoord. De eindscore is 60% gemiddelde bronscore plus 40% antwoordcontrole
+(100 bij goedkeuring, 50 bij bezwaren); de uitsplitsing is zichtbaar.
+Gesloten en gearchiveerde Hunches zijn alleen-lezen. Archiveren stopt
+openstaande verwerking en bewaart een bestaande eindscore. Heropenen wist
+de eindscore en hervat zo nodig de bronbeoordeling. De kennisgraaf is nog
+niet geïmplementeerd.
+
+Pas vóór gebruik de additieve migratie toe met `npm run db:migrate`.
+De onderstaande technische documentatie gebruikt voor de bestaande interne
+datamodellen en API's nog de term ticket.
 
 Een Nederlandstalige proof of concept rond **Find it. Understand it. Trust it.** De medewerker ziet niet alleen een antwoord, maar ook de bronnen, hun betrouwbaarheid, de onzekerheden en de uitkomst van een controle vóór verzending.
 

@@ -4,10 +4,12 @@ import "@fontsource-variable/figtree";
 import "@fontsource-variable/jetbrains-mono";
 import "./tokens.css";
 import "./globals.css";
+import "./hunch.css";
 import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
   title: "Hunch · SD Worx",
-  description: "De context achter elke klantvraag.",
+  description:
+    "Elke vraag, de juiste kennis en je volgende stappen op één plek.",
 };
 export const viewport: Viewport = {
   themeColor: "#fff8ef",

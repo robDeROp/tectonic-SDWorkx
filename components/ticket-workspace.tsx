@@ -2,9 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Check,
-  CheckCheck,
   ChevronDown,
   ChevronRight,
   Clock3,
@@ -12,7 +10,6 @@ import {
   Info,
   Mail,
   MessageSquareText,
-  MoreHorizontal,
   Paperclip,
   Search,
   Send,
@@ -22,6 +19,7 @@ import {
 } from "lucide-react";
 import { dateLabel, request, timeLabel } from "@/lib/client";
 import { colleagueEmail } from "@/lib/fixtures";
+import { hunchTimeline } from "@/lib/hunch-timeline";
 import {
   sourceKinds,
   type DocumentView,
@@ -30,17 +28,12 @@ import {
   type ReviewResult,
   type TicketDetail,
 } from "@/lib/types";
-import {
-  GlyphTile,
-  HunchIcon,
-  HunchMark,
-  Relevance,
-  SourceChip,
-} from "./hunch";
+import { HunchIcon } from "./hunch";
 import { PipStatus } from "./pip-status";
-import { ErrorNotice, Modal, Spinner, Status } from "./ui";
+import { HunchOverview, HunchSourceEntry } from "./hunch-overview";
+import { ErrorNotice, Modal, Spinner } from "./ui";
 
-export function TicketWorkspace({ id }: { id: string }) {
+export function HunchWorkspace({ id }: { id: string }) {
   const [data, setData] = useState<TicketDetail | null>(null);
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
@@ -56,9 +49,7 @@ export function TicketWorkspace({ id }: { id: string }) {
   const [composer, setComposer] = useState<"answer" | "note">("answer");
   const [note, setNote] = useState("");
   const noteId = useRef<string | null>(null);
-  const actionsMenu = useRef<HTMLDetailsElement>(null);
   function openAction(action: "colleague-email" | "reset") {
-    if (actionsMenu.current) actionsMenu.current.open = false;
     setError("");
     setConfirm(action);
   }
@@ -153,7 +144,7 @@ export function TicketWorkspace({ id }: { id: string }) {
         ) : (
           <div className="loading-page">
             <Spinner size={25} />
-            <p>Je ticket wordt geopend…</p>
+            <p>Je Hunch wordt geopend…</p>
           </div>
         )}
       </div>
@@ -173,7 +164,6 @@ export function TicketWorkspace({ id }: { id: string }) {
       : running.kind === "draft"
         ? "Concept schrijven"
         : "Antwoord controleren";
-  const emails = messages.filter((m) => m.kind === "email");
   const documentsReady =
     documents.length > 0 &&
     documents.every((d) => d.assessedVersion === ticket.documentVersion);
@@ -200,126 +190,8 @@ export function TicketWorkspace({ id }: { id: string }) {
       j.contextVersion === ticket.contextVersion &&
       j.answerVersion + 1 === ticket.answerVersion,
   )?.result as DraftResult | undefined;
-  type Entry = { key: string; at: string; rank: number } & (
-    | {
-        kind: "job";
-        job: JobView;
-        stage: "search" | "assess" | "draft" | "review";
-      }
-    | { kind: "message"; message: TicketDetail["messages"][number] }
-    | { kind: "delivery"; delivery: TicketDetail["deliveries"][number] }
-  );
-  const entries: Entry[] = [];
-  for (const job of jobs) {
-    if (job.kind === "documents") {
-      const received = data.events.filter(
-        (e) => e.jobId === job.id && e.label === "Document ontvangen",
-      );
-      const assessment = data.events.find(
-        (e) => e.jobId === job.id && e.label === "Betrouwbaarheid beoordelen",
-      );
-      if (received.length || !documents.length)
-        entries.push({
-          key: job.id + "-search",
-          at: job.createdAt,
-          rank: 1,
-          kind: "job",
-          job,
-          stage: "search",
-        });
-      if (
-        assessment ||
-        (received.length === 0 && documents.length > 0) ||
-        job.state === "done"
-      )
-        entries.push({
-          key: job.id + "-assess",
-          at: assessment?.createdAt || job.createdAt,
-          rank: 2,
-          kind: "job",
-          job,
-          stage: "assess",
-        });
-    } else
-      entries.push({
-        key: job.id,
-        at: job.createdAt,
-        rank: 2,
-        kind: "job",
-        job,
-        stage: job.kind as "draft" | "review",
-      });
-  }
-  messages.forEach((message) =>
-    entries.push({
-      key: message.id,
-      at: message.createdAt,
-      rank: 0,
-      kind: "message",
-      message,
-    }),
-  );
-  deliveries.forEach((delivery) =>
-    entries.push({
-      key: delivery.id,
-      at: delivery.createdAt,
-      rank: 3,
-      kind: "delivery",
-      delivery,
-    }),
-  );
-  entries.sort(
-    (a, b) =>
-      Date.parse(a.at) - Date.parse(b.at) ||
-      a.rank - b.rank ||
-      a.key.localeCompare(b.key),
-  );
   return (
-    <div className="page case-page">
-      <div className="case-breadcrumb">
-        <Link href="/">
-          <ArrowLeft size={16} />
-          Klantvragen
-        </Link>
-        <span aria-hidden="true">/</span>
-        <span className="mono">
-          TKT-{String(ticket.number).padStart(4, "0")}
-        </span>
-        <span className="case-category">Payroll België</span>
-      </div>
-      <header className="case-heading">
-        <div>
-          <h1>{ticket.subject}</h1>
-          <div className="case-heading-meta">
-            <Status status={ticket.status} />
-            <span>
-              {ticket.customer} · {ticket.company}
-            </span>
-          </div>
-        </div>
-        <details className="case-menu" ref={actionsMenu}>
-          <summary aria-label="Meer ticketacties">
-            <MoreHorizontal size={21} />
-          </summary>
-          <div>
-            <button
-              disabled={!!busy || receivedEmail}
-              onClick={() => openAction("colleague-email")}
-            >
-              <Mail size={15} />
-              {receivedEmail
-                ? "Collega-mail toegevoegd"
-                : "Demo: collega-mail ontvangen"}
-            </button>
-            {ticket.isDemo && (
-              <button disabled={!!busy} onClick={() => openAction("reset")}>
-                <Clock3 size={15} />
-                Demo opnieuw starten
-              </button>
-            )}
-          </div>
-        </details>
-      </header>
+    <div className="page hunch-page">
       {error && (
         <ErrorNotice
           error={error}
@@ -329,445 +201,285 @@ export function TicketWorkspace({ id }: { id: string }) {
           }}
         />
       )}
-      <div className="case-layout">
-        <div className="case-conversation">
-          <div className="case-section-label">
-            <MessageSquareText size={18} />
-            <h2>Conversatie</h2>
-            <span>Oudste eerst</span>
-          </div>
-          <ol
-            className="case-thread"
-            aria-label="Chronologische ticketactiviteit"
-          >
-            <li className="thread-item">
-              <span className="thread-avatar customer-avatar">
-                {ticket.customer.slice(0, 1)}
+      <HunchOverview
+        data={data}
+        busy={!!busy}
+        dirty={isDirty}
+        onAction={(action, payload) => void act(action, payload)}
+        onUpload={() => setUpload(true)}
+        onDocument={setSelected}
+        activity={hunchTimeline(data).map((entry) => {
+          if (entry.kind === "job")
+            return (
+              <AgentEntry
+                key={entry.id}
+                job={entry.job}
+                stage={entry.stage}
+                data={data}
+                busy={!!busy || !!active || ticket.lifecycle !== "open"}
+                answerDirty={isDirty}
+                onRetry={() => void act("retry")}
+                onDocument={setSelected}
+              />
+            );
+          if (entry.kind === "document")
+            return (
+              <HunchSourceEntry
+                key={entry.id}
+                doc={entry.document}
+                currentVersion={ticket.documentVersion}
+                onClick={() => setSelected(entry.document)}
+              />
+            );
+          const message = entry.kind === "message" ? entry.message : null;
+          const delivery = entry.kind === "delivery" ? entry.delivery : null;
+          return (
+            <li className="thread-item hunch-message-entry" key={entry.id}>
+              <span className="thread-avatar">
+                {delivery ? (
+                  <Send size={15} />
+                ) : message?.kind === "email" ? (
+                  <Mail size={15} />
+                ) : (
+                  <MessageSquareText size={15} />
+                )}
               </span>
-              <article className="thread-card original-question">
-                <header>
-                  <div>
-                    <strong>{ticket.customer}</strong>
-                    <SourceChip kind="chats">Klantvraag</SourceChip>
-                  </div>
-                  <time title={dateLabel(ticket.createdAt)}>
-                    {dateLabel(ticket.createdAt, true)} ·{" "}
-                    {timeLabel(ticket.createdAt)}
+              <div className="agent-content">
+                <div className="agent-heading">
+                  <strong>
+                    {message?.author ?? "Antwoord verzonden · simulatie"}
+                  </strong>
+                  <time dateTime={entry.at}>
+                    {dateLabel(entry.at, true)} · {timeLabel(entry.at)}
                   </time>
-                </header>
-                <div className="thread-mail-meta">
-                  <Mail size={13} />
-                  {ticket.email}
                 </div>
-                <p className="thread-body">{ticket.question}</p>
-              </article>
-            </li>
-            {entries.map((entry) =>
-              entry.kind === "job" ? (
-                <AgentEntry
-                  key={entry.key}
-                  job={entry.job}
-                  stage={entry.stage}
-                  data={data}
-                  busy={!!busy}
-                  answerDirty={isDirty}
-                  onRetry={() => void act("retry")}
-                  onDocument={setSelected}
-                />
-              ) : entry.kind === "message" ? (
-                <li
-                  className="thread-item"
-                  key={entry.key}
-                  id={`bericht-${entry.message.id}`}
-                >
-                  <span
-                    className={`thread-avatar ${entry.message.kind === "email" ? "colleague-avatar" : ""}`}
-                  >
-                    {entry.message.author
-                      .split(" ")
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </span>
-                  <article className="thread-card">
-                    <header>
-                      <div>
-                        <strong>{entry.message.author}</strong>
-                        {entry.message.kind === "email" ? (
-                          <SourceChip kind="chats">
-                            Collega-mail · demo
-                          </SourceChip>
-                        ) : (
-                          <span className="thread-label">Interne notitie</span>
-                        )}
-                      </div>
-                      <time>
-                        {dateLabel(entry.at, true)} · {timeLabel(entry.at)}
-                      </time>
-                    </header>
-                    <p className="thread-body">{entry.message.content}</p>
-                    {entry.message.documentId && (
-                      <button
-                        className="thread-attachment"
-                        onClick={() =>
-                          setSelected(
-                            documents.find(
-                              (d) => d.id === entry.message.documentId,
-                            ) || null,
-                          )
-                        }
-                      >
-                        <Paperclip size={15} />
-                        {
-                          documents.find(
-                            (d) => d.id === entry.message.documentId,
-                          )?.name
-                        }
-                        <ChevronRight size={14} />
-                      </button>
-                    )}
-                  </article>
-                </li>
-              ) : (
-                <li className="thread-item" key={entry.key}>
-                  <span className="thread-avatar sent-avatar">
-                    <CheckCheck size={18} />
-                  </span>
-                  <article className="thread-card sent-card">
-                    <header>
-                      <div>
-                        <strong>Verzending gesimuleerd</strong>
-                        <span className="thread-label label-success">
-                          {entry.delivery.overridden
-                            ? "Bewust overruled"
-                            : "Goedgekeurd"}
-                        </span>
-                      </div>
-                      <time>
-                        {dateLabel(entry.at, true)} · {timeLabel(entry.at)}
-                      </time>
-                    </header>
-                    <div className="thread-mail-meta">
-                      Aan {entry.delivery.recipient} · {entry.delivery.subject}
-                    </div>
-                    <p className="thread-body">{entry.delivery.content}</p>
-                  </article>
-                </li>
-              ),
-            )}
-            <li className="thread-item composer-item">
-              <span className="thread-avatar">JD</span>
-              <section
-                className="thread-card case-composer"
-                aria-label="Bericht opstellen"
-              >
-                <div className="composer-tabs">
-                  <button
-                    className={composer === "answer" ? "selected" : ""}
-                    onClick={() => setComposer("answer")}
-                    aria-pressed={composer === "answer"}
-                  >
-                    <Mail size={15} />
-                    Antwoord aan klant
-                  </button>
-                  <button
-                    className={composer === "note" ? "selected" : ""}
-                    onClick={() => setComposer("note")}
-                    aria-pressed={composer === "note"}
-                  >
-                    <MessageSquareText size={15} />
-                    Interne notitie
-                  </button>
-                </div>
-                {composer === "note" ? (
-                  <>
-                    <p className="composer-recipient">
-                      Alleen zichtbaar voor je team · telt mee als context voor
-                      AI
-                    </p>
-                    <textarea
-                      aria-label="Interne notitie"
-                      placeholder="Voeg context toe of deel een bevinding met je team…"
-                      value={note}
-                      disabled={!!busy}
-                      maxLength={5000}
-                      onChange={(e) => {
-                        setNote(e.target.value);
-                        noteId.current = null;
-                      }}
-                    />
-                    <footer className="composer-footer">
-                      <span>Wordt toegevoegd aan de conversatie</span>
-                      <button
-                        className="button secondary small"
-                        disabled={!!busy || !note.trim()}
-                        onClick={() => void act("message")}
-                      >
-                        {busy === "message" ? (
-                          <Spinner size={14} />
-                        ) : (
-                          <MessageSquareText size={14} />
-                        )}
-                        Notitie toevoegen
-                      </button>
-                    </footer>
-                  </>
-                ) : (
-                  <>
-                    <div className="composer-recipient">
-                      <span>
-                        Aan <strong>{ticket.email}</strong>
-                      </span>
-                      <span className="simulation-chip">Demo</span>
-                    </div>
-                    <textarea
-                      aria-label="Antwoord aan klant"
-                      placeholder="Schrijf je antwoord aan de klant, of laat de schrijfagent een concept voorstellen…"
-                      value={answer}
-                      disabled={editorLocked}
-                      maxLength={20000}
-                      onChange={(e) => {
-                        setAnswer(e.target.value);
-                        dirty.current = true;
-                        setIsDirty(true);
-                      }}
-                    />
-                    <div className="composer-tools">
-                      <button
-                        className="text-button"
-                        disabled={
-                          !!busy ||
-                          !!active ||
-                          !documentsReady ||
-                          !ai.configured
-                        }
-                        onClick={() =>
-                          answer.trim()
-                            ? setConfirm("draft")
-                            : void act("draft")
-                        }
-                      >
-                        <HunchIcon name="summary" size={16} />
-                        Schrijf met AI
-                      </button>
-                      <button
-                        className="text-button save-draft"
-                        disabled={!isDirty || !!busy}
-                        onClick={() => void act("save")}
-                      >
-                        {busy === "save" ? <Spinner size={13} /> : null}
-                        {isDirty
-                          ? "Concept opslaan"
-                          : `Concept opgeslagen · v${version}`}
-                      </button>
-                    </div>
-                    {draft && !isDirty && (
-                      <details className="composer-citations">
-                        <summary>
-                          {draft.citations.length} bronverwijzingen bij dit
-                          concept
-                        </summary>
-                        {draft.citations.map((c, i) => (
-                          <button
-                            key={i}
-                            onClick={() =>
-                              setSelected(
-                                documents.find((d) => d.id === c.documentId) ||
-                                  null,
-                              )
-                            }
-                          >
-                            <strong>
-                              {
-                                documents.find((d) => d.id === c.documentId)
-                                  ?.name
-                              }
-                            </strong>
-                            <q>{c.quote}</q>
-                          </button>
-                        ))}
-                      </details>
-                    )}
-                    <div className="send-gate">
-                      <div className="send-gate-copy">
-                        <ShieldCheck size={18} />
-                        <div>
-                          <strong>
-                            {alreadySent && !isDirty
-                              ? "Dit antwoord is verzonden (simulatie)"
-                              : reviewValid
-                                ? review?.verdict === "approved"
-                                  ? "Alle controles geslaagd. Klaar om te verzenden."
-                                  : "De review vraagt om aanpassingen."
-                                : isDirty && latestReview
-                                  ? "Antwoord gewijzigd · opnieuw controleren"
-                                  : "Eerst controleren, dan verzenden"}
-                          </strong>
-                          <p>
-                            {reviewValid
-                              ? "Lees de bevindingen in de tijdlijn hierboven."
-                              : "De reviewagent toetst je antwoord aan de actuele bronnen."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="send-gate-actions">
-                        <button
-                          className="button secondary small"
-                          disabled={
-                            !!busy ||
-                            !!active ||
-                            !documentsReady ||
-                            !answer.trim() ||
-                            !ai.configured ||
-                            (reviewValid && !isDirty)
-                          }
-                          onClick={() => void act("review")}
-                        >
-                          {active?.kind === "review" || busy === "review" ? (
-                            <Spinner size={14} />
-                          ) : (
-                            <ShieldCheck size={14} />
-                          )}
-                          Antwoord controleren
-                        </button>
-                        <button
-                          className="button primary small"
-                          disabled={!!busy || !reviewValid || alreadySent}
-                          onClick={() =>
-                            review?.verdict === "changes_requested"
-                              ? setConfirm("override")
-                              : void act("send", { reviewId: latestReview?.id })
-                          }
-                        >
-                          <Send size={14} />
-                          {reviewValid &&
-                          review?.verdict === "changes_requested"
-                            ? "Toch verzenden"
-                            : "Definitief verzenden"}
-                        </button>
-                      </div>
-                    </div>
-                  </>
+                {message && (
+                  <p>
+                    {message.kind === "note"
+                      ? "Interne notitie"
+                      : "E-mail ontvangen"}
+                  </p>
                 )}
-              </section>
+                <details className="hunch-message-content">
+                  <summary>
+                    {message?.kind === "note"
+                      ? "Notitie lezen"
+                      : "Bericht lezen"}
+                    <ChevronDown size={13} />
+                  </summary>
+                  <p>{message?.content ?? delivery?.content}</p>
+                </details>
+              </div>
             </li>
-          </ol>
-          <p className="case-demo-footnote">
-            Proof of concept · E-mailverzending wordt gesimuleerd.
-          </p>
-        </div>
-        <aside
-          className="case-sources hunch-panel"
-          aria-label="Hunch-context bij dit ticket"
-          aria-busy={running?.kind === "documents" ? "true" : undefined}
+          );
+        })}
+      >
+        <section
+          className="thread-card case-composer"
+          aria-label="Bericht opstellen"
         >
-          <div className="hunch-panel-top">
-            <span className="hunch-panel-brand">
-              <HunchMark size={26} />
-              hunch
-            </span>
-            <span className="hunch-panel-id">
-              TKT-{String(ticket.number).padStart(4, "0")}
-            </span>
+          <div className="composer-tabs">
+            <button
+              className={composer === "answer" ? "selected" : ""}
+              onClick={() => setComposer("answer")}
+              aria-pressed={composer === "answer"}
+            >
+              <Mail size={15} />
+              Antwoord aan klant
+            </button>
+            <button
+              className={composer === "note" ? "selected" : ""}
+              onClick={() => setComposer("note")}
+              aria-pressed={composer === "note"}
+            >
+              <MessageSquareText size={15} />
+              Interne notitie
+            </button>
           </div>
-          <div className="hunch-panel-body">
-            <section className="sources-section">
-              <div className="sources-heading">
-                <h2>Documenten</h2>
-                {documents.length > 0 && (
-                  <SourceChip kind="docs">
-                    {documents.length} gevonden
-                  </SourceChip>
-                )}
-              </div>
-              <p className="sources-intro">De bronnen achter je antwoord</p>
-              <div className="source-list">
-                {documents.map((doc, i) => (
-                  <SourceCard
-                    key={doc.id}
-                    doc={doc}
-                    index={i}
-                    currentVersion={ticket.documentVersion}
-                    onClick={() => setSelected(doc)}
-                  />
-                ))}
-              </div>
-              {!documents.length &&
-                (active?.kind === "documents" ? (
-                  <div className="source-list" aria-hidden="true">
-                    <span className="hn-skel" />
-                    <span className="hn-skel" />
-                    <span className="hn-skel short" />
-                  </div>
-                ) : (
-                  <div className="sources-empty">
-                    <Search size={20} />
-                    <p>Nog niets gevonden. Voeg zelf een document toe.</p>
-                  </div>
-                ))}
-              <button
-                className="source-add"
-                onClick={() => setUpload(true)}
-                disabled={!!busy}
-              >
-                <Upload size={16} />
-                Document toevoegen
-              </button>
-              <p className="sources-disclaimer">
-                Scores zijn AI-inschattingen. Open een bron voor de toelichting
-                en eventuele tegenstrijdigheden.
+          {composer === "note" ? (
+            <>
+              <p className="composer-recipient">
+                Alleen zichtbaar voor je team · telt mee als context voor AI
               </p>
-            </section>
-            {emails.length > 0 && (
-              <section className="sources-section">
-                <div className="sources-heading">
-                  <h2>Chats & e-mails</h2>
-                  <SourceChip kind="chats">{emails.length} gevonden</SourceChip>
-                </div>
-                <div className="source-list">
-                  {emails.map((mail) => (
-                    <a
-                      key={mail.id}
-                      className="source-card hn-k-chats"
-                      href={`#bericht-${mail.id}`}
+              <textarea
+                aria-label="Interne notitie"
+                placeholder="Voeg context toe of deel een bevinding met je team…"
+                value={note}
+                disabled={!!busy}
+                maxLength={5000}
+                onChange={(e) => {
+                  setNote(e.target.value);
+                  noteId.current = null;
+                }}
+              />
+              <footer className="composer-footer">
+                <span>Wordt toegevoegd aan de conversatie</span>
+                <button
+                  className="button secondary small"
+                  disabled={!!busy || !note.trim()}
+                  onClick={() => void act("message")}
+                >
+                  {busy === "message" ? (
+                    <Spinner size={14} />
+                  ) : (
+                    <MessageSquareText size={14} />
+                  )}
+                  Notitie toevoegen
+                </button>
+              </footer>
+            </>
+          ) : (
+            <>
+              <div className="composer-recipient">
+                <span>
+                  Aan <strong>{ticket.email}</strong>
+                </span>
+                <span className="simulation-chip">Demo</span>
+              </div>
+              <textarea
+                aria-label="Antwoord aan klant"
+                placeholder="Schrijf je antwoord aan de klant, of laat de schrijfagent een concept voorstellen…"
+                value={answer}
+                disabled={editorLocked}
+                maxLength={20000}
+                onChange={(e) => {
+                  setAnswer(e.target.value);
+                  dirty.current = true;
+                  setIsDirty(true);
+                }}
+              />
+              <div className="composer-tools">
+                <button
+                  className="text-button"
+                  disabled={
+                    !!busy || !!active || !documentsReady || !ai.configured
+                  }
+                  onClick={() =>
+                    answer.trim() ? setConfirm("draft") : void act("draft")
+                  }
+                >
+                  <HunchIcon name="summary" size={16} />
+                  Schrijf met AI
+                </button>
+                <button
+                  className="text-button save-draft"
+                  disabled={!isDirty || !!busy}
+                  onClick={() => void act("save")}
+                >
+                  {busy === "save" ? <Spinner size={13} /> : null}
+                  {isDirty
+                    ? "Concept opslaan"
+                    : `Concept opgeslagen · v${version}`}
+                </button>
+              </div>
+              {draft && !isDirty && (
+                <details className="composer-citations">
+                  <summary>
+                    {draft.citations.length} bronverwijzingen bij dit concept
+                  </summary>
+                  {draft.citations.map((c, i) => (
+                    <button
+                      key={i}
+                      onClick={() =>
+                        setSelected(
+                          documents.find((d) => d.id === c.documentId) || null,
+                        )
+                      }
                     >
-                      <GlyphTile kind="chats" />
-                      <span className="source-card-body">
-                        <strong className="source-name">{mail.author}</strong>
-                        <span className="source-card-meta">
-                          E-mail · {dateLabel(mail.createdAt, true)}
-                        </span>
-                        <span className="source-snippet">{mail.content}</span>
-                      </span>
-                    </a>
+                      <strong>
+                        {documents.find((d) => d.id === c.documentId)?.name}
+                      </strong>
+                      <q>{c.quote}</q>
+                    </button>
                   ))}
+                </details>
+              )}
+              <div className="send-gate">
+                <div className="send-gate-copy">
+                  <ShieldCheck size={18} />
+                  <div>
+                    <strong>
+                      {alreadySent && !isDirty
+                        ? "Dit antwoord is verzonden (simulatie)"
+                        : reviewValid
+                          ? review?.verdict === "approved"
+                            ? "Alle controles geslaagd. Klaar om te verzenden."
+                            : "De review vraagt om aanpassingen."
+                          : isDirty && latestReview
+                            ? "Antwoord gewijzigd · opnieuw controleren"
+                            : "Eerst controleren, dan verzenden"}
+                    </strong>
+                    <p>
+                      {reviewValid
+                        ? "Bekijk de bevindingen bij de antwoordcontrole in de tijdlijn."
+                        : "De reviewagent toetst je antwoord aan de actuele bronnen."}
+                    </p>
+                  </div>
                 </div>
-              </section>
-            )}
-            <section className="case-properties">
-              <h3>Ticketgegevens</h3>
-              <dl>
-                <div>
-                  <dt>Behandelaar</dt>
-                  <dd>
-                    <span className="mini-avatar">JD</span>Jamie De Clercq
-                  </dd>
+                <div className="send-gate-actions">
+                  <button
+                    className="button secondary small"
+                    disabled={
+                      !!busy ||
+                      !!active ||
+                      !documentsReady ||
+                      !answer.trim() ||
+                      !ai.configured ||
+                      (reviewValid && !isDirty)
+                    }
+                    onClick={() => void act("review")}
+                  >
+                    {active?.kind === "review" || busy === "review" ? (
+                      <Spinner size={14} />
+                    ) : (
+                      <ShieldCheck size={14} />
+                    )}
+                    Antwoord controleren
+                  </button>
+                  <button
+                    className="button primary small"
+                    disabled={!!busy || !reviewValid || alreadySent}
+                    onClick={() =>
+                      review?.verdict === "changes_requested"
+                        ? setConfirm("override")
+                        : void act("send", { reviewId: latestReview?.id })
+                    }
+                  >
+                    <Send size={14} />
+                    {reviewValid && review?.verdict === "changes_requested"
+                      ? "Toch verzenden"
+                      : "Definitief verzenden"}
+                  </button>
                 </div>
-                <div>
-                  <dt>Organisatie</dt>
-                  <dd>{ticket.company}</dd>
-                </div>
-                <div>
-                  <dt>Ontvangen</dt>
-                  <dd>
-                    {dateLabel(ticket.createdAt, true)},{" "}
-                    {timeLabel(ticket.createdAt)}
-                  </dd>
-                </div>
-              </dl>
-            </section>
-          </div>
-        </aside>
+              </div>
+            </>
+          )}
+        </section>
+      </HunchOverview>
+      <div className="hunch-demo-tools">
+        <span>Demonstratieomgeving · E-mailverzending wordt gesimuleerd.</span>
+        {ticket.lifecycle === "open" && (
+          <button
+            className="text-button"
+            disabled={!!busy || receivedEmail}
+            onClick={() => openAction("colleague-email")}
+          >
+            <Mail size={14} />
+            {receivedEmail
+              ? "Collega-mail toegevoegd"
+              : "Demo: collega-mail ontvangen"}
+          </button>
+        )}
+        {ticket.isDemo && (
+          <button
+            className="text-button"
+            disabled={!!busy}
+            onClick={() => openAction("reset")}
+          >
+            <Clock3 size={14} />
+            Demo herhalen
+          </button>
+        )}
       </div>
       {upload && (
         <UploadModal
@@ -789,7 +501,7 @@ export function TicketWorkspace({ id }: { id: string }) {
       {confirm === "colleague-email" ? (
         <Modal
           title="Een collega deelt extra informatie"
-          subtitle="Demoscenario · deze mail is nog niet toegevoegd aan het ticket."
+          subtitle="Demoscenario · deze mail is nog niet toegevoegd aan de Hunch."
           onClose={() => !busy && setConfirm(null)}
         >
           <div className="colleague-preview">
@@ -837,7 +549,7 @@ export function TicketWorkspace({ id }: { id: string }) {
             }
             subtitle={
               confirm === "reset"
-                ? "Uploads, berichten, concepten en reviews van dit oorspronkelijke demoticket worden verwijderd."
+                ? "Uploads, berichten, concepten en reviews van dit oorspronkelijke demo-Hunch worden verwijderd."
                 : confirm === "draft"
                   ? "Gemini vervangt je huidige tekst. De opgeslagen versie blijft in de antwoordhistoriek."
                   : "Je bevestigt dat je de bevindingen hebt gelezen. Deze keuze wordt geregistreerd. De verzending blijft een simulatie."
@@ -951,12 +663,12 @@ function AgentEntry({
     );
   const title =
     stage === "search"
-      ? "Kennisagent zoekt relevante documenten"
+      ? "Kennisbank doorzoeken"
       : stage === "assess"
-        ? "Bronagent beoordeelt betrouwbaarheid"
+        ? "Bronnen beoordelen"
         : stage === "draft"
-          ? "Schrijfagent maakt een concept"
-          : "Reviewagent controleert het antwoord";
+          ? "Concept schrijven"
+          : "Antwoord controleren";
   const state = stale
     ? "Eerdere versie"
     : failed
@@ -996,15 +708,19 @@ function AgentEntry({
             {!running && !failed && !stale && !negative && <Check size={14} />}
             {state}
           </span>
-          <time title={dateLabel(at)}>{timeLabel(at)}</time>
+          <time dateTime={at} title={dateLabel(at)}>
+            {dateLabel(at, true)} · {timeLabel(at)}
+          </time>
         </div>
         {stage === "search" ? (
           <p>
             {searchDone
-              ? `${received.length || 3} documenten gevonden en doorgegeven aan de bronagent.`
+              ? received.length
+                ? `${received.length} ${received.length === 1 ? "bron gevonden" : "bronnen gevonden"}. De beoordeling volgt automatisch.`
+                : "De beschikbare bronnen worden opnieuw beoordeeld."
               : running
-                ? "De kennisbank wordt doorzocht. Documenten verschijnen rechts."
-                : "Het documentonderzoek is onderbroken."}
+                ? "Passende bronnen verschijnen hieronder zodra ze binnenkomen."
+                : failureMessage || "Het documentonderzoek is onderbroken."}
           </p>
         ) : stage === "assess" ? (
           <p>
@@ -1107,63 +823,8 @@ function AgentEntry({
             </div>
           </details>
         )}
-        {stage === "search" && received.length > 0 && (
-          <details className="agent-checks">
-            <summary>
-              <ChevronDown size={14} />
-              Gevonden documenten
-            </summary>
-            <ul>
-              {received.map((e) => (
-                <li key={e.id}>{e.detail}</li>
-              ))}
-            </ul>
-          </details>
-        )}
       </div>
     </li>
-  );
-}
-function SourceCard({
-  doc,
-  index,
-  currentVersion,
-  onClick,
-}: {
-  doc: DocumentView;
-  index: number;
-  currentVersion: number;
-  onClick: () => void;
-}) {
-  const assessment =
-    doc.assessedVersion === currentVersion ? doc.assessment : null;
-  return (
-    <button
-      className="source-card hn-k-docs"
-      onClick={onClick}
-      style={{ animationDelay: `${index * 80}ms` }}
-    >
-      <GlyphTile kind="docs" />
-      <span className="source-card-body">
-        <strong className="source-name">{doc.name}</strong>
-        <span className="source-card-meta">
-          {doc.kind} · {dateLabel(doc.date, true)}
-          {doc.date && ` ${doc.date.slice(0, 4)}`}
-          {doc.fictional && " · Fictieve bron"}
-        </span>
-        {assessment ? (
-          <Relevance value={assessment.score} label={assessment.jev ? "relevant" : "betrouwbaar"} />
-        ) : (
-          <span className="source-unscored">Nog niet beoordeeld</span>
-        )}
-        {assessment?.contradictions.length ? (
-          <span className="source-conflict">
-            <TriangleAlert size={14} />
-            Tegenstrijdigheid gevonden
-          </span>
-        ) : null}
-      </span>
-    </button>
   );
 }
 export function DocumentCard({
@@ -1281,21 +942,31 @@ export function DocumentModal({
               <small>%</small>
             </span>
             <div>
-              <strong>{assessment.jev ? "Relevantie voor deze klantvraag" : "AI-inschatting van betrouwbaarheid"}</strong>
+              <strong>
+                {assessment.jev
+                  ? "Relevantie voor deze Hunch"
+                  : "AI-inschatting van betrouwbaarheid"}
+              </strong>
               <p>{assessment.summary}</p>
             </div>
           </div>
           {assessment.jev && (
             <>
               <div className="assessment-grid">
-                {([
-                  ["Relevantie", assessment.jev.relevance],
-                  ["Bronbetrouwbaarheid", assessment.jev.reliability],
-                  ["Actualiteit", assessment.jev.freshness],
-                ] as const).map(([label, dimension]) => (
+                {(
+                  [
+                    ["Relevantie", assessment.jev.relevance],
+                    ["Bronbetrouwbaarheid", assessment.jev.reliability],
+                    ["Actualiteit", assessment.jev.freshness],
+                  ] as const
+                ).map(([label, dimension]) => (
                   <div key={label}>
                     <span>{label}</span>
-                    <p>{dimension ? `${dimension.score}/100 · modelzekerheid ${Math.round(dimension.confidence * 100)}%` : "Onbekend · geen geldige brondatum"}</p>
+                    <p>
+                      {dimension
+                        ? `${dimension.score}/100 · modelzekerheid ${Math.round(dimension.confidence * 100)}%`
+                        : "Onbekend · geen geldige brondatum"}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1402,11 +1073,11 @@ function UploadModal({
               ? `${(file.size / 1024).toFixed(0)} KB · klik om te vervangen`
               : "of klik om een bestand te kiezen"}
           </span>
-          <small>PDF met tekst, TXT of DOCX · maximaal 10 MB</small>
+          <small>Word, PowerPoint, Excel, PDF of TXT · maximaal 10 MB</small>
           <input
             type="file"
             aria-label="Kies document"
-            accept=".pdf,.txt,.docx"
+            accept=".pdf,.txt,.docx,.pptx,.xlsx"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
         </label>
@@ -1429,6 +1100,10 @@ function UploadModal({
           Onbekende brongegevens blijven zichtbaar als onzekerheid. Je bestaande
           antwoord blijft behouden.
         </div>
+        <p className="small-copy">
+          PowerPoint: tekst op dia’s. Excel: opgeslagen celwaarden, zonder
+          herberekening. Afbeeldingen worden niet uitgelezen.
+        </p>
         {error && <ErrorNotice error={error} />}
         <div className="modal-actions">
           <button

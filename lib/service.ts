@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db, type Transaction } from "./db";
 import {
   answers,
@@ -16,7 +16,15 @@ import { AppError } from "./errors";
 import { dispatchJob } from "./dispatch";
 import { removeFile } from "./storage";
 import type { ReviewResult } from "./types";
+import { completionScore, relevanceMatch } from "./hunch";
 export type Ticket = typeof tickets.$inferSelect;
+function requireOpen(ticket: Ticket) {
+  if (ticket.lifecycle !== "open")
+    throw new AppError(
+      "Heropen deze Hunch om informatie of antwoorden te wijzigen.",
+      409,
+    );
+}
 export async function seed() {
   const [existing] = await db
     .select({ id: tickets.id })
@@ -31,7 +39,7 @@ export async function lockTicket(tx: Transaction, id: string) {
     .from(tickets)
     .where(eq(tickets.id, id))
     .for("update");
-  if (!ticket) throw new AppError("Dit ticket bestaat niet.", 404);
+  if (!ticket) throw new AppError("Deze Hunch bestaat niet.", 404);
   return ticket;
 }
 export async function addEvent(
@@ -47,6 +55,7 @@ export async function addEvent(
     .values({ id: randomUUID(), ticketId, label, detail, tone, jobId });
 }
 export async function enqueue(tx: Transaction, ticket: Ticket, kind: string) {
+  requireOpen(ticket);
   const sources = await tx
     .select()
     .from(documents)
@@ -145,7 +154,7 @@ export async function listTickets() {
 }
 export async function getDetail(id: string) {
   const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
-  if (!ticket) throw new AppError("Dit ticket bestaat niet.", 404);
+  if (!ticket) throw new AppError("Deze Hunch bestaat niet.", 404);
   const [docs, runs, timeline, sent, conversation] = await Promise.all([
     db
       .select()
@@ -186,6 +195,58 @@ export async function getDetail(id: string) {
       .where(eq(messages.ticketId, id))
       .orderBy(asc(messages.createdAt)),
   ]);
+  const candidates = await db
+    .select()
+    .from(tickets)
+    .where(ne(tickets.id, id))
+    .orderBy(desc(tickets.updatedAt))
+    .limit(200);
+  const query = `${ticket.subject} ${ticket.question}`;
+  const related = candidates
+    .map((candidate) => ({
+      id: candidate.id,
+      number: candidate.number,
+      subject: candidate.subject,
+      question: candidate.question,
+      customer: candidate.customer,
+      company: candidate.company,
+      lifecycle: candidate.lifecycle,
+      ...relevanceMatch(
+        query,
+        `${candidate.subject} ${candidate.question} ${candidate.answer}`,
+      ),
+    }))
+    .filter(
+      (candidate) =>
+        candidate.matchedTerms.length >= 2 || candidate.score >= 25,
+    )
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+  const relatedMessages = related.length
+    ? await db
+        .select()
+        .from(messages)
+        .where(
+          inArray(
+            messages.ticketId,
+            related.map((item) => item.id),
+          ),
+        )
+    : [];
+  const discussions = [...conversation, ...relatedMessages]
+    .filter((message) => message.kind !== "note")
+    .map((message) => ({
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+      subject:
+        message.ticketId === id
+          ? ticket.subject
+          : related.find((item) => item.id === message.ticketId)!.subject,
+      ...relevanceMatch(query, message.content),
+    }))
+    .filter((message) => message.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12);
   return {
     ticket,
     documents: docs.map(({ storageKey: _key, ...d }) => d),
@@ -193,6 +254,8 @@ export async function getDetail(id: string) {
     events: timeline,
     deliveries: sent,
     messages: conversation,
+    related,
+    discussions,
     ai: aiConfiguration(),
   };
 }
@@ -202,6 +265,7 @@ export async function createTicket(data: {
   email: string;
   subject: string;
   question: string;
+  intakeChannel?: "email" | "teams" | "other";
 }) {
   const id = randomUUID();
   const jobId = await db.transaction(async (tx) => {
@@ -223,7 +287,7 @@ export async function createTicket(data: {
 export async function startTicket(id: string) {
   const jobId = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
-    if (ticket.phase !== "idle") return null;
+    if (ticket.phase !== "idle" || ticket.lifecycle !== "open") return null;
     await addEvent(
       tx,
       id,
@@ -241,9 +305,10 @@ export async function saveAnswer(
 ) {
   return db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     if (ticket.answerVersion !== expectedVersion)
       throw new AppError(
-        "Het antwoord is elders gewijzigd. Herlaad het ticket voordat je verdergaat.",
+        "Het antwoord is elders gewijzigd. Herlaad de Hunch voordat je verdergaat.",
         409,
       );
     if (ticket.answer === content)
@@ -305,17 +370,27 @@ export async function addDocument(
     content: string;
     kind: string;
     date: string | null;
-    storageKey: string;
+    storageKey: string | null;
+    sourceTicketId?: string;
+    fictional?: boolean;
   },
 ) {
   const jobId = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     const existing = await tx
       .select()
       .from(documents)
       .where(eq(documents.ticketId, id));
+    if (
+      data.sourceTicketId &&
+      existing.some((doc) => doc.sourceTicketId === data.sourceTicketId)
+    )
+      throw new AppError("Deze Hunch is al gekoppeld.", 409);
     const pendingFixtures = demoDocuments.filter(
       (fixture) =>
+        relevanceMatch(ticket.question, `${fixture.name} ${fixture.content}`)
+          .score > 0 &&
         !existing.some(
           (doc) => doc.id === `${id}-${ticket.generation}-${fixture.key}`,
         ),
@@ -330,12 +405,12 @@ export async function addDocument(
         300000
     )
       throw new AppError(
-        "De demo ondersteunt maximaal 15 documenten en 300.000 tekens per ticket.",
+        "De demo ondersteunt maximaal 15 documenten en 300.000 tekens per Hunch.",
       );
     await obsoleteJobs(tx, id);
     await tx
       .insert(documents)
-      .values({ id: randomUUID(), ticketId: id, ...data });
+      .values({ id: randomUUID(), ticketId: id, origin: "work", ...data });
     const version = ticket.documentVersion + 1;
     await tx
       .update(tickets)
@@ -358,6 +433,7 @@ export async function requestAI(
 ) {
   const jobId = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     if (ticket.answerVersion !== expectedVersion)
       throw new AppError(
         "Het antwoord is gewijzigd. Sla de actuele tekst op en probeer opnieuw.",
@@ -443,6 +519,7 @@ export async function sendReviewedAnswer(
 ) {
   await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     const [review] = await tx
       .select()
       .from(jobs)
@@ -475,6 +552,7 @@ export async function overrideReview(id: string, reviewId: string) {
 export async function retryTicket(id: string) {
   const jobId = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     const [last] = await tx
       .select()
       .from(jobs)
@@ -500,7 +578,7 @@ export async function retryTicket(id: string) {
 export async function resetDemo(id: string) {
   if (id !== DEMO_ID)
     throw new AppError(
-      "Alleen het oorspronkelijke demoticket kan opnieuw worden afgespeeld.",
+      "Alleen de oorspronkelijke demo-Hunch kan opnieuw worden afgespeeld.",
     );
   const { jobId, files } = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
@@ -525,6 +603,8 @@ export async function resetDemo(id: string) {
         answer: "",
         phase: "idle",
         status: "new",
+        lifecycle: "open",
+        completion: null,
         error: null,
         updatedAt: new Date(),
       })
@@ -551,6 +631,7 @@ export async function addMessage(
 ) {
   return db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     const [existing] = await tx
       .select()
       .from(messages)
@@ -571,7 +652,7 @@ export async function addMessage(
         50000
     )
       throw new AppError(
-        "Dit demoticket ondersteunt maximaal 50 berichten en 50.000 tekens.",
+        "Deze demo-Hunch ondersteunt maximaal 50 berichten en 50.000 tekens.",
       );
     await tx.insert(messages).values({
       id: messageId,
@@ -622,6 +703,7 @@ export async function addMessage(
 export async function receiveColleagueEmail(id: string) {
   const jobId = await db.transaction(async (tx) => {
     const ticket = await lockTicket(tx, id);
+    requireOpen(ticket);
     const messageId = `${id}-${ticket.generation}-colleague-email`;
     const [already] = await tx
       .select()
@@ -634,6 +716,7 @@ export async function receiveColleagueEmail(id: string) {
       .where(eq(documents.ticketId, id));
     const pending = demoDocuments.filter(
       (f) =>
+        relevanceMatch(ticket.question, `${f.name} ${f.content}`).score > 0 &&
         !existing.some((d) => d.id === `${id}-${ticket.generation}-${f.key}`),
     );
     if (
@@ -643,7 +726,7 @@ export async function receiveColleagueEmail(id: string) {
         300000
     )
       throw new AppError(
-        "De maximale documentruimte voor dit ticket is bereikt.",
+        "De maximale documentruimte voor deze Hunch is bereikt.",
       );
     const documentId = `${messageId}-attachment`;
     await tx.insert(documents).values({
@@ -651,6 +734,7 @@ export async function receiveColleagueEmail(id: string) {
       ticketId: id,
       ...colleagueEmail.document,
       fictional: true,
+      origin: "work",
     });
     await tx.insert(messages).values({
       id: messageId,
@@ -680,6 +764,123 @@ export async function receiveColleagueEmail(id: string) {
       "Alle documenten worden opnieuw beoordeeld; eerdere antwoordreviews vervallen.",
     );
     return enqueue(tx, next, "documents");
+  });
+  if (jobId) await dispatchJob(jobId);
+}
+
+export async function linkHunch(id: string, sourceId: string) {
+  if (id === sourceId)
+    throw new AppError("Een Hunch kan niet naar zichzelf verwijzen.");
+  const [source] = await db
+    .select()
+    .from(tickets)
+    .where(eq(tickets.id, sourceId));
+  if (!source) throw new AppError("Deze Hunch bestaat niet.", 404);
+  await addDocument(id, {
+    name: `Hunch HNG-${String(source.number).padStart(4, "0")} · ${source.subject}`,
+    kind: "Intern",
+    date: source.updatedAt.toISOString().slice(0, 10),
+    content: `Gekoppelde Hunch · ${source.subject}\nStatus: ${source.lifecycle}\n\nOorspronkelijke vraag:\n${source.question}\n\nAntwoord op het moment van koppelen:\n${source.answer || "Nog geen antwoord. Deze Hunch is geen afgeronde oplossing."}`,
+    storageKey: null,
+    sourceTicketId: source.id,
+    fictional: source.isDemo,
+  });
+}
+
+export async function setHunchLifecycle(
+  id: string,
+  lifecycle: Ticket["lifecycle"],
+) {
+  const jobId = await db.transaction(async (tx) => {
+    const ticket = await lockTicket(tx, id);
+    if (ticket.lifecycle === lifecycle) return;
+    let completion = ticket.completion;
+    if (lifecycle === "open") completion = null;
+    if (lifecycle === "closed" && !completion) {
+      const active = await tx
+        .select()
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.ticketId, id),
+            inArray(jobs.state, ["queued", "running"]),
+          ),
+        );
+      if (active.length)
+        throw new AppError(
+          "Wacht tot de beoordeling is afgerond voordat je deze Hunch sluit.",
+          409,
+        );
+      const docs = await tx
+        .select()
+        .from(documents)
+        .where(eq(documents.ticketId, id));
+      const [review] = await tx
+        .select()
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.ticketId, id),
+            eq(jobs.kind, "review"),
+            eq(jobs.state, "done"),
+            eq(jobs.generation, ticket.generation),
+            eq(jobs.documentVersion, ticket.documentVersion),
+            eq(jobs.contextVersion, ticket.contextVersion),
+            eq(jobs.answerVersion, ticket.answerVersion),
+          ),
+        )
+        .orderBy(desc(jobs.createdAt));
+      if (
+        !docs.length ||
+        docs.some(
+          (doc) =>
+            !doc.assessment || doc.assessedVersion !== ticket.documentVersion,
+        ) ||
+        !review?.result
+      )
+        throw new AppError(
+          "Beoordeel eerst alle bronnen en controleer je antwoord. Daarna krijgt de Hunch een eindscore.",
+          409,
+        );
+      completion = completionScore(
+        docs.map((doc) => doc.assessment!),
+        review.result as ReviewResult,
+        new Date().toISOString(),
+      );
+    }
+    if (lifecycle === "archived") await obsoleteJobs(tx, id);
+    await tx
+      .update(tickets)
+      .set({ lifecycle, completion, updatedAt: new Date() })
+      .where(eq(tickets.id, id));
+    await addEvent(
+      tx,
+      id,
+      lifecycle === "closed"
+        ? "Hunch gesloten"
+        : lifecycle === "archived"
+          ? "Hunch gearchiveerd"
+          : "Hunch heropend",
+    );
+    if (lifecycle === "open") {
+      const docs = await tx
+        .select()
+        .from(documents)
+        .where(eq(documents.ticketId, id));
+      if (
+        !docs.length ||
+        docs.some(
+          (doc) =>
+            !doc.assessment || doc.assessedVersion !== ticket.documentVersion,
+        )
+      )
+        return enqueue(
+          tx,
+          { ...ticket, lifecycle: "open", completion: null },
+          "documents",
+        );
+    }
+    return null;
   });
   if (jobId) await dispatchJob(jobId);
 }

@@ -16,6 +16,8 @@ import {
   retryTicket,
   saveAnswer,
   startTicket,
+  setHunchLifecycle,
+  linkHunch,
 } from "../lib/service";
 import { runNextJob } from "../lib/worker";
 import { AppError } from "../lib/errors";
@@ -277,6 +279,93 @@ async function main() {
     assert.equal((await getDetail(id)).deliveries.length, 4);
     ok(
       "Notes persist once, reach AI context, and invalidate completed and in-flight reviews",
+    );
+    await assert.rejects(() => setHunchLifecycle(id, "closed"), /controleer/);
+    const finalReview = await requestAI(id, "review", 6);
+    await assert.rejects(() => setHunchLifecycle(id, "closed"), /Wacht/);
+    await runNextJob(finalReview, provider, false);
+    await setHunchLifecycle(id, "closed");
+    detail = await getDetail(id);
+    assert.equal(detail.ticket.lifecycle, "closed");
+    assert.equal(detail.ticket.completion?.documentCount, 5);
+    assert.equal(detail.ticket.completion?.reviewScore, 100);
+    const finalScore = detail.ticket.completion;
+    await assert.rejects(() => saveAnswer(id, "Changed", 6), /Heropen/);
+    await assert.rejects(() => receiveColleagueEmail(id), /Heropen/);
+    await assert.rejects(
+      () => addMessage(id, "Changed", randomUUID()),
+      /Heropen/,
+    );
+    await assert.rejects(() => requestAI(id, "draft", 6), /Heropen/);
+    await setHunchLifecycle(id, "archived");
+    assert.deepEqual((await getDetail(id)).ticket.completion, finalScore);
+    await setHunchLifecycle(id, "open");
+    assert.equal((await getDetail(id)).ticket.completion, null);
+    ok(
+      "Closing requires current assessments, freezes edits and preserves the final score through archiving",
+    );
+    const relatedId = await createTicket({
+      customer: "Related Test",
+      company: "Testbedrijf",
+      email: "related@example.test",
+      subject: "Vertrekvakantiegeld en vakantieattest",
+      question:
+        "Hoe verwerken we het vertrekvakantiegeld en bezorgen we een vakantieattest?",
+      intakeChannel: "teams",
+    });
+    owned.push(relatedId);
+    assert.equal((await getDetail(relatedId)).ticket.intakeChannel, "teams");
+    assert((await getDetail(id)).related.some((item) => item.id === relatedId));
+    await linkHunch(id, relatedId);
+    detail = await getDetail(id);
+    const linkedDoc = detail.documents.find(
+      (doc) => doc.sourceTicketId === relatedId,
+    );
+    assert.equal(linkedDoc?.origin, "work");
+    assert(linkedDoc?.content.includes("Nog geen antwoord"));
+    await assert.rejects(() => linkHunch(id, relatedId), /al gekoppeld/);
+    await assert.rejects(() => linkHunch(id, id), /zichzelf/);
+    await setHunchLifecycle(id, "archived");
+    assert(
+      !(await getDetail(id)).jobs.some((job) =>
+        ["queued", "running"].includes(job.state),
+      ),
+    );
+    await assert.rejects(() => linkHunch(id, relatedId), /Heropen/);
+    await setHunchLifecycle(id, "open");
+    assert(
+      (await getDetail(id)).jobs.some(
+        (job) => job.kind === "documents" && job.state === "queued",
+      ),
+    );
+    ok(
+      "Teams intake, related Hunch retrieval, linking, duplicate protection, archive cancellation and resumed assessment",
+    );
+    const unrelatedId = await createTicket({
+      customer: "Unrelated Test",
+      company: "Testbedrijf",
+      email: "unrelated@example.test",
+      subject: "Qubitkalibratie",
+      question:
+        "Quantumspinverstrengeling tijdens qubitkalibratie onderzoeken.",
+    });
+    owned.push(unrelatedId);
+    await runNextJob((await latest(unrelatedId)).id, provider, false);
+    assert.equal((await getDetail(unrelatedId)).documents.length, 0);
+    assert.equal((await latest(unrelatedId)).state, "failed");
+    await addDocument(unrelatedId, {
+      name: "Kalibratie.txt",
+      content:
+        "Quantumspinverstrengeling tijdens qubitkalibratie wordt hier onderzocht.",
+      kind: "Intern",
+      date: null,
+      storageKey: null,
+    });
+    await runNextJob((await latest(unrelatedId)).id, provider, false);
+    assert.equal((await getDetail(unrelatedId)).documents.length, 1);
+    assert.equal((await latest(unrelatedId)).state, "done");
+    ok(
+      "Unrelated questions receive no irrelevant demo sources and can proceed after a relevant upload",
     );
     console.log(
       `\n${passed} PostgreSQL integration scenarios passed. Mock AI was injected only by this test script.`,

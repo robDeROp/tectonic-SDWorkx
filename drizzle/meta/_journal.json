@@ -15,6 +15,13 @@
       "when": 1790794976339,
       "tag": "0001_dusty_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792491374737,
+      "tag": "0002_hunge_workspace",
+      "breakpoints": true
     }
   ]
 }

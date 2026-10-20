@@ -37,7 +37,9 @@ export const timeLabel = (value: string) =>
 export const statusLabel: Record<string, string> = {
   new: "Nieuw",
   working: "AI aan het werk",
-  open: "Klaar voor antwoord",
+  open: "Open",
+  closed: "Gesloten",
+  archived: "Gearchiveerd",
   attention: "Aandacht nodig",
   sent: "Afgehandeld",
   reviewed: "Klaar voor verzending",

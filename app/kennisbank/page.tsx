@@ -41,15 +41,15 @@ export default function KnowledgePage() {
             <p>{doc.content}</p>
             <div className="knowledge-foot">
               <ShieldCheck size={15} />
-              De beoordeling hangt af van de klantvraag.
+              De beoordeling hangt af van de Hunch.
             </div>
           </article>
         ))}
       </div>
       <div className="inline-info">
         <Info size={17} />
-        Extra uploads worden aan het betreffende ticket gekoppeld. Scores
-        verschijnen in het ticket zodra Gemini de bronnen heeft beoordeeld.
+        Extra uploads worden aan de betreffende Hunch gekoppeld. Scores
+        verschijnen in de Hunch zodra Gemini de bronnen heeft beoordeeld.
       </div>
     </div>
   );

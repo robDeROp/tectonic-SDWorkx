@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   output: "standalone",
   devIndicators: false,
+  redirects() {
+    return [
+      {
+        source: "/hunges/:path*",
+        destination: "/hunches/:path*",
+        permanent: true,
+      },
+    ];
+  },
   // The generated Tasks client loads these assets through a dynamic require.
   outputFileTracingIncludes: {
     "/*": [

@@ -52,7 +52,7 @@ export default function SettingsPage() {
               <div className="inline-info">
                 <Info size={17} />
                 Zonder verbinding worden geen AI-resultaten nagebootst. Je kunt
-                wel tickets bekijken, zelf antwoorden schrijven en documenten
+                wel Hunches bekijken, zelf antwoorden schrijven en documenten
                 toevoegen.
               </div>
               <h3>Lokale configuratie</h3>
@@ -86,11 +86,18 @@ export default function SettingsPage() {
       <div className="settings-grid">
         <section className="panel compact-integration">
           <h2>Jev van TypeSafe</h2>
-          <p>Beoordeelt per klantvraag de relevantie, bronbetrouwbaarheid en actualiteit van documenten. Gemini verzorgt de toelichting.</p>
+          <p>
+            Beoordeelt per Hunch de relevantie, bronbetrouwbaarheid en
+            actualiteit van documenten. Gemini verzorgt de toelichting.
+          </p>
           <span className="subtle-label">
-            {jev.configured ? `Geconfigureerd · ${jev.model}` : "Instellen vereist · JEV_KEY ontbreekt"}
+            {jev.configured
+              ? `Geconfigureerd · ${jev.model}`
+              : "Instellen vereist · JEV_KEY ontbreekt"}
           </span>
-          <p className="small-copy">Verbinding wordt bij de eerste beoordeling gecontroleerd.</p>
+          <p className="small-copy">
+            Verbinding wordt bij de eerste beoordeling gecontroleerd.
+          </p>
         </section>
         <section className="panel compact-integration">
           <span className="compact-icon" aria-hidden="true">

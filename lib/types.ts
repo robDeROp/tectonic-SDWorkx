@@ -89,6 +89,9 @@ export type TicketSummary = {
   subject: string;
   question: string;
   status: string;
+  lifecycle: "open" | "closed" | "archived";
+  intakeChannel: "email" | "teams" | "other";
+  completion: HunchCompletion | null;
   phase: string;
   isDemo: boolean;
   generation: number;
@@ -101,6 +104,8 @@ export type TicketSummary = {
   updatedAt: string;
 };
 export type DocumentView = SourceDocument & {
+  origin: string;
+  sourceTicketId: string | null;
   assessment: DocumentAssessment | null;
   assessedVersion: number | null;
   createdAt: string;
@@ -143,5 +148,31 @@ export type TicketDetail = {
   events: EventView[];
   messages: MessageView[];
   deliveries: DeliveryView[];
+  related: RelatedHunch[];
+  discussions: HunchDiscussion[];
   ai: { configured: boolean; missing: string[]; model: string | null };
+};
+export type HunchCompletion = {
+  score: number;
+  knowledgeScore: number;
+  reviewScore: number;
+  documentCount: number;
+  closedAt: string;
+};
+export type RelatedHunch = {
+  id: string;
+  number: number;
+  subject: string;
+  question: string;
+  customer: string;
+  company: string;
+  lifecycle: string;
+  score: number;
+  matchedTerms: string[];
+};
+export type HunchDiscussion = MessageView & {
+  ticketId: string;
+  subject: string;
+  score: number;
+  matchedTerms: string[];
 };

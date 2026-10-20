@@ -14,10 +14,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const nav = [
     {
-      href: "/",
-      label: "Klantvragen",
+      href: "/hunches",
+      label: "Hunches",
       icon: Inbox,
-      active: path === "/" || path.startsWith("/tickets"),
+      active:
+        path === "/" ||
+        path.startsWith("/tickets") ||
+        path.startsWith("/hunches"),
     },
     {
       href: "/kennisbank",

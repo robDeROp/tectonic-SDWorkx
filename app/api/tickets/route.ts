@@ -9,6 +9,7 @@ const schema = z.object({
   company: z.string().trim().min(2, "Vul een organisatie in.").max(120),
   email: z.email("Vul een geldig e-mailadres in.").max(254),
   subject: z.string().trim().min(3, "Vul een onderwerp in.").max(160),
+  intakeChannel: z.enum(["email", "teams", "other"]).default("email"),
   question: z
     .string()
     .trim()
