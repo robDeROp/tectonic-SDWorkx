@@ -85,7 +85,7 @@ gcloud auth application-default set-quota-project YOUR_PROJECT_ID
 
 ```dotenv
 GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
-GOOGLE_CLOUD_LOCATION=europe-west1
+GOOGLE_CLOUD_LOCATION=us-central1
 GEMINI_MODEL=YOUR_ENABLED_GEMINI_MODEL_ID
 ```
 
@@ -139,7 +139,7 @@ De repository bevat een volledige uitrolconfiguratie. De daadwerkelijke Google C
 
 ### Eerste installatie
 
-Vereist: een bestaand Google Cloud-project met billing, een account dat de genoemde resources en IAM mag beheren, schrijfrechten op de GitHub-repository, Google Cloud CLI, GitHub CLI, Terraform 1.9.8 en Python 3. De standaardregio is België (`europe-west1`). Selecteer een Gemini-model dat in dit project en deze regio beschikbaar is.
+Vereist: een bestaand Google Cloud-project met billing, een account dat de genoemde resources en IAM mag beheren, schrijfrechten op de GitHub-repository, Google Cloud CLI, GitHub CLI, Terraform 1.9.8 en Python 3. De standaardregio is `us-central1` (Iowa). Selecteer een Gemini-model dat in dit project en deze regio beschikbaar is.
 
 ```sh
 gcloud auth login
@@ -149,7 +149,11 @@ GEMINI_MODEL=YOUR_ENABLED_GEMINI_MODEL_ID \
 bash scripts/bootstrap-cloud.sh
 ```
 
-Optioneel: `GEMINI_LOCATION` (AI-endpoint, standaard dezelfde regio; gebruik `global` als het gekozen model dat vereist), `GCP_REGION`, `GITHUB_REPOSITORY` (standaard `robDeROp/tectonic-SDWorkx`), `VIEWER_MEMBER` (standaard de aangemelde Google-gebruiker) en `TERRAFORM` (pad naar het programma). Het script gebruikt expliciete projectparameters; het verandert je standaardproject niet. Bestaande resources buiten deze Terraform-states moet je eerst importeren als hun naam overeenkomt.
+Optioneel: `GEMINI_LOCATION` (AI-endpoint, standaard dezelfde regio; gebruik `global` als het gekozen model dat vereist), `GCP_REGION`, `GCP_ZONE` (voorkeurszone voor Cloud SQL, bijvoorbeeld `us-central1-c`), `GITHUB_REPOSITORY` (standaard `robDeROp/tectonic-SDWorkx`), `VIEWER_MEMBER` (standaard de aangemelde Google-gebruiker) en `TERRAFORM` (pad naar het programma). Het script gebruikt expliciete projectparameters; het verandert je standaardproject niet. Bestaande resources buiten deze Terraform-states moet je eerst importeren als hun naam overeenkomt.
+
+De huidige labomgeving is project `qwiklabs-gcp-02-d575dad602c3`, regio `us-central1`, zone `us-central1-c`, met account `student-04-1c1b8a669158@qwiklabs.net`. Geef bij bootstrap dit project en deze locatie expliciet mee. Cloud Run, Cloud Tasks en opslag gebruiken de regio; Cloud SQL kan de opgegeven zone gebruiken. Gemini behoudt een afzonderlijk endpoint (`GEMINI_LOCATION=global` wanneer het model dat vereist).
+
+Bij een projectwissel configureert bootstrap de state-backend opnieuw voor de bucket van het doelproject, zonder de oude state te migreren. De appvariabelen worden vóór het plan vernieuwd, zodat een oude `terraform.tfvars` het nieuwe project niet overschrijft. Bestaande tickets en documenten worden hiermee niet automatisch overgezet.
 
 De state staat in `gs://PROJECT_ID-clarity-tfstate`, onder afzonderlijke prefixes voor bootstrap en app. Beperk toegang tot deze bucket: de state bevat het databasewachtwoord. Lokale variabelen en planbestanden zijn uitgesloten van Git, Docker en Cloud Build. Het script bewaart niet-geheime appinvoer in het genegeerde `infra/terraform.tfvars` voor latere infrastructuurwijzigingen.
 
@@ -166,7 +170,7 @@ Databasewijzigingen moeten achterwaarts compatibel zijn: de vorige app blijft dr
 ### Werkelijke GCP-validatie
 
 ```sh
-python3 scripts/validate-cloud.py --project=YOUR_PROJECT_ID --region=europe-west1
+python3 scripts/validate-cloud.py --project=YOUR_PROJECT_ID --region=us-central1
 ```
 
 Deze controle gebruikt echte Cloud Run-, Cloud Tasks-, Cloud Storage-, PostgreSQL- en Gemini-verbindingen. Er wordt één duidelijk gemarkeerd fictief validatieticket met een TXT-upload gemaakt; bestaande tickets blijven behouden. Het rapport staat in `.data/cloud-validation.json`. Een geblokkeerde AI-aanvraag wordt als mislukte controle gerapporteerd, nooit vervangen door een mock. Het script controleert ook dat anonieme bezoekers en een menselijke identiteit geen toegang tot de taakverwerker krijgen.
@@ -176,7 +180,7 @@ Deze controle gebruikt echte Cloud Run-, Cloud Tasks-, Cloud Storage-, PostgreSQ
 Cloud Run vereist IAM-authenticatie. Gebruik voor de demo de lokale proxy:
 
 ```sh
-gcloud run services proxy clarity --project=YOUR_PROJECT_ID --region=europe-west1 --port=8080
+gcloud run services proxy clarity --project=YOUR_PROJECT_ID --region=us-central1 --port=8080
 ```
 
 Open `http://localhost:8080`. Alleen opgegeven `viewer_members` en de benodigde serviceaccounts mogen de app aanroepen. Uploads staan in de private bucket; Cloud Tasks vervangt de lokale worker. Cloud SQL wordt via de Cloud Run Unix-socket verbonden, zonder open authorized networks. De maximale schaal is drie appinstanties.
@@ -184,8 +188,8 @@ Open `http://localhost:8080`. Alleen opgegeven `viewer_members` en de benodigde 
 Een eerdere revisie herstellen:
 
 ```sh
-gcloud run revisions list --service=clarity --project=YOUR_PROJECT_ID --region=europe-west1
-gcloud run services update-traffic clarity --to-revisions=PREVIOUS_REVISION=100 --project=YOUR_PROJECT_ID --region=europe-west1
+gcloud run revisions list --service=clarity --project=YOUR_PROJECT_ID --region=us-central1
+gcloud run services update-traffic clarity --to-revisions=PREVIOUS_REVISION=100 --project=YOUR_PROJECT_ID --region=us-central1
 ```
 
 Cloud SQL, opslag en modelgebruik veroorzaken kosten. De configuratie gebruikt een kleine zonale database voor de demo, geen hoogbeschikbare productieomgeving. De bestaande gedeelde demo-identiteit en gesimuleerde verzending blijven behouden.
@@ -199,6 +203,8 @@ npm run typecheck
 npm test
 npm run test:integration
 npm run build
+python3 scripts/test-deploy.py
+python3 scripts/test-bootstrap.py
 ```
 
 De integratietest vereist de lokale PostgreSQL-database en `TASK_BACKEND=local`. Stop de normale worker tijdens deze test: de test voert zijn eigen taken uit met expliciet geïnjecteerde mock-AI. De test maakt tijdelijke tickets aan en ruimt alleen die eigen tickets op. Er is geen app-configuratie om live AI stilletjes te vervangen door mocks.

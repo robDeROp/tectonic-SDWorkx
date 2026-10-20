@@ -4,6 +4,7 @@
 node_modules
 .next
 .data
+output
 .env
 .env.*
 coverage

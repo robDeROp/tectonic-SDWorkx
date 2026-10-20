@@ -1,4 +1,5 @@
 import EmbeddedPostgres from "embedded-postgres";
+import { existsSync } from "node:fs";
 const postgres = new EmbeddedPostgres({
   databaseDir: ".data/postgres",
   user: "demo",
@@ -7,7 +8,7 @@ const postgres = new EmbeddedPostgres({
   persistent: true,
 });
 async function main() {
-  await postgres.initialise();
+  if (!existsSync(".data/postgres/PG_VERSION")) await postgres.initialise();
   await postgres.start();
   const client = postgres.getPgClient();
   await client.connect();
