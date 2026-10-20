@@ -6,18 +6,27 @@ import {
   ChevronDown,
   CircleHelp,
   Inbox,
+  Lightbulb,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
 import { HunchIcon, HunchLogo } from "./hunch";
+import { HelpBell } from "./help-bell";
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const isHunchPage = path === "/" || path.startsWith("/hunches");
   const nav = [
     {
       href: "/",
+      label: "Hunches",
+      icon: Lightbulb,
+      active: isHunchPage,
+    },
+    {
+      href: "/tickets",
       label: "Klantvragen",
       icon: Inbox,
-      active: path === "/" || path.startsWith("/tickets"),
+      active: path.startsWith("/tickets"),
     },
     {
       href: "/kennisbank",
@@ -33,7 +42,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     },
   ];
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isHunchPage ? " hunch-shell" : ""}`}>
       <aside className="sidebar">
         <Link href="/" className="brand" aria-label="Hunch startpagina">
           <HunchLogo size={34} />
@@ -100,6 +109,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <ShieldCheck size={16} />
               Verzending in demomodus
             </span>
+            {isHunchPage && <HelpBell />}
             <Link
               href="/instellingen"
               className="icon-button"

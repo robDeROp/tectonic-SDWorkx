@@ -42,3 +42,20 @@ export const statusLabel: Record<string, string> = {
   sent: "Afgehandeld",
   reviewed: "Klaar voor verzending",
 };
+export const hunchStatusLabel: Record<string, string> = {
+  open: "Context klaar",
+  waiting: "Wacht op hulp",
+  helping: "Hulp onderweg",
+  resolved: "Opgelost",
+};
+export const hunchNumber = (n: number) => `HUN-${String(n).padStart(4, "0")}`;
+/** "12 min geleden", "3 uur geleden", then a plain date. */
+export const agoLabel = (value: string) => {
+  const minutes = Math.max(
+    1,
+    Math.round((Date.now() - Date.parse(value)) / 60000),
+  );
+  if (minutes < 60) return `${minutes} min geleden`;
+  if (minutes < 60 * 24) return `${Math.round(minutes / 60)} uur geleden`;
+  return dateLabel(value, true);
+};

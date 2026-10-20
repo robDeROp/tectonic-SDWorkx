@@ -8,7 +8,8 @@ import {
   LoaderCircle,
   X,
 } from "lucide-react";
-import { statusLabel } from "@/lib/client";
+import { hunchStatusLabel, statusLabel } from "@/lib/client";
+import type { PersonView } from "@/lib/types";
 import { HunchIcon } from "./hunch";
 /* Every status pairs its colour with a glyph and a word. */
 const statusGlyph: Record<string, React.ReactNode> = {
@@ -23,6 +24,38 @@ export function Status({ status }: { status: string }) {
     <span className={`status status-${status}`}>
       {statusGlyph[status] || <span className="status-dot" />}
       {statusLabel[status] || status}
+    </span>
+  );
+}
+const hunchGlyph: Record<string, React.ReactNode> = {
+  open: <ArrowRight size={13} strokeWidth={2.5} />,
+  waiting: <HunchIcon name="summary" size={13} />,
+  helping: <HunchIcon name="people" size={13} />,
+  resolved: <CheckCheck size={13} strokeWidth={2.5} />,
+};
+export function HunchStatus({ status }: { status: string }) {
+  return (
+    <span className={`status hunch-status-${status}`}>
+      {hunchGlyph[status]}
+      {hunchStatusLabel[status] || status}
+    </span>
+  );
+}
+/** Initials avatar; a moon marks someone who is out of office. */
+export function Avatar({
+  person,
+  small = false,
+}: {
+  person: PersonView;
+  small?: boolean;
+}) {
+  return (
+    <span
+      className={`avatar avatar-tone-${person.tone}${small ? " avatar-small" : ""}${person.awayUntil ? " avatar-away" : ""}`}
+      title={person.name}
+      aria-hidden="true"
+    >
+      {person.initials}
     </span>
   );
 }

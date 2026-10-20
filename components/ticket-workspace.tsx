@@ -277,7 +277,7 @@ export function TicketWorkspace({ id }: { id: string }) {
   return (
     <div className="page case-page">
       <div className="case-breadcrumb">
-        <Link href="/">
+        <Link href="/tickets">
           <ArrowLeft size={16} />
           Klantvragen
         </Link>

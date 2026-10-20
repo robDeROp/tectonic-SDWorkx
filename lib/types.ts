@@ -145,3 +145,101 @@ export type TicketDetail = {
   deliveries: DeliveryView[];
   ai: { configured: boolean; missing: string[]; model: string | null };
 };
+
+/* ---------- Hunches ---------- */
+export type PersonView = {
+  id: string;
+  name: string;
+  initials: string;
+  /** Stable avatar colour, 0–4. */
+  tone: number;
+  jobTitle: string;
+  team: string;
+  /** End of the current out-of-office period, or null when available. */
+  awayUntil: string | null;
+  relevance?: number;
+  signal?: string;
+};
+/** One person, document or conversation linked to a hunch, and why. */
+export type ContextLink = {
+  kind: "person" | "document" | "conversation";
+  refId: string;
+  relevance: number;
+  reason: string;
+};
+/** Everything Hunch linked to a hunch, most relevant first. */
+export type HunchContextView = {
+  people: PersonView[];
+  documents: {
+    id: string;
+    name: string;
+    source: string;
+    location: string;
+    owner: string;
+    updatedAt: string;
+    relevance: number;
+    reason: string;
+  }[];
+  conversations: {
+    id: string;
+    title: string;
+    channel: string;
+    location: string;
+    participants: PersonView[];
+    lastActivity: string;
+    snippet: string;
+    relevance: number;
+    reason: string;
+  }[];
+};
+export type HunchStatus = "open" | "waiting" | "helping" | "resolved";
+/** Where a hunch or message comes from: the platform or a plugin. */
+export type HunchSource = "hunch" | "teams" | "outlook";
+export type HunchMessageView = {
+  id: string;
+  /** A directory person, or an outside sender such as a customer. */
+  author: PersonView;
+  external: boolean;
+  source: HunchSource;
+  content: string;
+  attachment: { name: string; text: string; length: number } | null;
+  createdAt: string;
+};
+export type HelpCallState =
+  "skipped" | "notified" | "accepted" | "passed" | "cancelled";
+export type HelpCallView = {
+  id: string;
+  recipient: PersonView;
+  state: HelpCallState;
+  note: string | null;
+  emailedAt: string | null;
+  createdAt: string;
+};
+export type HunchSummary = {
+  id: string;
+  number: number;
+  title: string;
+  workingOn: string;
+  status: HunchStatus;
+  source: HunchSource;
+  sourceLabel: string | null;
+  author: PersonView;
+  /** Who currently holds the call for help, if anyone. */
+  helper: PersonView | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type HunchDetail = HunchSummary & {
+  context: HunchContextView;
+  messages: HunchMessageView[];
+  calls: HelpCallView[];
+  passesLeft: number;
+  viewer: { isAuthor: boolean; isHelper: boolean };
+};
+export type HelpNotification = {
+  hunchId: string;
+  number: number;
+  title: string;
+  from: PersonView;
+  createdAt: string;
+};

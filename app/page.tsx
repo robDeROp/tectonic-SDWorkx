@@ -1,4 +1,4 @@
-import { TicketList } from "@/components/ticket-list";
+import { HunchList } from "@/components/hunch-list";
 export default function Home() {
-  return <TicketList />;
+  return <HunchList />;
 }

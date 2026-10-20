@@ -1,7 +1,8 @@
 import { seed } from "../lib/service";
+import { seedHunches } from "../lib/hunch-service";
 import { pool } from "../lib/db";
-seed()
-  .then(() => console.log("Demo ticket is ready."))
+Promise.all([seed(), seedHunches()])
+  .then(() => console.log("Demo ticket and hunches are ready."))
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;
