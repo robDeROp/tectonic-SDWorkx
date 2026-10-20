@@ -56,6 +56,28 @@ Open **http://127.0.0.1:3000**. Klik op het startticket. De drie demodocumenten 
 
 `db:seed` is herhaalbaar en overschrijft geen ticket. **Demo herhalen** reset uitsluitend het oorspronkelijke demoticket, verwijdert de daarbij horende uploads/berichten/concepten/reviews en start een nieuwe generatie. Zelf aangemaakte tickets blijven behouden.
 
+### Hunches en testscenario's
+
+De startpagina toont Hunches. Klantvragen staan onder `/tickets`.
+Voer na het wisselen naar deze branch `npm run db:migrate` en
+`npm run db:seed` uit op de database van de app.
+
+De seed voegt 23 Hunches toe, met voor elk invoerkanaal (Hunch, Teams en
+Outlook/mail) de statussen context klaar, wacht op hulp, hulp onderweg en
+opgelost. De voorbeelden bevatten oorspronkelijke Teams- en mailberichten,
+reacties in Hunch, tekstbijlagen, afwezige collega's, doorgegeven en ingetrokken
+hulpvragen, de limiet van twee keer doorgeven en een vraag zonder passende
+kennisbronnen. Mensen, documenten en gesprekken zijn aan de cases gekoppeld.
+
+Onder klantvragen staan daarnaast een nieuwe mail over API-toegang en een
+mailcase met vier fictieve documenten, een collega-mail met bijlage en een
+interne notitie. Het bestaande startticket blijft behouden. Seeden start geen
+AI-aanvragen of e-mailverzending en maakt geen fictieve AI-beoordelingen aan.
+
+Opnieuw seeden vult alleen ontbrekende cases aan. Bestaande cases, reacties,
+statussen en verwijderde contextkeuzes worden niet overschreven.
+De invoerkanalen zijn voorbeelddata; er is geen live Teams- of Outlook-import.
+
 ## Gemini werkelijk verbinden
 
 ### Documentbeoordeling met Jev + Gemini
