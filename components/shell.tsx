@@ -100,10 +100,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span>Find it. Understand it. Trust it.</span>
         </div>
         <div className="sidebar-bottom">
-          <div className="demo-label">
-            <span />
-            Proof of concept
-          </div>
           <div className="profile">
             <span className="avatar avatar-dark">JD</span>
             <div>
