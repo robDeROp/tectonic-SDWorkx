@@ -75,6 +75,7 @@ jobs:
       - run: bash -n scripts/bootstrap-cloud.sh scripts/deploy.sh
       - run: python3 scripts/test-deploy.py
       - run: python3 scripts/test-bootstrap.py
+      - run: node --test scripts/test-proxy.mjs
   deploy:
     name: Deploy to Google Cloud
     needs: [verify, infrastructure]

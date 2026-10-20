@@ -180,7 +180,7 @@ Deze controle gebruikt echte Cloud Run-, Cloud Tasks-, Cloud Storage-, PostgreSQ
 Cloud Run vereist IAM-authenticatie. Gebruik voor de demo de lokale proxy:
 
 ```sh
-gcloud run services proxy clarity --project=YOUR_PROJECT_ID --region=us-central1 --port=8080
+node scripts/proxy-cloud.mjs --project=YOUR_PROJECT_ID --region=us-central1 --port=8080
 ```
 
 Open `http://localhost:8080`. Alleen opgegeven `viewer_members` en de benodigde serviceaccounts mogen de app aanroepen. Uploads staan in de private bucket; Cloud Tasks vervangt de lokale worker. Cloud SQL wordt via de Cloud Run Unix-socket verbonden, zonder open authorized networks. De maximale schaal is drie appinstanties.
@@ -205,6 +205,7 @@ npm run test:integration
 npm run build
 python3 scripts/test-deploy.py
 python3 scripts/test-bootstrap.py
+node --test scripts/test-proxy.mjs
 ```
 
 De integratietest vereist de lokale PostgreSQL-database en `TASK_BACKEND=local`. Stop de normale worker tijdens deze test: de test voert zijn eigen taken uit met expliciet geïnjecteerde mock-AI. De test maakt tijdelijke tickets aan en ruimt alleen die eigen tickets op. Er is geen app-configuratie om live AI stilletjes te vervangen door mocks.
