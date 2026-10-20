@@ -131,6 +131,11 @@ export function HunchWorkspace({ id }: { id: string }) {
           <HunchContext
             context={hunch.context}
             hunches={hunch.relatedHunches}
+            origin={{
+              eyebrow: `Geopend vanuit ${hunchNumber(hunch.number)}`,
+              title: hunch.title,
+              kind: "hunch",
+            }}
           />
         </div>
         <aside className="panel help-card" aria-label="Call for help">

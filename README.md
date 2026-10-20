@@ -78,6 +78,29 @@ Opnieuw seeden vult alleen ontbrekende cases aan. Bestaande cases, reacties,
 statussen en verwijderde contextkeuzes worden niet overschreven.
 De invoerkanalen zijn voorbeelddata; er is geen live Teams- of Outlook-import.
 
+### Kennisbank, Organigram en details
+
+De kennisgraaf uit `poc/kennisgraaf` draait nu op de live data van de app
+(`GET /api/knowledge`): de Entra-achtige directory (mensen, teams, documenten,
+gesprekken), de hunches met hun gekoppelde context en hulpvragen, en de
+klantvragen met hun bronnen. Bronnen van klantvragen met dezelfde naam als een
+directorydocument worden samengevoegd; een document dat een ouder document
+vervangt (SharePoint-metadata `replaces`) markeert dat oude document als
+vervangen.
+
+- **Kennisbank** (`/kennisbank`) toont het kennislandschap uit
+  `variant-sterren.html`: onderwerpen → kernbronnen → de hunches, klantvragen
+  en gesprekken die ze gebruiken, met de lenzen voor ontbrekende, verouderde en
+  persoonsafhankelijke kennis.
+- **Organigram** (`/organigram`) toont de organisatie als uitklapbare boom met
+  per team de kennismix.
+- In een hunch openen mensen en documenten onder **Relevante context** een
+  detailvenster: links de verbandengraaf, rechts de details. Vanuit dat venster
+  spring je door naar de kennisbank of het organigram.
+
+Gesprekken worden aan documenten gekoppeld op basis van gedeelde trefwoorden,
+op dezelfde manier waarop Hunch context herkent.
+
 ### Status en voorgestelde acties
 
 De auteur kan op de status bovenaan een hunch klikken om deze te wijzigen.
@@ -252,6 +275,21 @@ node --test scripts/test-proxy.mjs
 De integratietest vereist de lokale PostgreSQL-database en `TASK_BACKEND=local`. Stop de normale worker tijdens deze test: de test voert zijn eigen taken uit met expliciet geïnjecteerde mock-AI. De test maakt tijdelijke tickets aan en ruimt alleen die eigen tickets op. Er is geen app-configuratie om live AI stilletjes te vervangen door mocks.
 
 De tests controleren tekstextractie (PDF/TXT/DOCX), limieten, schema's, citaten, brondekking, versiecontroles, start-idempotentie, concurrente taakclaims, positieve review, negatieve review + override, wijzigingen tijdens de review, herbeoordeling na upload, technische fouten, opnieuw proberen en leaseherstel.
+
+De browsertests controleren zoeken, filters, grafieken, detailvensters, navigatie
+en browsergeschiedenis in Kennisbank en Organigram, Hunch-context en mobiele
+schermbreedtes. Start een productiebuild tegen een gemigreerde en geseede
+lokale testdatabase en voer in een tweede terminal uit:
+
+```sh
+npx playwright install chromium
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:browser
+# Met een bestaande lokale Chrome-installatie kan ook:
+PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:browser
+```
+
+CI draait deze controles tegen de standalone productiebuild. De browsertests
+doen geen AI-aanvragen en wijzigen geen cases.
 
 De productiebuild en automatische tests bewijzen niet dat het doelproject toegang heeft tot Gemini. Daarvoor blijft een echte Vertex AI-aanvraag nodig. Een succesvolle lokale controle bewijst nog geen geslaagde cloudrelease; controleer ook de GitHub Actions-run en de doelomgeving.
 

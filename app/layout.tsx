@@ -4,6 +4,7 @@ import "@fontsource-variable/figtree";
 import "@fontsource-variable/jetbrains-mono";
 import "./tokens.css";
 import "./globals.css";
+import "./knowledge.css";
 import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
   title: "Hunch · SD Worx",

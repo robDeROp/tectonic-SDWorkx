@@ -23,7 +23,13 @@ export type Employee = {
   outOfOffice: { start: string; end: string } | null;
 };
 
-export type Team = { id: string; name: string; department: string };
+export type Team = {
+  id: string;
+  name: string;
+  department: string;
+  /** Entra group owner: the person who leads the team. */
+  leadId: string;
+};
 
 /*
  * The knowledge index. Every item carries the words that point to it, learned
@@ -48,6 +54,8 @@ export type KnowledgeDocument = {
   ownerId: string;
   updatedAt: string;
   keywords: string[];
+  /** Names of older documents this one officially replaces (SharePoint metadata). */
+  replaces?: string[];
 };
 
 export type KnowledgeConversation = {
@@ -65,11 +73,36 @@ export type KnowledgeConversation = {
 export const CURRENT_USER_ID = "e-jamie";
 
 export const teams: Team[] = [
-  { id: "payroll-be", name: "Payroll België", department: "Customer care" },
-  { id: "loonmotor", name: "Loonmotor", department: "Engineering" },
-  { id: "juridisch", name: "Juridisch kenniscentrum", department: "Legal" },
-  { id: "marketing", name: "Marketing Benelux", department: "Marketing" },
-  { id: "success", name: "Customer success", department: "Customer care" },
+  {
+    id: "payroll-be",
+    name: "Payroll België",
+    department: "Customer care",
+    leadId: "e-pieter",
+  },
+  {
+    id: "loonmotor",
+    name: "Loonmotor",
+    department: "Engineering",
+    leadId: "e-ines",
+  },
+  {
+    id: "juridisch",
+    name: "Juridisch kenniscentrum",
+    department: "Legal",
+    leadId: "e-lotte",
+  },
+  {
+    id: "marketing",
+    name: "Marketing Benelux",
+    department: "Marketing",
+    leadId: "e-yasmine",
+  },
+  {
+    id: "success",
+    name: "Customer success",
+    department: "Customer care",
+    leadId: "e-tom",
+  },
 ];
 
 export const employees: Employee[] = [
@@ -295,6 +328,7 @@ export const documents: KnowledgeDocument[] = [
     ownerId: "e-emma",
     updatedAt: "2026-09-10",
     keywords: PAYROLL,
+    replaces: ["FAQ vakantie & vertrek · archief 2021"],
   },
   {
     id: "d-checklist",

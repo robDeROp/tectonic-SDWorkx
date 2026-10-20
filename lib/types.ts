@@ -264,3 +264,81 @@ export type HelpNotification = {
   from: PersonView;
   createdAt: string;
 };
+
+/* ---------- Kennisgraaf ---------- */
+/** The kinds of knowledge the graph links: documents, conversations, hunches, customer questions. */
+export type KnowledgeKind = "doc" | "chat" | "hunch" | "ticket";
+/**
+ * How one item points to another. `cites` and `supersedes` link documents,
+ * `discusses` links a conversation to a document it talks about (recognised
+ * from shared keywords), `uses` links a hunch or ticket to its sources.
+ */
+export type KnowledgeRel = "cites" | "supersedes" | "discusses" | "uses";
+export type Freshness = {
+  k: "ok" | "warn" | "old";
+  label: "Actueel" | "Nakijken" | "Verouderd" | "Vervangen";
+};
+export type GraphPerson = {
+  id: string;
+  name: string;
+  first: string;
+  initials: string;
+  /** Stable avatar colour, 0–4, as in the rest of the app. */
+  tone: number;
+  role: string;
+  unitId: string;
+  managerId: string | null;
+  isHead: boolean;
+  awayUntil: string | null;
+  /** Directory expertise signals, strongest first. */
+  expertise: { signal: string; weight: number }[];
+};
+export type GraphUnit = {
+  id: string;
+  name: string;
+  /** 0 organisation · 1 department · 2 team. */
+  level: 0 | 1 | 2;
+  parentId: string | null;
+  headId: string | null;
+};
+export type GraphItem = {
+  id: string;
+  type: KnowledgeKind;
+  title: string;
+  /** ISO date or timestamp of the last change. */
+  date: string;
+  /** The directory person who wrote, started or opened it. */
+  authorId: string | null;
+  /** Shown when the author is outside the directory, e.g. a customer. */
+  authorLabel: string | null;
+  /** Directory people who worked on it or took part. */
+  participants: string[];
+  /** People Hunch linked to a hunch as relevant experts. */
+  experts: string[];
+  topic: string;
+  /** Where it lives: SharePoint, Teams, Hunch, Klantvragen… */
+  source: string;
+  location: string;
+  summary: string;
+  refs: { to: string; rel: KnowledgeRel; reason?: string }[];
+  fresh: Freshness;
+  fictional: boolean;
+  /** Status label for hunches and tickets. */
+  status: string | null;
+  href: string | null;
+};
+export type GraphTopic = {
+  id: string;
+  name: string;
+  short: string;
+  /** Position on the landscape, roughly −1…1. */
+  c: [number, number];
+};
+export type KnowledgeGraph = {
+  generatedAt: string;
+  rootId: string;
+  people: GraphPerson[];
+  units: GraphUnit[];
+  items: GraphItem[];
+  topics: GraphTopic[];
+};

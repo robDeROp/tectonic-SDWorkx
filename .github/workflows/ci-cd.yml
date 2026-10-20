@@ -42,14 +42,19 @@ jobs:
       - run: npm run db:migrate
       - run: npm run test:integration
       - run: npm run test:hunches
+      - run: npm run db:seed
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
       - name: Test standalone health endpoint
         run: |
+          cp -R public .next/standalone/public
+          cp -R .next/static .next/standalone/.next/static
           PORT=8080 HOSTNAME=127.0.0.1 node .next/standalone/server.js &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8080/api/health
           curl --fail --silent --show-error http://127.0.0.1:8080/api/tickets > /dev/null
+          PLAYWRIGHT_BASE_URL=http://127.0.0.1:8080 npm run test:browser
       - name: Build and smoke-test release containers
         run: |
           docker build --target runner -t clarity-app:test .
