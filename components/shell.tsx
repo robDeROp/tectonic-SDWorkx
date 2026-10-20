@@ -2,28 +2,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpen,
   ChevronDown,
   CircleHelp,
-  Inbox,
+  Lightbulb,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
 import { HunchIcon, HunchLogo } from "./hunch";
+import { HelpBell } from "./help-bell";
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const nav = [
     {
       href: "/",
-      label: "Klantvragen",
-      icon: Inbox,
-      active: path === "/" || path.startsWith("/tickets"),
-    },
-    {
-      href: "/kennisbank",
-      label: "Kennisbank",
-      icon: BookOpen,
-      active: path === "/kennisbank",
+      label: "Hunches",
+      icon: Lightbulb,
+      active: path === "/" || path.startsWith("/hunches"),
     },
     {
       href: "/instellingen",
@@ -65,22 +59,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="tiny-spark">
             <HunchIcon name="summary" size={18} />
           </span>
-          <strong>Kennis wordt vertrouwen.</strong>
+          <strong>Een hunch is genoeg.</strong>
           <p>
-            Vind de juiste bronnen.
+            Hunch vindt de context.
             <br />
-            Begrijp het verschil.
+            Pip vindt de juiste collega.
             <br />
-            Antwoord met vertrouwen.
+            Jij werkt gewoon verder.
           </p>
           <div className="note-rule" />
-          <span>Find it. Understand it. Trust it.</span>
+          <span>Find it. Trust it. Keep it trusted.</span>
         </div>
         <div className="sidebar-bottom">
-          <div className="demo-label">
-            <span />
-            Proof of concept
-          </div>
           <div className="profile">
             <span className="avatar avatar-dark">JD</span>
             <div>
@@ -98,8 +88,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="topbar-right">
             <span className="safe-tag">
               <ShieldCheck size={16} />
-              Verzending in demomodus
+              E-mails in demomodus
             </span>
+            <HelpBell />
             <Link
               href="/instellingen"
               className="icon-button"
