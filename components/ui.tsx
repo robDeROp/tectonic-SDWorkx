@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -60,6 +60,8 @@ export function Modal({
   children: React.ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const subtitleId = useId();
   useEffect(() => {
     const el = dialog.current;
     el?.showModal();
@@ -69,6 +71,8 @@ export function Modal({
     <dialog
       ref={dialog}
       className="modal"
+      aria-labelledby={titleId}
+      aria-describedby={subtitle ? subtitleId : undefined}
       onCancel={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -76,8 +80,8 @@ export function Modal({
     >
       <div className="modal-heading">
         <div>
-          <h2>{title}</h2>
-          {subtitle && <p>{subtitle}</p>}
+          <h2 id={titleId}>{title}</h2>
+          {subtitle && <p id={subtitleId}>{subtitle}</p>}
         </div>
         <button className="icon-button" aria-label="Sluiten" onClick={onClose}>
           <X size={20} />

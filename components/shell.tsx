@@ -5,7 +5,7 @@ import {
   BookOpen,
   ChevronDown,
   CircleHelp,
-  Inbox,
+  LayoutDashboard,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
@@ -15,9 +15,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const nav = [
     {
       href: "/",
-      label: "Klantvragen",
-      icon: Inbox,
-      active: path === "/" || path.startsWith("/tickets"),
+      label: "Overview",
+      icon: LayoutDashboard,
+      active: path === "/",
     },
     {
       href: "/kennisbank",
