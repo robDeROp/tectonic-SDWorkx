@@ -1,0 +1,1603 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<style>body{margin:0}</style>
+<title>Hunch Kennisgraaf</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<!--
+  Hunch Kennisgraaf · proof of concept
+  Standalone page with generated mock data. Three views:
+    1. Verbanden       – ego graph around one document / person (the hero)
+    2. Kennislandschap – every item on a topic map (canvas)
+    3. Organigram      – collapsible org tree for 10.000 employees
+  To move into the Next.js app later: replace generateData() with API calls that
+  return the same shapes (people, units, items with refs). Rendering only needs d3.
+-->
+<style>
+/* Layout: dark Hunch header band, then a two-column workspace (visual stage left, inspector right) that stacks on phones.
+   Single light theme on purpose: it mirrors the Hunch app, which ignores the OS dark-mode setting. */
+:root {
+  color-scheme: light;
+  --surface: #FFF8EF;
+  --raised: #FFFFFF;
+  --sunken: #F6EBDC;
+  --header: #12343B;
+  --on-header: #FFF3E4;
+  --on-header-muted: #BDBEB5;
+  --line: #E6D5BE;
+  --line-soft: #EFE3D2;
+  --ink: #12343B;
+  --muted: #4F666B;
+  --coral: #FF7A50; --coral-soft: #FFE4D9; --coral-strong: #B53A14;
+  --sun: #FFC53D;   --sun-soft: #FFF1C9;   --sun-strong: #7A4E00;
+  --teal: #1F8A87;  --teal-soft: #D7F1EC;  --teal-strong: #0D5F5C;
+  --berry: #C04A88; --berry-soft: #FBE2EF; --berry-strong: #8A2760;
+  --success: #2A7A4B; --success-soft: #E8F5EC;
+  --danger: #B3261E;  --danger-soft: #FCE6E3;
+  --focus: #0D5F5C;
+  --font-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --font-sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r-sm: 6px; --r-md: 12px; --r-lg: 20px;
+  --shadow-card: 0 1px 2px rgba(18,52,59,.08), 0 4px 12px rgba(18,52,59,.06);
+  --shadow-pop: 0 12px 32px rgba(18,52,59,.18);
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--surface); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.45; }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.app { height: 100%; display: flex; flex-direction: column; }
+
+/* Header band */
+.top { background: var(--header); color: var(--on-header); }
+.top-inner {
+  display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.brand { display: flex; align-items: center; gap: 8px; }
+.wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: -.02em; }
+.ws { color: var(--on-header-muted); font-size: 13px; padding-left: 14px; border-left: 1px solid rgba(255,243,228,.18); }
+.tabs { display: flex; gap: 4px; background: rgba(255,243,228,.08); border-radius: 999px; padding: 4px; margin-left: auto; overflow-x: auto; max-width: 100%; }
+.tab { border: 0; background: transparent; color: var(--on-header-muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+.tab:hover { color: var(--on-header); }
+.tab[aria-selected="true"] { background: var(--on-header); color: var(--ink); }
+.poc-chip { font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; background: var(--sun); color: var(--ink); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+
+main {
+  flex: 1; min-height: 0;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.view { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 16px; }
+.panel { background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-card); }
+.stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.stage-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
+.canvas-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.dotgrid { background-image: radial-gradient(var(--line-soft) 1.2px, transparent 1.2px); background-size: 22px 22px; }
+.canvas-wrap > svg, .canvas-wrap > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.inspector { overflow: auto; padding: 20px; min-width: 0; }
+
+/* Controls */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--raised); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.chip .n { font-family: var(--font-mono); font-weight: 500; font-size: 11px; color: var(--muted); }
+.chip[aria-pressed="false"] { background: var(--sunken); color: var(--muted); border-style: dashed; }
+.chip[aria-pressed="false"] .dot { background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+.search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; min-width: 0; flex: 1 1 220px; max-width: 340px; }
+.search input { border: 0; background: transparent; outline: none; font: inherit; color: var(--ink); width: 100%; min-width: 0; }
+.search:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px var(--teal-soft); }
+.hint { font-size: 12px; color: var(--muted); }
+.zoom-ctl { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
+.zoom-ctl button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--raised); cursor: pointer; font-size: 17px; font-weight: 600; box-shadow: var(--shadow-card); display: grid; place-items: center; }
+.zoom-ctl button.fit { font-size: 11px; font-weight: 700; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 9px 16px; font-weight: 700; cursor: pointer; border: 1px solid var(--line); background: var(--raised); }
+.btn.primary { background: var(--coral); border-color: var(--coral); color: var(--ink); }
+.btn.primary:hover { background: #FF8D68; }
+.btn:hover { border-color: var(--ink); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.linkish { border: 0; background: none; padding: 0; color: var(--teal-strong); font-weight: 600; cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: var(--teal-soft); text-underline-offset: 3px; }
+.linkish:hover { text-decoration-color: var(--teal-strong); }
+
+/* Inspector typography */
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.inspector h2 { font-family: var(--font-display); font-size: 22px; line-height: 1.15; letter-spacing: -.015em; margin: 4px 0 6px; text-wrap: balance; }
+.inspector h3 { font-family: var(--font-display); font-size: 15px; margin: 22px 0 8px; display: flex; align-items: center; gap: 8px; }
+.inspector h3 .count { font-family: var(--font-mono); font-size: 11px; font-weight: 500; background: var(--sunken); border-radius: 999px; padding: 1px 7px; }
+.inspector p { margin: 0 0 8px; color: var(--muted); max-width: 65ch; }
+.insp-head { display: flex; gap: 14px; align-items: flex-start; }
+.insp-head > div:last-child { min-width: 0; }
+.tile { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--berry-soft); color: var(--berry-strong); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none; }
+.avatar.lg { width: 48px; height: 48px; font-size: 16px; }
+.meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 14px 0 4px; font-size: 13px; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+.pill.ok { background: var(--success-soft); color: var(--success); }
+.pill.warn { background: var(--sun-soft); color: var(--sun-strong); }
+.pill.old { background: var(--danger-soft); color: var(--danger); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.stat { background: var(--surface); border-radius: var(--r-md); padding: 10px 12px; }
+.stat b { display: block; font-family: var(--font-display); font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+.mix i { display: block; height: 100%; }
+.mix { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--sunken); margin: 8px 0 6px; }
+.mix-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.mix-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.rows { display: flex; flex-direction: column; gap: 2px; }
+.row { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 7px 8px; border-radius: 10px; cursor: pointer; text-align: left; }
+.row:hover, .row.hi { background: var(--surface); }
+.row .main { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.row .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .num { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mini { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex: none; }
+.mini.round { border-radius: 50%; font-size: 10.5px; font-weight: 700; }
+.bar { height: 5px; border-radius: 999px; background: var(--sunken); margin-top: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--teal); border-radius: 999px; }
+.more { font-size: 12px; color: var(--muted); padding: 2px 8px 6px 44px; }
+.conn-title { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--muted); margin: 12px 0 2px; }
+.signals { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.signal { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; padding: 9px 11px; border-radius: var(--r-md); border: 0; text-align: left; width: 100%; }
+.signal.ok { background: var(--success-soft); color: #1F5C39; }
+.signal.warn { background: var(--sun-soft); color: var(--sun-strong); }
+.signal.danger { background: var(--danger-soft); color: var(--danger); }
+button.signal { cursor: pointer; }
+.signal::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-top: 6px; flex: none; }
+.topic-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.topic-chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.topic-chip:hover { border-color: var(--ink); }
+.crumbs { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 6px; margin-top: 2px; }
+.crumbs button { border: 0; background: none; padding: 0; cursor: pointer; color: var(--muted); }
+.crumbs button:hover { color: var(--ink); text-decoration: underline; }
+.close-x { float: right; border: 0; background: var(--surface); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+
+/* Graph view */
+.context { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 320px; }
+.context .ctx-text { min-width: 0; font-size: 13px; }
+.context .ctx-text b { display: block; font-family: var(--font-display); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.context .ctx-text span { color: var(--muted); }
+.trail { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 8px 14px 0; font-size: 12.5px; min-height: 30px; }
+.trail button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 3px 6px; border-radius: 6px; }
+.trail button:hover { background: var(--surface); color: var(--ink); }
+.trail .cur { font-weight: 700; color: var(--ink); padding: 3px 6px; }
+.trail .sep { color: var(--line); }
+.trail .back { border: 1px solid var(--line); font-weight: 600; color: var(--ink); margin-right: 6px; }
+.gnode { cursor: pointer; transition: opacity .2s; }
+.gnode .lbl { font: 600 12.5px var(--font-sans); fill: var(--ink); paint-order: stroke; stroke: var(--raised); stroke-width: 5px; stroke-linejoin: round; }
+.gnode .lbl.center { font: 700 15px var(--font-display); }
+.gnode .rel { font: 500 11px var(--font-sans); fill: var(--muted); paint-order: stroke; stroke: var(--raised); stroke-width: 4px; stroke-linejoin: round; }
+.gnode.dim { opacity: .15; }
+.gnode:hover .body > :first-child, .gnode.hi .body > :first-child { stroke-width: 3px; }
+.e1 { stroke: #D3C2A8; stroke-width: 1.4px; transition: opacity .2s, stroke .2s; }
+.e1.hi { stroke: var(--ink); stroke-width: 2px; }
+.e2 { stroke: #E2D2BB; stroke-width: 1.2px; stroke-dasharray: 3 4; fill: none; transition: opacity .2s; }
+.e2.hi { stroke: var(--coral); stroke-dasharray: none; stroke-width: 1.8px; }
+.edim { opacity: .1; }
+.legend-note { position: absolute; left: 14px; bottom: 12px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.85); padding: 4px 10px; border-radius: 999px; z-index: 2; }
+
+/* Map view */
+#map-labels { position: absolute; inset: 0; pointer-events: none; }
+.tlabel { position: absolute; left: 0; top: 0; pointer-events: auto; border: 1px solid var(--line); background: rgba(255,248,239,.9); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; color: var(--ink); }
+.tlabel span { font-family: var(--font-mono); font-weight: 500; color: var(--muted); font-size: 10.5px; margin-left: 4px; }
+.tlabel:hover { border-color: var(--ink); background: var(--raised); }
+.tip { position: absolute; z-index: 4; pointer-events: none; background: var(--header); color: var(--on-header); border-radius: 10px; padding: 8px 11px; font-size: 12.5px; max-width: 280px; box-shadow: var(--shadow-pop); }
+.tip b { display: block; font-size: 13px; }
+.tip .tip-cta { display: block; margin-top: 3px; color: var(--sun); font-weight: 600; }
+.map-guide { position: absolute; left: 12px; top: 12px; z-index: 3; width: min(300px, calc(100% - 24px)); background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-card); padding: 12px 14px; font-size: 12.5px; }
+.guide-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.guide-head b { font-family: var(--font-display); font-size: 14.5px; }
+.guide-head button { border: 0; background: var(--surface); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 15px; }
+.map-guide p { margin: 0 0 10px; color: var(--muted); }
+.guide-legend { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; margin-bottom: 10px; }
+.guide-legend .src { color: var(--muted); }
+.gtile { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; }
+.steps-cap { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.steps { display: flex; gap: 3px; background: var(--surface); border-radius: 999px; padding: 3px; }
+.steps button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 5px 6px; font-size: 11.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.steps button[aria-pressed="true"] { background: var(--ink); color: var(--on-header); }
+.guide-open { position: absolute; left: 12px; top: 12px; z-index: 3; border: 1px solid var(--line); background: var(--raised); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 12.5px; cursor: pointer; box-shadow: var(--shadow-card); }
+.tlabel.quiet { font-size: 11px; opacity: .45; }
+.tlabel.focus { background: var(--ink); color: var(--on-header); border-color: var(--ink); font-size: 13px; }
+.tlabel.focus span { color: var(--on-header-muted); }
+.gline { width: 20px; height: 0; border-top: 1.5px solid rgba(18,52,59,.5); justify-self: center; }
+.gline.thick { border-top: 6px solid rgba(18,52,59,.18); border-radius: 3px; }
+ol.howto { margin: 6px 0 4px; padding-left: 20px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+.tip span { color: var(--on-header-muted); }
+
+/* Org view */
+.search-wrap { position: relative; flex: 1 1 260px; max-width: 360px; display: flex; }
+.search-wrap .search { max-width: none; }
+.results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-pop); padding: 6px; z-index: 10; max-height: 360px; overflow: auto; }
+.results .empty { padding: 10px; color: var(--muted); font-size: 13px; }
+.org-stats { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.org-stats b { color: var(--ink); }
+.onode { cursor: pointer; }
+.onode .card { fill: var(--raised); stroke: var(--line); stroke-width: 1.2px; transition: stroke .15s; }
+.onode:not(.grid):hover .card { stroke: var(--ink); }
+.onode.sel .card { stroke: var(--coral); stroke-width: 2.5px; }
+.onode .t1 { font: 700 14.5px var(--font-display); fill: var(--ink); }
+.onode .t2 { font: 500 12px var(--font-sans); fill: var(--muted); }
+.onode .lvl { font: 500 10px var(--font-mono); fill: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.onode .hc { font: 600 11px var(--font-mono); fill: var(--ink); }
+.onode .badge circle { fill: var(--raised); stroke: var(--line); }
+.onode .badge text { font: 700 10.5px var(--font-mono); fill: var(--ink); }
+.onode:hover .badge circle { stroke: var(--ink); }
+.pcard { cursor: pointer; }
+.pcard .card { fill: var(--raised); stroke: var(--line); stroke-width: 1.2px; transition: stroke .15s; }
+.pcard:hover .card { stroke: var(--ink); }
+.pcard.sel .card { stroke: var(--coral); stroke-width: 2.5px; }
+.pcard .t1 { font-weight: 700; fill: var(--ink); }
+.pcard .t2 { font: 500 11px var(--font-sans); fill: var(--muted); }
+.pcard .hc { font: 600 11px var(--font-mono); }
+.onode.grid { cursor: default; }
+.kn { cursor: pointer; transition: opacity .25s; }
+.kn:focus, .onode:focus, .pcard:focus, .gnode:focus { outline: none; }
+.kn:focus-visible .kbody, .kn:focus-visible .card, .onode:focus-visible .card, .pcard:focus-visible .card { stroke: var(--focus); stroke-width: 3px; }
+.kn .kbody { fill: var(--raised); stroke: var(--line); stroke-width: 1.4px; transition: stroke .15s; }
+.kn.island:hover .kbody, .kn.hub:hover .kbody, .kn:hover .card { stroke: var(--ink); }
+.kn.star:hover .kbody, .kn.rest:hover .kbody, .kn.gap:hover .kbody { stroke-width: 2.6px; }
+.kn.sel .kbody, .kn.sel .card { stroke: var(--coral) !important; stroke-width: 3px !important; }
+.kn .klbl { font: 700 15px var(--font-display); fill: var(--ink); }
+.kn.hub .klbl { font-size: 17px; }
+.kn .kcnt { font: 500 11px var(--font-mono); fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.kn .cap { font: 600 12.5px var(--font-sans); fill: var(--ink); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.kn .card { fill: var(--raised); stroke: var(--line); stroke-width: 1.2px; transition: stroke .15s; }
+.kn .pt { font: 600 12.5px var(--font-sans); fill: var(--ink); }
+.kn .ps { font: 500 11px var(--font-sans); fill: var(--muted); }
+.kn .kbadge { font: 700 11px var(--font-sans); }
+.kn .kplus circle { fill: var(--raised); stroke: var(--line); }
+.kn .kplus text { font: 700 12px var(--font-mono); fill: var(--ink); }
+.kl { fill: none; }
+.kl.spoke { stroke: #DCCBB2; stroke-width: 1.2px; stroke-dasharray: 2 5; }
+.kl.sat { stroke: #CDB99C; stroke-width: 1.5px; }
+.kl.cites { stroke: #1F8A87; stroke-width: 1.5px; stroke-opacity: .55; }
+.kl.supersedes { stroke: #B3261E; stroke-width: 2px; stroke-dasharray: 6 4; }
+.kl.also { stroke: #FF7A50; stroke-width: 1.3px; stroke-dasharray: 3 4; stroke-opacity: .8; }
+.lens[aria-pressed="true"] { background: var(--ink); color: var(--on-header); border-color: var(--ink); border-style: solid; }
+.lens[aria-pressed="false"] { background: var(--raised); color: var(--ink); border-style: solid; }
+.legend { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 4px; font-size: 12.5px; color: var(--muted); }
+.legend > div { display: flex; align-items: center; gap: 10px; }
+.legend b { color: var(--ink); }
+.legend svg { flex: none; }
+.signal:disabled { cursor: default; }
+.olink { fill: none; stroke: #D9C7AE; stroke-width: 1.4px; }
+
+@media (max-width: 920px) {
+  main { overflow: auto; }
+  .view { height: auto; grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 70vh; min-height: 440px; }
+  .inspector { overflow: visible; }
+  .ws, .legend-note { display: none; }
+  .tabs { margin-left: 0; order: 3; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand" aria-label="Hunch">
+        <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><path d="M16,14 H48 A10,10 0 0 1 58,24 V29 A5,5 0 0 0 58,39 V44 A10,10 0 0 1 48,54 H16 A10,10 0 0 1 6,44 V39 A5,5 0 0 0 6,29 V24 A10,10 0 0 1 16,14 Z" fill="#FF7A50"/><rect x="27" y="27" width="6" height="13" rx="3" fill="#12343B"/><rect x="38" y="27" width="6" height="13" rx="3" fill="#12343B"/><path d="M52,2 Q52,11 61,11 Q52,11 52,20 Q52,11 43,11 Q52,11 52,2 Z" fill="#FFC53D"/></svg>
+        <span class="wordmark">hunch</span>
+      </div>
+      <span class="ws">SD Worx · Kennisgraaf</span>
+      <nav class="tabs" role="tablist" aria-label="Weergaven">
+        <button class="tab" role="tab" id="tab-graph" data-tab="graph" aria-selected="true">Verbanden</button>
+        <button class="tab" role="tab" id="tab-map" data-tab="map" aria-selected="false">Kennislandschap</button>
+        <button class="tab" role="tab" id="tab-org" data-tab="org" aria-selected="false">Organigram</button>
+      </nav>
+      <span class="poc-chip">Proof of concept · fictieve data</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Verbanden -->
+    <section class="view" id="view-graph" role="tabpanel" aria-labelledby="tab-graph">
+      <div class="stage panel">
+        <div class="stage-bar">
+          <div class="context">
+            <span class="tile" style="background:var(--coral-soft);width:38px;height:38px;border-radius:11px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B53A14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6 H19 A2 2 0 0 1 21 8 V10 A2 2 0 0 0 21 14 V16 A2 2 0 0 1 19 18 H5 A2 2 0 0 1 3 16 V14 A2 2 0 0 0 3 10 V8 A2 2 0 0 1 5 6 Z M10 10 V14 M14 10 V14"/></svg>
+            </span>
+            <div class="ctx-text">
+              <span>Geopend vanuit klantvraag #1042 · Atelier Noord</span>
+              <b>Vakantiegeld bij uitdiensttreding</b>
+            </div>
+          </div>
+          <div class="chips" id="graph-chips" aria-label="Toon of verberg soorten"></div>
+        </div>
+        <div class="trail" id="graph-trail"></div>
+        <div class="canvas-wrap dotgrid" id="graph-stage">
+          <div class="legend-note">Klik op een bol om verder te springen · stippellijn = onderling verbonden</div>
+          <div class="zoom-ctl"><button data-zoom="in" aria-label="Inzoomen">+</button><button data-zoom="out" aria-label="Uitzoomen">−</button><button class="fit" data-zoom="fit" aria-label="Passend maken">FIT</button></div>
+        </div>
+      </div>
+      <aside class="inspector panel" id="graph-insp" aria-live="polite"></aside>
+    </section>
+
+    <!-- 2. Kennislandschap -->
+    <section class="view" id="view-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+      <div class="stage panel">
+        <div class="stage-bar">
+          <label class="search" for="map-q">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20 L16 16"/></svg>
+            <input id="map-q" type="search" placeholder="Zoek op titel, onderwerp of persoon" autocomplete="off">
+          </label>
+          <div class="chips" id="map-chips"></div>
+          <span class="hint" id="map-hint">Scroll of knijp om in te zoomen</span>
+        </div>
+        <div class="canvas-wrap" id="map-stage">
+          <canvas aria-label="Kaart van alle kennisitems, gegroepeerd per onderwerp"></canvas>
+          <div id="map-labels"></div>
+          <div class="tip" id="map-tip" hidden></div>
+          <div class="map-guide" id="map-guide">
+            <div class="guide-head"><b>Wat zie je hier?</b><button id="guide-x" aria-label="Uitleg verbergen">×</button></div>
+            <p>Elk punt is één kennisitem. Gesprekken, opnames en tickets liggen rond het document waar ze naar verwijzen.</p>
+            <div class="guide-legend" id="guide-legend"></div>
+            <div class="steps-cap">Zoomniveau</div>
+            <div class="steps" role="group" aria-label="Zoomniveau"><button data-level="0" aria-pressed="true">Onderwerpen</button><button data-level="1" aria-pressed="false">Iconen</button><button data-level="2" aria-pressed="false">Titels</button></div>
+          </div>
+          <button class="guide-open" id="guide-open" hidden>Wat zie je?</button>
+          <div class="zoom-ctl"><button data-zoom="in" aria-label="Inzoomen">+</button><button data-zoom="out" aria-label="Uitzoomen">−</button><button class="fit" data-zoom="fit" aria-label="Alles tonen">FIT</button></div>
+        </div>
+      </div>
+      <aside class="inspector panel" id="map-insp" aria-live="polite"></aside>
+    </section>
+
+    <!-- 3. Organigram -->
+    <section class="view" id="view-org" role="tabpanel" aria-labelledby="tab-org" hidden>
+      <div class="stage panel">
+        <div class="stage-bar">
+          <div class="search-wrap">
+            <label class="search" for="org-q">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20 L16 16"/></svg>
+              <input id="org-q" type="search" placeholder="Zoek een collega of team" autocomplete="off" aria-controls="org-results">
+            </label>
+            <div class="results" id="org-results" hidden></div>
+          </div>
+          <div class="org-stats" id="org-stats"></div>
+        </div>
+        <div class="canvas-wrap dotgrid" id="org-stage">
+          <div class="legend-note">Klik op een kaart om open te klappen · de gekleurde lijn toont de kennismix</div>
+          <div class="zoom-ctl"><button data-zoom="in" aria-label="Inzoomen">+</button><button data-zoom="out" aria-label="Uitzoomen">−</button><button class="fit" data-zoom="fit" aria-label="Passend maken">FIT</button></div>
+        </div>
+      </div>
+      <aside class="inspector panel" id="org-insp" aria-live="polite"></aside>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(() => {
+"use strict";
+/* ================================================================
+   Helpers
+   ================================================================ */
+const $ = (s, r = document) => r.querySelector(s);
+const fmt = n => n.toLocaleString("nl-BE");
+const NOW = new Date("2026-10-20T12:00:00");
+const fmtDate = iso => new Date(iso + "T12:00:00").toLocaleDateString("nl-BE", { day: "numeric", month: "short", year: "numeric" });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const trunc = (s, n) => s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const initials = p => (p.first[0] + p.last.replace(/^(van den |van |de |el |de )/i, "")[0]).toUpperCase();
+
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rnd = mulberry32(20261020);
+const pick = a => a[Math.floor(rnd() * a.length)];
+const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const weighted = (arr, wf) => { const tot = arr.reduce((s, x) => s + wf(x), 0); let r = rnd() * tot; for (const x of arr) { r -= wf(x); if (r <= 0) return x; } return arr[arr.length - 1]; };
+const sample = (arr, n) => { const out = new Set(); let g = 0; while (out.size < Math.min(n, arr.length) && g++ < n * 20) out.add(pick(arr)); return [...out]; };
+const isoMinusYears = y => { const d = new Date(NOW.getTime() - y * 365.25 * 864e5); return d.toISOString().slice(0, 10); };
+
+/* ================================================================
+   Visual vocabulary (Hunch category colours)
+   ================================================================ */
+const COL = {
+  doc:    { c: "#1F8A87", soft: "#D7F1EC", strong: "#0D5F5C" },
+  chat:   { c: "#FF7A50", soft: "#FFE4D9", strong: "#B53A14" },
+  rec:    { c: "#E9A90F", soft: "#FFF1C9", strong: "#7A4E00" },
+  ticket: { c: "#12343B", soft: "#E2E8E7", strong: "#12343B" },
+  person: { c: "#C04A88", soft: "#FBE2EF", strong: "#8A2760" },
+  unit:   { c: "#4F666B", soft: "#F6EBDC", strong: "#12343B" },
+};
+const KIND = {
+  doc:    { label: "Document",      plural: "Documenten",  src: "SharePoint" },
+  chat:   { label: "Teams-gesprek", plural: "Gesprekken",  src: "Microsoft Teams" },
+  rec:    { label: "Opname",        plural: "Opnames",     src: "Teams-opname · transcript" },
+  ticket: { label: "Ticket",        plural: "Tickets",     src: "Hunch" },
+  person: { label: "Persoon",       plural: "Mensen" },
+  unit:   { label: "Team",          plural: "Teams" },
+};
+const ITEM_TYPES = ["doc", "chat", "rec", "ticket"];
+const GLYPH = {
+  doc: "M7 3 H14 L19 8 V20 A1 1 0 0 1 18 21 H7 A1 1 0 0 1 6 20 V4 A1 1 0 0 1 7 3 Z M14 3 V8 H19 M9 13 H16 M9 17 H14",
+  chat: "M5 5 H19 A2 2 0 0 1 21 7 V15 A2 2 0 0 1 19 17 H11 L7 20 V17 H5 A2 2 0 0 1 3 15 V7 A2 2 0 0 1 5 5 Z M8 11 H8.01 M12 11 H12.01 M16 11 H16.01",
+  rec: "M4 10 V14 M8 7 V17 M12 4 V20 M16 8 V16 M20 11 V13",
+  ticket: "M5 6 H19 A2 2 0 0 1 21 8 V10 A2 2 0 0 0 21 14 V16 A2 2 0 0 1 19 18 H5 A2 2 0 0 1 3 16 V14 A2 2 0 0 0 3 10 V8 A2 2 0 0 1 5 6 Z M10 10 V14 M14 10 V14",
+  person: "M9 11 A3.5 3.5 0 1 0 9 4 A3.5 3.5 0 1 0 9 11 Z M3 20 C3 16 5.5 14 9 14 C12.5 14 15 16 15 20 M16 4.5 A3 3 0 0 1 16 10.5 M18 14.5 C20 15.3 21 17.2 21 20",
+  unit: "M9 3 H15 V8 H9 Z M12 8 V12 M5 15 V12 H19 V15 M3 15 H7 V20 H3 Z M10 15 H14 V20 H10 Z M17 15 H21 V20 H17 Z",
+};
+const icon = (name, color, size = 16) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${GLYPH[name]}"/></svg>`;
+
+/* ================================================================
+   Mock data: 10.000 employees, ~6.000 knowledge items
+   ================================================================ */
+const FIRST = ["Emma","Lotte","Noah","Lucas","Louise","Liam","Mila","Arthur","Olivia","Jules","Elise","Finn","Nora","Victor","Julie","Lars","Sofie","Bram","Hanne","Thomas","Lien","Wout","Fien","Jonas","Marie","Seppe","Laura","Ruben","Amber","Kobe","Ines","Milan","Eline","Jasper","Charlotte","Robbe","Anouk","Pieter","Sarah","Tibo","Nina","Stijn","Lisa","Maarten","Hélène","Mehdi","Yasmine","Karim","Sanne","Daan","Femke","Joris","Tine","Koen","An","Bart","Griet","Dries","Leen","Arne","Camille","Maxime","Chloé","Nathan","Hugo","Manon","Sam","Zoë","Elias","Ayoub"];
+const LAST = ["Peeters","Janssens","Maes","Jacobs","Mertens","Willems","Claes","Goossens","Wouters","De Smet","Dubois","Lambert","Dupont","Hermans","Aerts","Michiels","Martens","Desmet","Vermeulen","Van Damme","De Vos","Lemmens","Cools","Smets","Verstraeten","Hendrickx","Van den Broeck","Coppens","Leclercq","Segers","Bogaerts","Pauwels","Vandenberghe","Stevens","Wuyts","Mahieu","Declercq","Vanhove","De Backer","Bastiaens","El Amrani","Benali","Nijs","Thys","Verhoeven","de Jong","Bakker","Visser","Smit","de Vries","Mulder","Dekker","Van Acker","Lenaerts","Geerts","Moens","Baert","Callens","Renard","Simon"];
+const BE = ["Antwerpen","Gent","Brugge","Leuven","Hasselt","Mechelen","Kortrijk","Namen","Luik","Brussel","Aalst","Genk","Roeselare","Turnhout","Charleroi"];
+const NL = ["Amsterdam","Rotterdam","Utrecht","Eindhoven","Zwolle","Groningen","Den Haag","Breda","Arnhem","Tilburg","Nijmegen","Haarlem"];
+const DIVISIONS = [
+  { name: "Payroll België", w: 1.6, cities: BE, roles: ["Payroll consultant","Senior payroll consultant","Payroll specialist","Dossierbeheerder"], depts: ["Eindafrekening & vertrek","Loonverwerking KMO","Loonverwerking grote ondernemingen","Sociale documenten","Payroll Vlaanderen","Payroll Wallonië & Brussel"] },
+  { name: "Payroll Nederland", w: 1.0, cities: NL, roles: ["Salarisadministrateur","Senior salarisadviseur","Payroll specialist"], depts: ["Salarisverwerking","Pensioenen & verzekeringen","Arbeidsvoorwaarden"] },
+  { name: "HR Services", w: 0.9, cities: BE, roles: ["HR-adviseur","HR business partner","Recruiter","Trainer"], depts: ["Talent & rekrutering","Learning","Welzijn & verzuim","Rewards & mobiliteit"] },
+  { name: "Legal & Compliance", w: 0.6, cities: BE, roles: ["Juridisch adviseur","Fiscaal specialist","Compliance officer","Auditor"], depts: ["Sociaal recht","Fiscaliteit","Privacy & GDPR","Audit"] },
+  { name: "Klantenservice", w: 1.3, cities: BE, roles: ["Klantadviseur payroll","Klantadviseur HR","Onboarding specialist","Kennisbeheerder"], depts: ["Servicedesk payroll","Servicedesk HR","Onboarding klanten","Kennisbeheer"] },
+  { name: "Technologie", w: 1.0, cities: BE, roles: ["Software engineer","Data engineer","Product owner","Cloud engineer","Security analist"], depts: ["Platform payroll","Data & AI","Integraties","Infrastructuur","Security"] },
+  { name: "Finance & Operations", w: 0.5, cities: BE, roles: ["Financieel analist","Boekhouder","Facility coördinator","Aankoper"], depts: ["Finance","Facility","Procurement"] },
+  { name: "Sales & Partners", w: 0.7, cities: BE, roles: ["Accountmanager","Partnermanager","Marketeer","Sales engineer"], depts: ["Sales KMO","Sales enterprise","Partnerbeheer","Marketing"] },
+];
+const TOPICS = [
+  { id: "vak",    name: "Vakantiegeld & vertrek",     short: "vakantiegeld bij vertrek",  c: [-0.62, -0.16], w: 1.3, depts: ["Eindafrekening & vertrek","Sociaal recht","Servicedesk payroll"] },
+  { id: "eind",   name: "Eindafrekening",             short: "eindafrekening",            c: [-0.33, -0.42], w: 1.1, depts: ["Eindafrekening & vertrek","Loonverwerking KMO"] },
+  { id: "beslag", name: "Loonbeslag",                 short: "loonbeslag",                c: [-0.88, -0.48], w: 0.6, depts: ["Loonverwerking grote ondernemingen","Sociaal recht"] },
+  { id: "cheq",   name: "Eco- & maaltijdcheques",     short: "maaltijdcheques",           c: [-0.16, -0.08], w: 0.7, depts: ["Loonverwerking KMO","Rewards & mobiliteit"] },
+  { id: "dimona", name: "Dimona & aangiftes",         short: "Dimona-aangiftes",          c: [-0.92, 0.06],  w: 0.9, depts: ["Sociale documenten","Payroll Vlaanderen"] },
+  { id: "index",  name: "Indexering",                 short: "indexering",                c: [-0.48, 0.14],  w: 0.8, depts: ["Payroll Vlaanderen","Payroll Wallonië & Brussel","Fiscaliteit"] },
+  { id: "mob",    name: "Mobiliteitsbudget",          short: "mobiliteitsbudget",         c: [0.12, -0.62],  w: 0.7, depts: ["Rewards & mobiliteit","Fiscaliteit"] },
+  { id: "vaa",    name: "Bedrijfswagens & VAA",       short: "VAA bedrijfswagen",         c: [0.44, -0.74],  w: 0.6, depts: ["Rewards & mobiliteit","Fiscaliteit"] },
+  { id: "thuis",  name: "Thuiswerkvergoeding",        short: "thuiswerkvergoeding",       c: [0.30, -0.38],  w: 0.6, depts: ["Rewards & mobiliteit","Servicedesk HR"] },
+  { id: "ziek",   name: "Ziekte & gewaarborgd loon",  short: "gewaarborgd loon",          c: [0.74, -0.24],  w: 0.9, depts: ["Welzijn & verzuim","Sociaal recht"] },
+  { id: "verlof", name: "Tijdskrediet & verlof",      short: "tijdskrediet",              c: [0.54, 0.04],   w: 0.8, depts: ["Welzijn & verzuim","Servicedesk HR"] },
+  { id: "onb",    name: "Onboarding medewerkers",     short: "onboarding",                c: [0.92, 0.10],   w: 0.6, depts: ["Talent & rekrutering","Learning","Onboarding klanten"] },
+  { id: "gdpr",   name: "GDPR & personeelsdossier",   short: "personeelsdossier en GDPR", c: [0.20, 0.32],   w: 0.7, depts: ["Privacy & GDPR","Security"] },
+  { id: "verk",   name: "Sociale verkiezingen",       short: "sociale verkiezingen",      c: [-0.12, 0.48],  w: 0.4, depts: ["Sociaal recht","Servicedesk HR"] },
+  { id: "pens",   name: "Pensioenen NL",              short: "pensioenregeling",          c: [-0.72, 0.54],  w: 0.6, depts: ["Pensioenen & verzekeringen"] },
+  { id: "lh",     name: "Loonheffing NL",             short: "loonheffing",               c: [-0.42, 0.78],  w: 0.7, depts: ["Salarisverwerking","Arbeidsvoorwaarden"] },
+  { id: "api",    name: "Integraties & API's",        short: "API-koppeling",             c: [0.62, 0.56],   w: 0.6, depts: ["Integraties","Platform payroll"] },
+  { id: "data",   name: "Data & rapportering",        short: "rapportering",              c: [0.96, 0.70],   w: 0.5, depts: ["Data & AI","Kennisbeheer"] },
+];
+const topicById = new Map(TOPICS.map(t => [t.id, t]));
+const RELATED = [["vak","eind"],["eind","beslag"],["vak","index"],["dimona","index"],["cheq","mob"],["mob","vaa"],["mob","thuis"],["thuis","verlof"],["ziek","verlof"],["onb","gdpr"],["gdpr","api"],["api","data"],["pens","lh"],["verk","gdpr"],["ziek","vak"],["eind","cheq"],["onb","verlof"],["index","lh"]];
+const relatedOf = tid => { const r = RELATED.filter(p => p.includes(tid)).map(p => p[0] === tid ? p[1] : p[0]); return r.length ? pick(r) : null; };
+const CHANNELS = ["#payroll-be","#hr-vragen","#legal-updates","#servicedesk","#nl-salaris","#kennisdeling","#eindafrekening"];
+const COMPANIES = ["Atelier Noord","Bakkerij Verhaeghe","Lumen Logistics","Brouwerij De Kroon","Koda Tech","Studio Maas","Groep Delvaux","Haven Partners","Velo Retail","Medica Zorggroep","Bouwwerken Lauwers","Nordic Foods","Clinique Sainte-Anne","Transport Wyns","Optiek Claerhout"];
+const REGIONS = ["Vlaanderen","Wallonië","Brussel"];
+
+const people = [], units = [], unitById = new Map(), deptByName = new Map(), reportsOf = new Map();
+const items = [], itemById = new Map(), incoming = new Map();
+const personById = id => people[+id.slice(1)];
+const unitOf = p => unitById.get(p.unitId);
+const parentOf = u => u.parent ? unitById.get(u.parent) : null;
+
+function mkUnit(name, level, parent) {
+  const u = { id: "u" + units.length, name, level, parent: parent ? parent.id : null, children: [], members: [], headId: null, size: 0, types: { doc: 0, chat: 0, rec: 0, ticket: 0 }, topics: {} };
+  units.push(u); unitById.set(u.id, u); if (parent) parent.children.push(u); return u;
+}
+function mkPerson(role, unit, managerId, isHead) {
+  const first = pick(FIRST), last = pick(LAST);
+  const p = { id: "p" + people.length, first, last, name: first + " " + last, role, unitId: unit.id, managerId, isHead, authored: [], joined: [] };
+  people.push(p);
+  if (managerId) { if (!reportsOf.has(managerId)) reportsOf.set(managerId, []); reportsOf.get(managerId).push(p.id); }
+  return p;
+}
+
+const TOTAL_PEOPLE = 10000;
+const ROOT = mkUnit("SD Worx", 0, null);
+const ceo = mkPerson("Chief Executive Officer", ROOT, null, true); ROOT.headId = ceo.id;
+(function buildOrg() {
+  const plan = [];
+  DIVISIONS.forEach(d => d.depts.forEach(dep => plan.push({ d, dep, n: ri(7, 11) })));
+  const nTeams = plan.reduce((s, p) => s + p.n, 0);
+  const rest = TOTAL_PEOPLE - (1 + DIVISIONS.length + plan.length + nTeams);
+  const w = []; plan.forEach(p => { for (let i = 0; i < p.n; i++) w.push(p.d.w * (0.6 + rnd() * 0.8)); });
+  const tw = w.reduce((a, b) => a + b, 0);
+  const sizes = w.map(x => Math.max(4, Math.round(rest * x / tw)));
+  let diff = rest - sizes.reduce((a, b) => a + b, 0), k = 0;
+  while (diff !== 0) { const j = k++ % sizes.length; if (diff > 0) { sizes[j]++; diff--; } else if (sizes[j] > 4) { sizes[j]--; diff++; } }
+  let ti = 0;
+  for (const d of DIVISIONS) {
+    const du = mkUnit(d.name, 1, ROOT);
+    const dh = mkPerson("Directeur " + d.name, du, ceo.id, true); du.headId = dh.id;
+    for (const pl of plan.filter(p => p.d === d)) {
+      const pu = mkUnit(pl.dep, 2, du); deptByName.set(pl.dep, pu);
+      const ph = mkPerson("Afdelingshoofd", pu, dh.id, true); pu.headId = ph.id;
+      const cities = sample(d.cities, pl.n);
+      for (let i = 0; i < pl.n; i++) {
+        const tu = mkUnit("Team " + cities[i], 3, pu);
+        const lead = mkPerson("Teamleider", tu, ph.id, true); tu.headId = lead.id;
+        for (let m = 0; m < sizes[ti]; m++) tu.members.push(mkPerson(pick(d.roles), tu, lead.id, false).id);
+        ti++;
+      }
+    }
+  }
+  (function size(u) { u.size = 1 + u.members.length + u.children.reduce((s, c) => s + size(c), 0); return u.size; })(ROOT);
+})();
+
+// People pools per department (used to pick authors per topic)
+const deptPeopleCache = new Map();
+function deptPeople(name) {
+  if (deptPeopleCache.has(name)) return deptPeopleCache.get(name);
+  const out = []; (function walk(u) { out.push(u.headId); out.push(...u.members); u.children.forEach(walk); })(deptByName.get(name));
+  deptPeopleCache.set(name, out); return out;
+}
+const topicPool = new Map(TOPICS.map(t => [t.id, t.depts.flatMap(deptPeople)]));
+const servicePool = [...deptPeople("Servicedesk payroll"), ...deptPeople("Servicedesk HR")];
+
+// Named demo cast, tied to the existing Hunch ticket demo
+function cast(person, first, last, role) { person.first = first; person.last = last; person.name = first + " " + last; if (role) person.role = role; return person; }
+const team0 = n => unitById.get(deptByName.get(n).children[0].id);
+const emma = cast(personById(team0("Eindafrekening & vertrek").headId), "Emma", "Peeters", "Teamleider eindafrekening");
+const lotte = cast(personById(team0("Eindafrekening & vertrek").members[0]), "Lotte", "Maes", "Senior payroll consultant");
+const jamie = cast(personById(team0("Servicedesk payroll").members[0]), "Jamie", "Claes", "Klantadviseur payroll");
+const pieter = cast(personById(team0("Sociaal recht").members[0]), "Pieter", "Wouters", "Juridisch adviseur sociaal recht");
+const marc = cast(personById(team0("Kennisbeheer").headId), "Marc", "Janssens", "Teamleider kennisbeheer");
+const sofie = cast(personById(team0("Learning").members[0]), "Sofie", "Mertens", "Trainer payroll");
+
+function mkItem(o) { o.refs = o.refs || []; o.participants = o.participants || []; items.push(o); itemById.set(o.id, o); return o; }
+const docsByTopic = new Map(TOPICS.map(t => [t.id, []]));
+const chatsByTopic = new Map(TOPICS.map(t => [t.id, []]));
+(function demoItems() {
+  const V = topicById.get("vak").c, at = (dx, dy) => [V[0] + dx, V[1] + dy];
+  const eindPool = deptPeople("Eindafrekening & vertrek");
+  const list = [
+    { id: "demo-kader", type: "doc", title: "Vertrekvakantiegeld · regelgevend kader", date: "2026-08-15", authorId: pieter.id, xy: at(-0.03, 0.02),
+      summary: "Juridisch kader voor vertrekvakantiegeld bij een vertrekkende bediende. Beschrijft welke gegevens nodig zijn, zonder rekensleutel." },
+    { id: "demo-faq2021", type: "doc", title: "FAQ vakantie & vertrek · archief 2021", date: "2021-02-12", authorId: marc.id, xy: at(-0.05, -0.04),
+      summary: "Oude interne FAQ met verouderde en tegenstrijdige instructies. Vervangen door het payroll playbook van september 2026." },
+    { id: "demo-playbook", type: "doc", title: "Payroll playbook · uitdiensttreding", date: "2026-09-10", authorId: emma.id, participants: [lotte.id, pieter.id], xy: at(0.004, -0.006),
+      refs: [{ to: "demo-kader", rel: "cites" }, { to: "demo-faq2021", rel: "supersedes" }],
+      summary: "Werkinstructie voor de eindafrekening van een vertrekkende bediende: welke gegevens je opvraagt, wanneer vertrekvakantiegeld meetelt en wanneer je een vakantieattest bezorgt." },
+    { id: "demo-checklist", type: "doc", title: "Checklist eindafrekening · aanvulling", date: "2026-09-30", authorId: emma.id, xy: at(0.03, 0.01),
+      refs: [{ to: "demo-playbook", rel: "cites" }],
+      summary: "Aanvullende checklist: loonhistoriek, tewerkstellingsperiode en opgenomen vakantiedagen bevestigen vóór de berekening." },
+    { id: "demo-chat1", type: "chat", title: "#payroll-be-vertrek · vakantieattest bij vertrek", date: "2026-09-18", authorId: lotte.id, participants: [emma.id, jamie.id, ...sample(eindPool, 3)], xy: at(0.035, -0.03),
+      refs: [{ to: "demo-playbook", rel: "discusses" }],
+      summary: "Thread over wie het vakantieattest bezorgt en wanneer. Emma verwijst naar het nieuwe playbook." },
+    { id: "demo-chat2", type: "chat", title: "#kennisbeheer · FAQ 2021 archiveren?", date: "2026-09-12", authorId: marc.id, participants: [emma.id, sofie.id], xy: at(-0.02, -0.05),
+      refs: [{ to: "demo-faq2021", rel: "discusses" }, { to: "demo-playbook", rel: "discusses" }],
+      summary: "Afspraak om de oude FAQ te archiveren zodra het playbook live staat." },
+    { id: "demo-rec", type: "rec", title: "Kennissessie uitdiensttreding · september 2026", date: "2026-09-24", authorId: sofie.id, participants: [emma.id, lotte.id, jamie.id, pieter.id, ...sample(eindPool, 5)], xy: at(-0.01, 0.045),
+      refs: [{ to: "demo-playbook", rel: "explains" }, { to: "demo-kader", rel: "explains" }],
+      summary: "Transcript van een interne kennissessie van 48 minuten. Emma en Pieter lichten het playbook en het regelgevend kader toe." },
+    { id: "demo-t1042", type: "ticket", title: "Atelier Noord · vakantiegeld bij uitdiensttreding", date: "2026-10-14", authorId: jamie.id, xy: at(0.05, 0.03),
+      refs: [{ to: "demo-playbook", rel: "uses" }, { to: "demo-kader", rel: "uses" }, { to: "demo-checklist", rel: "uses" }, { to: "demo-chat1", rel: "uses" }],
+      summary: "Klantvraag #1042 van Sophie De Smet (Atelier Noord) over het vertrekvakantiegeld van een bediende." },
+    { id: "demo-t2", type: "ticket", title: "Bakkerij Verhaeghe · vakantieattest vergeten", date: "2026-10-02", authorId: pick(servicePool), xy: at(0.06, -0.01),
+      refs: [{ to: "demo-playbook", rel: "uses" }] },
+    { id: "demo-t3", type: "ticket", title: "Lumen Logistics · eindafrekening bediende", date: "2026-09-27", authorId: pick(servicePool), xy: at(-0.06, 0.0),
+      refs: [{ to: "demo-faq2021", rel: "uses" }, { to: "demo-playbook", rel: "uses" }] },
+  ];
+  for (const o of list) {
+    o.topic = "vak"; o.x = o.xy[0]; o.y = o.xy[1]; delete o.xy; mkItem(o);
+    if (o.type === "doc") docsByTopic.get("vak").push(o.id);
+  }
+})();
+
+(function generateItems() {
+  const N = 6000 - items.length;
+  const share = { doc: 0.38, chat: 0.32, rec: 0.10, ticket: 0.20 };
+  const off = { doc: [0, 0], chat: [0.03, 0.012], rec: [-0.025, 0.022], ticket: [0.005, -0.03] };
+  const TPL = {
+    doc: [(t, y) => `${cap(t.short)} · werkinstructie`, (t) => `FAQ ${t.short}`, (t) => `Checklist ${t.short}`, (t, y) => `Beleidsnota ${t.short} ${y}`, (t) => `Klantmail-template ${t.short}`, (t) => `${cap(t.short)} · procedure ${pick(REGIONS)}`, (t) => `Opleiding ${t.short} · slides`, (t, y) => `${cap(t.short)} · wijzigingen ${y}`],
+    chat: [(t) => `${pick(CHANNELS)} · vraag over ${t.short}`, (t) => `${pick(CHANNELS)} · ${t.short} bij ${pick(COMPANIES)}`, (t) => `${pick(CHANNELS)} · update ${t.short}`],
+    rec: [(t) => `Kennissessie ${t.short}`, (t) => `Teamoverleg · ${t.short}`, (t) => `Klantcall ${pick(COMPANIES)} · ${t.short}`],
+    ticket: [(t) => `${pick(COMPANIES)} · ${t.short}`, (t) => `Vraag over ${t.short} · ${pick(COMPANIES)}`],
+  };
+  // Preferential attachment: well-used sources attract more references (like real usage).
+  const use = new Map();
+  items.forEach(it => it.refs.forEach(r => use.set(r.to, (use.get(r.to) || 0) + 1)));
+  const pickDocs = (pool, k) => {
+    const out = [];
+    for (let j = 0; j < k && out.length < pool.length; j++) {
+      const cand = pool.filter(id => !out.includes(id));
+      const id = weighted(cand, x => Math.pow(1 + (use.get(x) || 0), 1.35));
+      out.push(id); use.set(id, (use.get(id) || 0) + 1);
+    }
+    return out;
+  };
+  TOPICS.forEach(t => { t.experts = sample(topicPool.get(t.id), 2); t.expertBias = 0.12 + rnd() * 0.3; });
+  let n = 0;
+  for (const type of ITEM_TYPES) {
+    const count = Math.round(N * share[type]);
+    for (let i = 0; i < count; i++) {
+      const t = weighted(TOPICS, x => x.w);
+      const pool = topicPool.get(t.id);
+      let author = type === "ticket" && rnd() < 0.7 ? pick(servicePool) : pick(pool);
+      if (type === "doc") { const r = rnd(); if (r < t.expertBias) author = t.experts[0]; else if (r < t.expertBias + 0.08) author = t.experts[1]; }
+      const age = type === "doc" ? Math.pow(rnd(), 1.6) * 6.5 : Math.pow(rnd(), 2.1) * 4.5;
+      const date = isoMinusYears(age);
+      const o = { id: "i" + (n++), type, topic: t.id, date, authorId: author, title: pick(TPL[type])(t, date.slice(0, 4)),
+        x: t.c[0] + gauss() * 0.065 + off[type][0], y: t.c[1] + gauss() * 0.06 + off[type][1] };
+      const docs = docsByTopic.get(t.id), chats = chatsByTopic.get(t.id);
+      if (type === "doc") { if (docs.length && rnd() < 0.5) o.refs = pickDocs(docs, ri(1, 2)).map(to => ({ to, rel: "cites" })); if (rnd() < 0.4) o.participants = sample(pool, ri(1, 2)).filter(x => x !== author); }
+      if (type === "chat") { if (docs.length && rnd() > 0.26) o.refs = pickDocs(docs, ri(1, 2)).map(to => ({ to, rel: "discusses" })); o.participants = sample(pool, ri(2, 6)).filter(x => x !== author); }
+      if (type === "rec") { if (docs.length && rnd() > 0.2) o.refs = pickDocs(docs, ri(1, 2)).map(to => ({ to, rel: "explains" })); o.participants = sample(pool, ri(3, 10)).filter(x => x !== author); }
+      if (type === "ticket") { o.refs = docs.length && rnd() > 0.22 ? pickDocs(docs, ri(1, 2)).map(to => ({ to, rel: "uses" })) : []; if (chats.length && rnd() < 0.25) o.refs.push({ to: pick(chats), rel: "uses" }); }
+      if (rnd() < (type === "doc" ? 0.05 : 0.09)) {
+        const other = relatedOf(t.id), pool2 = other && docsByTopic.get(other);
+        if (pool2 && pool2.length) { o.refs = o.refs || []; o.refs.push({ to: pickDocs(pool2, 1)[0], rel: { doc: "cites", chat: "discusses", rec: "explains", ticket: "uses" }[type] }); }
+      }
+      mkItem(o);
+      if (type === "doc") docs.push(o.id);
+      if (type === "chat") chats.push(o.id);
+    }
+  }
+})();
+
+// Indexes
+for (const it of items) {
+  for (const r of it.refs) { if (!incoming.has(r.to)) incoming.set(r.to, []); incoming.get(r.to).push({ from: it.id, rel: r.rel }); }
+  const a = personById(it.authorId); a.authored.push(it.id);
+  it.participants.forEach(pid => personById(pid).joined.push(it.id));
+  let u = unitOf(a); while (u) { u.types[it.type]++; u.topics[it.topic] = (u.topics[it.topic] || 0) + 1; u = parentOf(u); }
+}
+for (const it of items) {
+  it.age = (NOW - new Date(it.date + "T12:00:00")) / (365.25 * 864e5);
+  const sup = (incoming.get(it.id) || []).some(r => r.rel === "supersedes");
+  it.fresh = sup ? { k: "old", label: "Vervangen" } : it.age < 1 ? { k: "ok", label: "Actueel" } : it.age < 3 ? { k: "warn", label: "Nakijken" } : { k: "old", label: "Verouderd" };
+  it.search = (it.title + " " + topicById.get(it.topic).name + " " + personById(it.authorId).name).toLowerCase();
+}
+for (const t of TOPICS) {
+  const list = items.filter(i => i.topic === t.id);
+  t.count = list.length; t.cx = d3.mean(list, i => i.x); t.cy = d3.mean(list, i => i.y);
+  t.stale = list.filter(i => i.fresh.k === "old").length / list.length;
+}
+const typeCount = Object.fromEntries(ITEM_TYPES.map(t => [t, items.filter(i => i.type === t).length]));
+
+/* ================================================================
+   Shared fragments
+   ================================================================ */
+const unitPath = u => { const out = []; let a = u; while (a) { out.unshift(a); a = parentOf(a); } return out; };
+const teamLabel = p => { const u = unitOf(p); const par = parentOf(u); return u.level === 3 && par ? `${u.name} · ${par.name}` : u.name; };
+const tileFor = (kind, size = 48) => `<span class="tile" style="width:${size}px;height:${size}px;background:${COL[kind].soft}">${icon(kind, COL[kind].strong, Math.round(size * 0.5))}</span>`;
+const miniFor = n => n.kind === "person"
+  ? `<span class="mini round" style="background:${COL.person.soft};color:${COL.person.strong}">${esc(initials(personById(n.id)))}</span>`
+  : `<span class="mini" style="background:${COL[n.kind].soft}">${icon(n.kind, COL[n.kind].strong, 15)}</span>`;
+const freshPill = it => `<span class="pill ${it.fresh.k}">${it.fresh.label}</span>`;
+const LEVEL = ["Organisatie", "Divisie", "Afdeling", "Team"];
+const AUTH_REL = { doc: "geschreven door", chat: "gestart door", rec: "georganiseerd door", ticket: "behandeld door" };
+const AUTH_VERB = { doc: "schreef", chat: "startte", rec: "organiseerde", ticket: "behandelde" };
+const OUT_REL = { cites: "verwijst naar", supersedes: "vervangt", discusses: "bespreekt", explains: "licht toe", uses: "gebruikt" };
+const IN_REL = { cites: "aangehaald door", supersedes: "vervangen door", discusses: "besproken in", explains: "toegelicht in", uses: "gebruikt in" };
+
+function describe(it) {
+  if (it.summary) return it.summary;
+  const t = topicById.get(it.topic), a = personById(it.authorId);
+  if (it.type === "doc") return `Document van ${teamLabel(a)} over ${t.short}, opgeslagen in SharePoint.`;
+  if (it.type === "chat") return `Teams-thread met ${it.participants.length + 1} deelnemers over ${t.short}.`;
+  if (it.type === "rec") return `Transcript van een Teams-opname met ${it.participants.length + 1} deelnemers over ${t.short}.`;
+  return `Klantvraag over ${t.short}, behandeld door ${a.name}.`;
+}
+function personTopics(p, n = 3) {
+  const c = {}; [...p.authored, ...p.joined].forEach(id => { const t = itemById.get(id).topic; c[t] = (c[t] || 0) + 1; });
+  return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, n).map(([id, k]) => ({ t: topicById.get(id), k }));
+}
+const byDateDesc = (a, b) => b.date.localeCompare(a.date);
+
+/* ================================================================
+   Navigation between views
+   ================================================================ */
+const views = { graph: { init: false }, map: { init: false }, org: { init: false } };
+let currentView = "graph";
+function show(name) {
+  currentView = name;
+  for (const v of Object.keys(views)) {
+    $("#view-" + v).hidden = v !== name;
+    $("#tab-" + v).setAttribute("aria-selected", v === name ? "true" : "false");
+  }
+  if (!views[name].init) { views[name].init = true; ({ graph: graphInit, map: mapInit, org: orgInit })[name](); }
+  try { history.replaceState(null, "", "#" + name); } catch (e) {}
+}
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => show(b.dataset.tab)));
+
+// data-go="graph:item:ID" | "graph:person:ID" | "org:person:ID" | "org:unit:ID" | "map:item:ID" | "topic:ID"
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-go]"); if (!el) return;
+  const [where, kind, id] = el.dataset.go.split(":");
+  if (where === "graph") { show("graph"); graphFocus({ kind, id }); }
+  else if (where === "org") { show("org"); orgReveal(kind, id); }
+  else if (where === "map") { show("map"); mapSelect(id, true); }
+  else if (where === "topic") { show("map"); mapZoomTopic(kind); }
+});
+
+/* ================================================================
+   1 · VERBANDEN (ego graph)
+   ================================================================ */
+const G = { svg: null, g: null, zoom: null, current: null, history: [], hidden: new Set(), pos: new Map(), ego: null, w: 0, h: 0 };
+const CAPS = { person: 7, unit: 2, doc: 6, chat: 5, rec: 4, ticket: 5 };
+const GROUP_ORDER = ["person", "unit", "doc", "chat", "rec", "ticket"];
+const GROUP_LABEL = { person: "Mensen", unit: "Teams", doc: "Documenten", chat: "Gesprekken", rec: "Opnames", ticket: "Tickets" };
+
+const nItem = (it, rel) => ({ key: "item:" + it.id, kind: it.type, group: it.type, id: it.id, label: it.title, rel, sub: fmtDate(it.date) });
+const nPerson = (p, rel) => ({ key: "person:" + p.id, kind: "person", group: "person", id: p.id, label: p.name, rel, sub: p.role });
+const nUnit = (u, rel) => ({ key: "unit:" + u.id, kind: "unit", group: "unit", id: u.id, label: u.name, rel, sub: (parentOf(u) || {}).name || "" });
+
+function egoBuilder(center) {
+  const seen = new Set([center.key]), ring = [], over = {}, cnt = {};
+  return {
+    center, ring, over,
+    add(n) { if (!n || seen.has(n.key)) return; seen.add(n.key); cnt[n.group] = (cnt[n.group] || 0) + 1; if (cnt[n.group] > CAPS[n.group]) over[n.group] = (over[n.group] || 0) + 1; else ring.push(n); },
+  };
+}
+function egoItem(it) {
+  const E = egoBuilder(nItem(it, KIND[it.type].label));
+  const a = personById(it.authorId);
+  E.add(nPerson(a, AUTH_REL[it.type]));
+  it.participants.forEach(pid => E.add(nPerson(personById(pid), it.type === "doc" ? "werkte mee" : "nam deel")));
+  E.add(nUnit(unitOf(a), "eigenaar"));
+  it.refs.forEach(r => E.add(nItem(itemById.get(r.to), OUT_REL[r.rel])));
+  (incoming.get(it.id) || []).map(r => ({ r, x: itemById.get(r.from) })).sort((p, q) => byDateDesc(p.x, q.x)).forEach(({ r, x }) => E.add(nItem(x, IN_REL[r.rel])));
+  return E;
+}
+function egoPerson(p) {
+  const E = egoBuilder(nPerson(p, p.role));
+  if (p.managerId) E.add(nPerson(personById(p.managerId), "leidinggevende"));
+  E.add(nUnit(unitOf(p), p.isHead ? "leidt" : "lid van"));
+  const co = new Map();
+  [...p.authored, ...p.joined].forEach(id => { const it = itemById.get(id); [it.authorId, ...it.participants].forEach(q => { if (q !== p.id) co.set(q, (co.get(q) || 0) + 1); }); });
+  [...co.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(([q, k]) => E.add(nPerson(personById(q), `${k} ${k === 1 ? "gedeeld item" : "gedeelde items"}`)));
+  if (p.isHead) (reportsOf.get(p.id) || []).slice(0, 4).forEach(q => E.add(nPerson(personById(q), "rapporteert aan")));
+  p.authored.map(id => itemById.get(id)).sort(byDateDesc).forEach(it => E.add(nItem(it, AUTH_VERB[it.type])));
+  p.joined.map(id => itemById.get(id)).sort(byDateDesc).forEach(it => E.add(nItem(it, it.type === "doc" ? "werkte mee" : "nam deel")));
+  return E;
+}
+const isItemKind = k => ITEM_TYPES.includes(k);
+function linked(a, b) {
+  if (a.kind === "person" && isItemKind(b.kind)) { const it = itemById.get(b.id); return it.authorId === a.id || it.participants.includes(a.id); }
+  if (b.kind === "person" && isItemKind(a.kind)) return linked(b, a);
+  if (isItemKind(a.kind) && isItemKind(b.kind)) { const x = itemById.get(a.id), y = itemById.get(b.id); return x.refs.some(r => r.to === y.id) || y.refs.some(r => r.to === x.id); }
+  if (a.kind === "person" && b.kind === "unit") return personById(a.id).unitId === b.id;
+  if (b.kind === "person" && a.kind === "unit") return linked(b, a);
+  if (a.kind === "person" && b.kind === "person") { const x = personById(a.id), y = personById(b.id); return x.managerId === y.id || y.managerId === x.id; }
+  return false;
+}
+
+function layoutEgo(ring) {
+  const groups = GROUP_ORDER.map(g => ring.filter(n => n.group === g)).filter(a => a.length);
+  const total = ring.length; if (!total) return 0;
+  const gap = groups.length > 1 ? 0.2 : 0;
+  const avail = Math.PI * 2 - gap * groups.length;
+  const R = Math.max(250, total * 132 / (Math.PI * 2));
+  let a = -Math.PI / 2 - (avail * (groups[0].length / total)) / 2;
+  for (const grp of groups) {
+    const span = avail * (grp.length / total), step = span / grp.length;
+    const crowded = step * R < 160;
+    grp.forEach((n, i) => { const ang = a + step * (i + 0.5); const r = crowded && i % 2 ? R * 0.66 : R; n.x = Math.cos(ang) * r; n.y = Math.sin(ang) * r; });
+    a += span + gap;
+  }
+  return R;
+}
+function wrapLines(s, max, lines) {
+  const words = s.split(" "), out = []; let cur = "";
+  for (const w of words) { if ((cur + " " + w).trim().length > max && cur) { out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }
+  if (cur) out.push(cur);
+  if (out.length > lines) { out.length = lines; out[lines - 1] = trunc(out[lines - 1] + " …", max); }
+  return out;
+}
+
+function graphInit() {
+  const st = $("#graph-stage");
+  G.svg = d3.select(st).insert("svg", ":first-child").attr("role", "img").attr("aria-label", "Verbindingsgraaf");
+  G.g = G.svg.append("g");
+  G.gE2 = G.g.append("g"); G.gE1 = G.g.append("g"); G.gN = G.g.append("g");
+  G.zoom = d3.zoom().scaleExtent([0.3, 2.5]).on("zoom", e => G.g.attr("transform", e.transform));
+  G.svg.call(G.zoom).on("dblclick.zoom", null);
+  st.querySelectorAll("[data-zoom]").forEach(b => b.addEventListener("click", () => {
+    const z = b.dataset.zoom; if (z === "fit") graphFit(true); else G.svg.transition().duration(250).call(G.zoom.scaleBy, z === "in" ? 1.3 : 1 / 1.3);
+  }));
+  new ResizeObserver(() => { const r = st.getBoundingClientRect(); if (r.width && (Math.abs(r.width - G.w) > 4 || Math.abs(r.height - G.h) > 4)) { G.w = r.width; G.h = r.height; graphFit(false); } }).observe(st);
+  const r = st.getBoundingClientRect(); G.w = r.width; G.h = r.height;
+  graphFocus(G.pending || { kind: "item", id: "demo-playbook" }, { push: false });
+}
+function graphFocus(f, { push = true } = {}) {
+  if (!views.graph.init) { G.pending = f; return; }
+  if (G.current && G.current.kind === f.kind && G.current.id === f.id) return;
+  if (push && G.current) G.history.push(G.current);
+  G.current = f;
+  G.ego = f.kind === "person" ? egoPerson(personById(f.id)) : egoItem(itemById.get(f.id));
+  graphRender(); graphInspector(); graphTrail(); graphChips();
+}
+function graphRender() {
+  const E = G.ego, center = E.center;
+  const ring = E.ring.filter(n => !G.hidden.has(n.group));
+  const R = layoutEgo(ring);
+  center.x = 0; center.y = 0; G.R = R;
+  const nodes = [center, ...ring];
+  const sec = [];
+  for (let i = 0; i < ring.length; i++) for (let j = i + 1; j < ring.length; j++) if (linked(ring[i], ring[j])) sec.push({ key: ring[i].key + "|" + ring[j].key, a: ring[i], b: ring[j] });
+  G.adj = new Map(nodes.map(n => [n.key, new Set([center.key])]));
+  sec.forEach(e => { G.adj.get(e.a.key).add(e.b.key); G.adj.get(e.b.key).add(e.a.key); });
+  ring.forEach(n => G.adj.get(center.key).add(n.key));
+  const prev = G.pos, T = d3.transition().duration(650).ease(d3.easeCubicOut);
+  const from = n => prev.get(n.key) || { x: 0, y: 0 };
+
+  // primary edges
+  G.gE1.selectAll("line").data(ring, d => d.key).join(
+    en => en.append("line").attr("class", "e1").attr("x1", 0).attr("y1", 0).attr("x2", d => from(d).x).attr("y2", d => from(d).y).attr("opacity", 0),
+    up => up, ex => ex.transition(T).attr("opacity", 0).remove()
+  ).transition(T).attr("x1", 0).attr("y1", 0).attr("x2", d => d.x).attr("y2", d => d.y).attr("opacity", 1);
+
+  // secondary edges
+  const curve = (a, b) => `M${a.x},${a.y} Q${(a.x + b.x) * 0.3},${(a.y + b.y) * 0.3} ${b.x},${b.y}`;
+  G.gE2.selectAll("path").data(sec, d => d.key).join(
+    en => en.append("path").attr("class", "e2").attr("opacity", 0).attr("d", d => curve(d.a, d.b)),
+    up => up, ex => ex.transition(T).attr("opacity", 0).remove()
+  ).transition(T).attr("d", d => curve(d.a, d.b)).attr("opacity", 1);
+
+  // nodes
+  const sel = G.gN.selectAll("g.gnode").data(nodes, d => d.key).join(
+    en => {
+      const g = en.append("g").attr("class", "gnode").attr("tabindex", 0).attr("role", "button")
+        .attr("transform", d => `translate(${from(d).x},${from(d).y}) scale(.4)`).attr("opacity", 0);
+      g.append("circle").attr("class", "halo").attr("r", 0).attr("fill", "#FFF1C9");
+      const body = g.append("g").attr("class", "body");
+      body.each(function (d) {
+        const b = d3.select(this), c = COL[d.kind];
+        if (d.kind === "person") {
+          b.append("circle").attr("r", 22).attr("fill", c.soft).attr("stroke", c.c).attr("stroke-width", 1.6);
+          b.append("text").attr("text-anchor", "middle").attr("dy", "0.36em").attr("fill", c.strong).style("font", "700 13px var(--font-sans)").text(initials(personById(d.id)));
+        } else {
+          b.append("rect").attr("x", -22).attr("y", -22).attr("width", 44).attr("height", 44).attr("rx", d.kind === "unit" ? 10 : 13).attr("fill", c.soft).attr("stroke", c.c).attr("stroke-width", 1.6).attr("stroke-dasharray", d.kind === "unit" ? "4 3" : null);
+          b.append("path").attr("d", GLYPH[d.kind]).attr("transform", "translate(-12,-12)").attr("fill", "none").attr("stroke", c.strong).attr("stroke-width", 2).attr("stroke-linecap", "round").attr("stroke-linejoin", "round");
+        }
+      });
+      g.append("g").attr("class", "texts");
+      g.append("title");
+      g.on("click", (e, d) => graphClick(d))
+        .on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); graphClick(d); } })
+        .on("mouseenter focus", (e, d) => graphHighlight(d.key))
+        .on("mouseleave blur", () => graphHighlight(null));
+      return g;
+    },
+    up => up,
+    ex => ex.transition(T).attr("opacity", 0).attr("transform", d => `translate(${d.x || 0},${d.y || 0}) scale(.3)`).remove()
+  );
+  sel.each(function (d) {
+    const g = d3.select(this), isC = d.key === center.key;
+    g.select("title").text(isC ? d.label : `${d.label} (${d.rel})${d.kind === "unit" ? " · opent in organigram" : ""}`);
+    g.select(".halo").transition(T).attr("r", isC ? 46 : 0);
+    g.select(".body").transition(T).attr("transform", `scale(${isC ? 1.55 : 1})`);
+    const tx = g.select(".texts"); tx.selectAll("*").remove();
+    if (isC) {
+      const lines = wrapLines(d.label, 30, 2);
+      lines.forEach((l, i) => tx.append("text").attr("class", "lbl center").attr("text-anchor", "middle").attr("y", 66 + i * 19).text(l));
+      tx.append("text").attr("class", "rel").attr("text-anchor", "middle").attr("y", 66 + lines.length * 19).text(d.rel);
+    } else {
+      tx.append("text").attr("class", "lbl").attr("text-anchor", "middle").attr("y", 40).text(trunc(d.label, 24));
+      tx.append("text").attr("class", "rel").attr("text-anchor", "middle").attr("y", 55).text(d.rel);
+    }
+  });
+  sel.transition(T).attr("transform", d => `translate(${d.x},${d.y})`).attr("opacity", 1);
+  G.pos = new Map(nodes.map(n => [n.key, { x: n.x, y: n.y }]));
+  graphFit(true);
+}
+function graphFit(animate) {
+  if (!G.svg || !G.ego) return;
+  const R = (G.R || 200) + 120, w = G.w, h = G.h;
+  const k = Math.max(0.3, Math.min(1.15, Math.min(w / (2 * R), h / (2 * R + 40))));
+  const t = d3.zoomIdentity.translate(w / 2, h / 2 - 10 * k).scale(k);
+  (animate ? G.svg.transition().duration(650) : G.svg).call(G.zoom.transform, t);
+}
+function graphClick(d) {
+  if (d.key === G.ego.center.key) return;
+  if (d.kind === "unit") { show("org"); orgReveal("unit", d.id); return; }
+  graphFocus({ kind: d.kind === "person" ? "person" : "item", id: d.id });
+}
+function graphHighlight(key) {
+  const center = G.ego.center.key;
+  const on = key && key !== center ? G.adj.get(key) : null;
+  G.gN.selectAll("g.gnode").classed("dim", d => !!on && d.key !== key && !on.has(d.key)).classed("hi", d => d.key === key);
+  G.gE1.selectAll("line").classed("hi", d => d.key === key).classed("edim", d => !!on && d.key !== key);
+  G.gE2.selectAll("path").classed("hi", d => !!on && (d.a.key === key || d.b.key === key)).classed("edim", d => !!on && d.a.key !== key && d.b.key !== key);
+  document.querySelectorAll("#graph-insp .row[data-key]").forEach(r => r.classList.toggle("hi", r.dataset.key === key));
+}
+function graphChips() {
+  const E = G.ego, counts = {};
+  E.ring.forEach(n => counts[n.group] = (counts[n.group] || 0) + 1);
+  Object.entries(E.over).forEach(([g, n]) => counts[g] = (counts[g] || 0) + n);
+  $("#graph-chips").innerHTML = GROUP_ORDER.filter(g => counts[g]).map(g =>
+    `<button class="chip" data-group="${g}" aria-pressed="${!G.hidden.has(g)}"><span class="dot" style="background:${COL[g].c}"></span>${GROUP_LABEL[g]}<span class="n">${counts[g]}</span></button>`).join("");
+  $("#graph-chips").querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+    const g = b.dataset.group; G.hidden.has(g) ? G.hidden.delete(g) : G.hidden.add(g);
+    b.setAttribute("aria-pressed", String(!G.hidden.has(g))); graphRender();
+  }));
+}
+const focusLabel = f => f.kind === "person" ? personById(f.id).name : itemById.get(f.id).title;
+function graphTrail() {
+  const h = G.history.slice(-3), skipped = G.history.length - h.length;
+  let html = G.history.length ? `<button class="back" id="g-back">← Terug</button>` : "";
+  if (skipped) html += `<span class="sep">…</span><span class="sep">›</span>`;
+  h.forEach((f, i) => { html += `<button data-hi="${skipped + i}">${esc(trunc(focusLabel(f), 30))}</button><span class="sep">›</span>`; });
+  if (!G.history.length) html += `<span class="sep" style="color:var(--muted)">Je bekijkt</span>`;
+  html += `<span class="cur">${esc(trunc(focusLabel(G.current), 40))}</span>`;
+  if (!(G.current.kind === "item" && G.current.id === "demo-playbook")) html += `<button style="margin-left:auto" id="g-home">Terug naar het startdocument</button>`;
+  const el = $("#graph-trail"); el.innerHTML = html;
+  const goIdx = i => { const f = G.history[i]; G.history = G.history.slice(0, i); G.current = null; graphFocus(f, { push: false }); };
+  el.querySelectorAll("[data-hi]").forEach(b => b.addEventListener("click", () => goIdx(+b.dataset.hi)));
+  const back = $("#g-back"); if (back) back.addEventListener("click", () => goIdx(G.history.length - 1));
+  const home = $("#g-home"); if (home) home.addEventListener("click", () => { G.history = []; G.current = null; graphFocus({ kind: "item", id: "demo-playbook" }, { push: false }); });
+}
+function signalsFor(it) {
+  const s = [], inc = incoming.get(it.id) || [];
+  const sup = inc.find(r => r.rel === "supersedes");
+  if (sup) { const n = itemById.get(sup.from); s.push({ tone: "danger", text: `Vervangen door “${n.title}”. Gebruik dit niet meer als bron.`, go: "graph:item:" + n.id }); }
+  it.refs.filter(r => r.rel === "supersedes").forEach(r => {
+    const old = itemById.get(r.to);
+    const late = (incoming.get(old.id) || []).filter(x => x.rel === "uses").map(x => itemById.get(x.from)).filter(t => t.date >= it.date);
+    if (late.length) s.push({ tone: "warn", text: `${late.length} ${late.length === 1 ? "ticket gebruikte" : "tickets gebruikten"} na publicatie nog de vervangen “${old.title}”.`, go: "graph:item:" + late[0].id });
+  });
+  if (!sup && it.type === "doc" && it.age > 3) s.push({ tone: "warn", text: "Ouder dan drie jaar. Vraag de eigenaar om dit na te kijken." });
+  const used = inc.filter(r => r.rel === "uses").length;
+  if (used) s.push({ tone: "ok", text: `Gebruikt als bron in ${used} ${used === 1 ? "ticket" : "tickets"}.` });
+  return s;
+}
+function signalsHTML(list) {
+  if (!list.length) return "";
+  return `<div class="signals">${list.map(x => x.go ? `<button class="signal ${x.tone}" data-go="${x.go}">${esc(x.text)}</button>` : `<div class="signal ${x.tone}">${esc(x.text)}</div>`).join("")}</div>`;
+}
+function connectionsHTML(E) {
+  const total = E.ring.length + Object.values(E.over).reduce((a, b) => a + b, 0);
+  let html = `<h3>Verbonden met <span class="count">${total}</span></h3>`;
+  for (const g of GROUP_ORDER) {
+    const list = E.ring.filter(n => n.group === g); if (!list.length) continue;
+    html += `<div class="conn-title"><span class="dot" style="background:${COL[g].c}"></span>${GROUP_LABEL[g]}</div><div class="rows">`;
+    html += list.map(n => {
+      const go = n.kind === "unit" ? `org:unit:${n.id}` : `graph:${n.kind === "person" ? "person" : "item"}:${n.id}`;
+      return `<button class="row" data-key="${n.key}" data-go="${go}">${miniFor(n)}<span class="main"><span class="name">${esc(n.label)}</span><span class="sub">${esc(n.rel)}${n.sub ? " · " + esc(n.sub) : ""}</span></span></button>`;
+    }).join("");
+    html += `</div>`;
+    if (E.over[g]) html += `<div class="more">+ ${E.over[g]} meer</div>`;
+  }
+  return html;
+}
+function graphInspector() {
+  const f = G.current, el = $("#graph-insp");
+  let html = "";
+  if (f.kind === "item") {
+    const it = itemById.get(f.id), a = personById(it.authorId), t = topicById.get(it.topic);
+    html += `<div class="insp-head">${tileFor(it.type)}<div><div class="eyebrow">${KIND[it.type].label} · ${KIND[it.type].src}</div><h2>${esc(it.title)}</h2>${freshPill(it)}</div></div>
+      <dl class="meta">
+        <dt>${cap(AUTH_REL[it.type])}</dt><dd><button class="linkish" data-go="graph:person:${a.id}">${esc(a.name)}</button></dd>
+        <dt>Team</dt><dd><button class="linkish" data-go="org:unit:${a.unitId}">${esc(teamLabel(a))}</button></dd>
+        <dt>Datum</dt><dd>${fmtDate(it.date)}</dd>
+        <dt>Onderwerp</dt><dd><button class="linkish" data-go="topic:${t.id}">${esc(t.name)}</button></dd>
+      </dl>
+      <p>${esc(describe(it))}</p>${signalsHTML(signalsFor(it))}
+      <div class="btn-row"><button class="btn" data-go="map:item:${it.id}">Toon op de kaart</button></div>`;
+  } else {
+    const p = personById(f.id), m = p.managerId ? personById(p.managerId) : null;
+    const tops = personTopics(p);
+    html += `<div class="insp-head"><span class="avatar lg">${esc(initials(p))}</span><div><div class="eyebrow">Persoon</div><h2>${esc(p.name)}</h2><p>${esc(p.role)}</p></div></div>
+      <dl class="meta">
+        <dt>Team</dt><dd><button class="linkish" data-go="org:unit:${p.unitId}">${esc(teamLabel(p))}</button></dd>
+        ${m ? `<dt>Leidinggevende</dt><dd><button class="linkish" data-go="graph:person:${m.id}">${esc(m.name)}</button></dd>` : ""}
+        <dt>Bijdragen</dt><dd>${p.authored.length} gemaakt · ${p.joined.length} meegewerkt</dd>
+      </dl>
+      ${tops.length ? `<div class="topic-chips" style="margin-top:10px">${tops.map(x => `<button class="topic-chip" data-go="topic:${x.t.id}">${esc(x.t.name)}</button>`).join("")}</div>` : `<p style="margin-top:10px">Nog geen gedeelde kennis gevonden voor deze persoon.</p>`}
+      <div class="btn-row"><button class="btn" data-go="org:person:${p.id}">Toon in het organigram</button></div>`;
+  }
+  html += connectionsHTML(G.ego);
+  el.innerHTML = html;
+  el.querySelectorAll(".row[data-key]").forEach(r => { r.addEventListener("mouseenter", () => graphHighlight(r.dataset.key)); r.addEventListener("mouseleave", () => graphHighlight(null)); });
+}
+
+/* ================================================================
+   2 · KENNISLANDSCHAP (canvas)
+   Items are laid out by connection: every conversation, recording and ticket sits in a
+   ring around the document it refers to. The most-used documents sit in the middle of
+   their topic, loose items without a source on the rim. Lines are the references;
+   thick curves between topics are "highways" (many cross-topic references).
+   ================================================================ */
+const M = { t: d3.zoomIdentity, filter: { doc: true, chat: true, rec: true, ticket: true }, q: "", hover: null, sel: null, topic: null, focus: null, w: 0, h: 0, base: 1, dpr: 1, hitR: 9, left: 0, spread: new Map(), anim: false };
+const DOT = { doc: "#1F8A87", chat: "#F2683C", rec: "#E9A90F", ticket: "#12343B" };
+const ICON_K = 3, TITLE_K = 9, LEVELS = [1, 4.2, 11], SPREAD = 2.6;
+const PATHS = Object.fromEntries(ITEM_TYPES.map(t => [t, new Path2D(GLYPH[t])]));
+const mapCX = () => M.left + (M.w - M.left) / 2;
+const bx = x => M.left + (M.w - M.left) / 2 + x * M.base, by = y => M.h / 2 + y * M.base;
+const rrect = (c, x, y, w, h, r) => { if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); };
+
+/* ---------- connection-ordered layout ---------- */
+const SAT_ORDER = { chat: 0, rec: 1, ticket: 2 };
+const ringCap = k => Math.max(1, Math.floor(2 * Math.PI * k * 0.92));
+const ringsFor = n => { let k = 0, c = 0; while (c < n) { k++; c += ringCap(k); } return k; };
+TOPICS.forEach(t => {
+  const list = items.filter(i => i.topic === t.id), docs = list.filter(i => i.type === "doc");
+  const orbit = new Map(docs.map(d => [d.id, []])), orphans = [];
+  for (const it of list) if (it.type !== "doc") {
+    const r = it.refs.find(x => { const y = itemById.get(x.to); return y.type === "doc" && y.topic === t.id; });
+    if (r) { orbit.get(r.to).push(it); it.anchor = r.to; } else orphans.push(it);
+  }
+  const groups = docs.map(d => {
+    const sats = orbit.get(d.id).sort((a, b) => SAT_ORDER[a.type] - SAT_ORDER[b.type] || byDateDesc(a, b));
+    d.score = sats.length + (incoming.get(d.id) || []).filter(r => r.rel === "cites").length * 2;
+    d.sats = sats.length;
+    return { d, sats, r: ringsFor(sats.length) + 0.8 };
+  }).sort((a, b) => b.d.score - a.d.score || b.r - a.r);
+  const circles = groups.map(g => ({ r: g.r + 0.35, g }));
+  if (orphans.length) circles.push({ r: Math.sqrt(orphans.length) * 0.66 + 0.9, orphans: orphans.sort((a, b) => SAT_ORDER[a.type] - SAT_ORDER[b.type] || byDateDesc(a, b)) });
+  d3.packSiblings(circles);
+  const enc = d3.packEnclose(circles);
+  t.rad = 0.12 * Math.sqrt(list.length / 330);
+  const sc = t.rad / enc.r, place = (it, x, y) => { it.ox = (x - enc.x) * sc; it.oy = (y - enc.y) * sc; };
+  for (const c of circles) {
+    if (c.g) {
+      place(c.g.d, c.x, c.y);
+      const sats = c.g.sats; let k = 1, i = 0;
+      while (i < sats.length) {
+        const m = Math.min(ringCap(k), sats.length - i);
+        for (let j = 0; j < m; j++) { const a = k * 0.7 + j * 2 * Math.PI / m; place(sats[i + j], c.x + Math.cos(a) * k, c.y + Math.sin(a) * k); }
+        i += m; k++;
+      }
+    } else {
+      c.orphans.forEach((it, i) => { const r = 0.66 * Math.sqrt(i + 0.5), a = i * 2.399963; place(it, c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); });
+      t.orphan = { ox: (c.x - enc.x) * sc, oy: (c.y - enc.y) * sc, r: c.r * sc, n: c.orphans.length };
+    }
+  }
+  t.cx = t.c[0]; t.cy = t.c[1];
+  t.stars = groups.slice(0, 12).map(g => g.d);
+});
+function applySpread() { for (const it of items) { const t = topicById.get(it.topic), f = M.spread.get(t.id) || 1; it.x = t.c[0] + it.ox * f; it.y = t.c[1] + it.oy * f; } }
+applySpread();
+
+const EDGES = [];
+const STAR_IDS = new Set(TOPICS.flatMap(t => t.stars.slice(0, 8).map(d => d.id)));
+for (const it of items) for (const r of it.refs) { const b = itemById.get(r.to); EDGES.push({ a: it, b, rel: r.rel, cross: it.topic !== b.topic, primary: it.anchor === b.id, core: it.type === "doc" && b.type === "doc" && (r.rel === "supersedes" || (STAR_IDS.has(it.id) && STAR_IDS.has(b.id))) }); }
+const HIGHWAYS = (() => {
+  const m = new Map();
+  EDGES.filter(e => e.cross).forEach(e => { const k = [e.a.topic, e.b.topic].sort().join("|"); m.set(k, (m.get(k) || 0) + 1); });
+  return [...m.entries()].map(([k, n]) => { const [x, y] = k.split("|"); return { a: topicById.get(x), b: topicById.get(y), n }; });
+})();
+const neighbours = id => { const it = itemById.get(id); return new Set([id, ...it.refs.map(r => r.to), ...(incoming.get(id) || []).map(r => r.from)]); };
+
+/* ---------- view ---------- */
+function mapInit() {
+  const st = $("#map-stage");
+  M.canvas = st.querySelector("canvas"); M.ctx = M.canvas.getContext("2d");
+  M.zoom = d3.zoom().scaleExtent([0.6, 30]).on("zoom", e => { M.t = e.transform; mapDraw(); });
+  d3.select(M.canvas).call(M.zoom).on("dblclick.zoom", null);
+  st.querySelectorAll("[data-zoom]").forEach(b => b.addEventListener("click", () => {
+    const z = b.dataset.zoom, s = d3.select(M.canvas).transition().duration(300);
+    if (z === "fit") { if (M.focus) mapZoomTopic(M.focus); else s.call(M.zoom.transform, d3.zoomIdentity); }
+    else s.call(M.zoom.scaleBy, z === "in" ? 1.6 : 1 / 1.6);
+  }));
+  M.canvas.addEventListener("mousemove", e => { const r = M.canvas.getBoundingClientRect(); mapHover(e.clientX - r.left, e.clientY - r.top); });
+  M.canvas.addEventListener("mouseleave", () => { M.hover = null; $("#map-tip").hidden = true; mapDraw(); });
+  M.canvas.addEventListener("click", e => { const r = M.canvas.getBoundingClientRect(); const it = mapFind(e.clientX - r.left, e.clientY - r.top); if (it) mapSelect(it.id, false); });
+  $("#map-q").addEventListener("input", e => { M.q = e.target.value.trim().toLowerCase(); mapHint(); mapDraw(); });
+  $("#map-chips").innerHTML = ITEM_TYPES.map(t => `<button class="chip" data-type="${t}" aria-pressed="true"><span class="dot" style="background:${DOT[t]}"></span>${KIND[t].plural}<span class="n">${fmt(typeCount[t])}</span></button>`).join("");
+  $("#map-chips").querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+    const t = b.dataset.type; M.filter[t] = !M.filter[t]; b.setAttribute("aria-pressed", String(M.filter[t])); mapQuad(); mapDraw();
+  }));
+  $("#guide-legend").innerHTML = ITEM_TYPES.map(t => `<span class="gtile" style="background:${COL[t].soft};box-shadow:inset 0 0 0 1px ${COL[t].c}">${icon(t, COL[t].strong, 12)}</span><span><b>${KIND[t].label}</b> <span class="src">· ${KIND[t].src}</span></span>`).join("")
+    + `<span class="gline"></span><span class="src">Verwijzing naar een document</span>`
+    + `<span class="gline thick"></span><span class="src">Snelweg: veel verwijzingen tussen twee onderwerpen</span>`;
+  const guide = $("#map-guide"), gopen = $("#guide-open");
+  const setGuide = open => { guide.hidden = !open; gopen.hidden = open; if (M.ctx) mapResize(); };
+  $("#guide-x").addEventListener("click", () => setGuide(false));
+  gopen.addEventListener("click", () => setGuide(true));
+  if (window.innerWidth < 640) setGuide(false);
+  M.steps = [...guide.querySelectorAll("[data-level]")];
+  M.steps.forEach(b => b.addEventListener("click", () => d3.select(M.canvas).transition().duration(650).call(M.zoom.scaleTo, LEVELS[+b.dataset.level], [mapCX(), M.h / 2])));
+  const lab = $("#map-labels");
+  M.labels = TOPICS.map(t => { const b = document.createElement("button"); b.className = "tlabel"; b.innerHTML = `${esc(t.name)}<span>${fmt(t.count)}</span>`; b.addEventListener("click", () => mapZoomTopic(t.id)); lab.appendChild(b); return b; });
+  new ResizeObserver(mapResize).observe(st);
+  mapResize(); mapHint();
+  if (M.pendingSel) { const id = M.pendingSel.id; M.pendingSel = null; mapSelect(id, true); }
+  else if (M.pendingTopic) { const t = M.pendingTopic; M.pendingTopic = null; mapZoomTopic(t); }
+  else mapInspector();
+}
+function mapResize() {
+  const r = $("#map-stage").getBoundingClientRect(); if (!r.width) return;
+  M.w = r.width; M.h = r.height; M.dpr = window.devicePixelRatio || 1;
+  M.canvas.width = Math.round(M.w * M.dpr); M.canvas.height = Math.round(M.h * M.dpr);
+  M.left = !$("#map-guide").hidden && M.w > 760 ? 324 : 0;
+  M.base = Math.min((M.w - M.left) / 2.5, M.h / 2.0);
+  mapQuad(); mapDraw();
+}
+function mapQuad() { M.quad = d3.quadtree().x(d => bx(d.x)).y(d => by(d.y)).addAll(items.filter(i => M.filter[i.type] && (!M.focus || i.topic === M.focus))); }
+function mapFind(mx, my) { const [x, y] = M.t.invert([mx, my]); return M.quad.find(x, y, M.hitR / M.t.k) || null; }
+function mapHint() {
+  if (!M.q) { $("#map-hint").textContent = "Scroll of knijp om in te zoomen"; return; }
+  const n = items.filter(i => M.filter[i.type] && i.search.includes(M.q)).length;
+  $("#map-hint").textContent = `${fmt(n)} ${n === 1 ? "resultaat" : "resultaten"}`;
+}
+function drawTile(c, type, x, y, s, alpha) {
+  const col = COL[type];
+  c.globalAlpha = alpha;
+  c.beginPath(); rrect(c, x - s / 2, y - s / 2, s, s, s * 0.28);
+  c.fillStyle = col.soft; c.fill(); c.lineWidth = 1.2; c.strokeStyle = col.c; c.stroke();
+  c.save(); const g = s * 0.66 / 24; c.translate(x - 12 * g, y - 12 * g); c.scale(g, g);
+  c.lineWidth = 2.3; c.lineCap = "round"; c.lineJoin = "round"; c.strokeStyle = col.strong; c.stroke(PATHS[type]); c.restore();
+  c.globalAlpha = 1;
+}
+function pillLabel(c, txt, x, y, border, boxes) {
+  const w = c.measureText(txt).width, x0 = x, y0 = y - 9, bw = w + 12, bh = 18;
+  if (x0 > M.w || x0 + bw < 0 || y < 0 || y > M.h) return false;
+  if (boxes.some(b => x0 < b[0] + b[2] && x0 + bw > b[0] && y0 < b[1] + b[3] && y0 + bh > b[1])) return false;
+  boxes.push([x0, y0, bw, bh]);
+  c.beginPath(); rrect(c, x0, y0, bw, bh, 9); c.fillStyle = "rgba(255,255,255,.95)"; c.fill(); c.lineWidth = 1; c.strokeStyle = border; c.stroke();
+  c.fillStyle = "#12343B"; c.fillText(txt, x0 + 6, y);
+  return true;
+}
+const sizeOf = (it, base) => it.type === "doc" ? base * (1 + Math.min(0.8, Math.sqrt(it.score || 0) / 5)) : base;
+function mapDraw() {
+  if (!M.ctx || !M.w) return;
+  const c = M.ctx, t = M.t, q = M.q, F = M.focus;
+  c.setTransform(M.dpr, 0, 0, M.dpr, 0, 0); c.clearRect(0, 0, M.w, M.h);
+  c.fillStyle = "#FFFFFF"; c.fillRect(0, 0, M.w, M.h);
+  const sx = x => t.applyX(bx(x)), sy = y => t.applyY(by(y));
+  const level = t.k >= TITLE_K ? 2 : t.k >= ICON_K ? 1 : 0;
+  const r = Math.min(4, Math.max(1.6, 1.7 * Math.sqrt(t.k)));
+  const s = Math.min(28, 6 * Math.sqrt(t.k));
+  M.hitR = level ? s / 2 + 3 : 8;
+  const act = M.anim ? null : (M.hover || (M.sel ? itemById.get(M.sel) : null));
+  const hl = act ? neighbours(act.id) : null;
+  c.lineCap = "round";
+
+  // 1 · highways between topics
+  HIGHWAYS.forEach(h => {
+    const x0 = sx(h.a.c[0]), y0 = sy(h.a.c[1]), x1 = sx(h.b.c[0]), y1 = sy(h.b.c[1]);
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, dx = x1 - x0, dy = y1 - y0;
+    const mine = F && (h.a.id === F || h.b.id === F);
+    c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(mx - dy * 0.15, my + dx * 0.15, x1, y1);
+    c.strokeStyle = F ? (mine ? (hl ? "rgba(255,122,80,.08)" : "rgba(255,122,80,.16)") : "rgba(18,52,59,.03)") : "rgba(18,52,59,.10)";
+    c.lineWidth = Math.min(22, (1.5 + Math.sqrt(h.n) * 1.5) * Math.min(2.2, Math.sqrt(t.k)));
+    c.stroke();
+  });
+
+  // 2 · references between items
+  const STY = [["rgba(18,52,59,.025)", 0.6], ["rgba(18,52,59,.07)", 0.6], ["rgba(18,52,59,.2)", 1], ["rgba(18,52,59,.9)", 1.8], ["rgba(31,138,135,.75)", 1.6], ["rgba(179,38,30,.9)", 2], ["rgba(255,122,80,.65)", 1.3]];
+  const paths = STY.map(() => new Path2D());
+  for (const e of EDGES) {
+    if (!M.filter[e.a.type] || !M.filter[e.b.type]) continue;
+    let st;
+    if (hl) { if (e.a.id === act.id || e.b.id === act.id) st = e.cross ? 6 : 3; else if (e.primary && (!F || e.a.topic === F)) st = 0; else continue; }
+    else if (F) { if (e.a.topic !== F && e.b.topic !== F) { if (!e.primary) continue; st = 0; } else if (e.core) st = e.rel === "supersedes" ? 5 : 4; else if (e.primary) st = 2; else continue; }
+    else { if (!e.primary && !e.core) continue; st = 1; }
+    const x0 = sx(e.a.x), y0 = sy(e.a.y), x1 = sx(e.b.x), y1 = sy(e.b.y);
+    if ((x0 < 0 && x1 < 0) || (y0 < 0 && y1 < 0) || (x0 > M.w && x1 > M.w) || (y0 > M.h && y1 > M.h)) continue;
+    const p = paths[st]; p.moveTo(x0, y0);
+    if (e.cross || st === 4 || st === 5) { const mx = (x0 + x1) / 2, my = (y0 + y1) / 2; p.quadraticCurveTo(mx - (y1 - y0) * 0.2, my + (x1 - x0) * 0.2, x1, y1); } else p.lineTo(x1, y1);
+  }
+  [0, 1, 2, 6, 4, 5, 3].forEach(i => { c.strokeStyle = STY[i][0]; c.lineWidth = STY[i][1] * (level ? 1.25 : 1); c.setLineDash(i === 5 ? [6, 4] : []); c.stroke(paths[i]); });
+  c.setLineDash([]);
+
+  // 3 · items
+  const bucketOf = it => {
+    if (q && !it.search.includes(q)) return 0;
+    if (F && it.topic !== F) return 0;
+    if (hl && !hl.has(it.id)) return 3;
+    return it.fresh.k === "old" ? 1 : 2;
+  };
+  const ALPHA = [0.07, 0.32, 0.92, 0.2], TALPHA = [0.1, 0.42, 1, 0.22];
+  const vis = [];
+  for (const it of items) {
+    if (!M.filter[it.type]) continue;
+    const x = sx(it.x), y = sy(it.y);
+    if (x < -40 || y < -40 || x > M.w + 40 || y > M.h + 40) continue;
+    vis.push({ it, x, y, b: bucketOf(it) });
+  }
+  const drawOrder = [0, 3, 1, 2];
+  if (!level) {
+    for (const b of drawOrder) for (const type of ["ticket", "rec", "chat", "doc"]) {
+      c.globalAlpha = ALPHA[b]; c.fillStyle = DOT[type]; c.beginPath();
+      for (const v of vis) { if (v.b !== b || v.it.type !== type) continue; const rr = sizeOf(v.it, r); c.moveTo(v.x + rr, v.y); c.arc(v.x, v.y, rr, 0, Math.PI * 2); }
+      c.fill();
+    }
+    c.globalAlpha = 1;
+  } else {
+    vis.sort((a, b) => drawOrder.indexOf(a.b) - drawOrder.indexOf(b.b) || (a.it.type === "doc") - (b.it.type === "doc"));
+    vis.forEach(v => drawTile(c, v.it.type, v.x, v.y, sizeOf(v.it, s), TALPHA[v.b]));
+  }
+
+  // 4 · highlight ring for hover / selection
+  const ring = (it, color, w) => {
+    const x = sx(it.x), y = sy(it.y), ss = sizeOf(it, level ? s : r * 2); c.beginPath();
+    if (level) rrect(c, x - ss / 2 - 4, y - ss / 2 - 4, ss + 8, ss + 8, ss * 0.36); else c.arc(x, y, ss / 2 + 5, 0, Math.PI * 2);
+    c.lineWidth = w; c.strokeStyle = color; c.stroke();
+  };
+  if (M.sel) ring(itemById.get(M.sel), "#FF7A50", 3);
+  if (M.hover && M.hover.id !== M.sel) ring(M.hover, "#12343B", 2);
+
+  // 5 · labels: quiet text for the main documents; other titles only for what you hover or select
+  c.textBaseline = "middle"; c.lineJoin = "round";
+  const boxes = [], seen = new Set();
+  const label = (v, mode) => {
+    if (seen.has(v.it.id)) return false; seen.add(v.it.id);
+    const doc = v.it.type === "doc", txt = trunc(v.it.title, mode === "active" ? 44 : 34);
+    c.font = mode === "active" ? "700 12.5px Figtree, system-ui, sans-serif" : doc ? "600 12px Figtree, system-ui, sans-serif" : "500 11px Figtree, system-ui, sans-serif";
+    const w = c.measureText(txt).width, x = v.x + sizeOf(v.it, level ? s : r * 2) / 2 + 6, y = v.y;
+    const pad = mode === "active" ? 7 : 2, box = [x - pad, y - 9, w + pad * 2, 18];
+    if (box[0] > M.w || box[0] + box[2] < 0 || y < 0 || y > M.h) return false;
+    if (mode !== "active" && boxes.some(b => box[0] < b[0] + b[2] && box[0] + box[2] > b[0] && box[1] < b[1] + b[3] && box[1] + box[3] > b[1])) return false;
+    boxes.push(box);
+    if (mode === "active") {
+      c.beginPath(); rrect(c, box[0], box[1] - 1, box[2], 20, 10); c.fillStyle = "#12343B"; c.fill();
+      c.fillStyle = "#FFF3E4"; c.fillText(txt, x, y);
+    } else {
+      c.lineWidth = 3.5; c.strokeStyle = "rgba(255,255,255,.92)"; c.strokeText(txt, x, y);
+      c.fillStyle = doc ? "#12343B" : "#4F666B"; c.fillText(txt, x, y);
+    }
+    return true;
+  };
+  if (act) { const v = vis.find(v => v.it.id === act.id); if (v) label(v, "active"); }
+  if (hl && (level || F)) vis.filter(v => hl.has(v.it.id)).sort((a, b) => (b.it.type === "doc") - (a.it.type === "doc")).slice(0, 24).forEach(v => label(v, "quiet"));
+  const docCap = F ? (level === 2 ? 40 : level ? 14 : 8) : (level === 2 ? 30 : 0);
+  if (docCap) vis.filter(v => v.b === 2 && v.it.type === "doc" && (v.it.score || 0) >= (level === 2 ? 2 : 4) && (!F || v.it.topic === F))
+    .sort((a, b) => b.it.score - a.it.score).slice(0, docCap).forEach(v => label(v, "quiet"));
+  if (F) {
+    const tp = topicById.get(F), o = tp.orphan;
+    if (o) {
+      const f = M.spread.get(F) || 1, x = sx(tp.c[0] + o.ox * f), y = sy(tp.c[1] + (o.oy - o.r) * f);
+      c.font = "700 12px Figtree, system-ui, sans-serif";
+      const txt = `Zonder bron · ${o.n}`, w = c.measureText(txt).width;
+      c.beginPath(); rrect(c, x - w / 2 - 8, y - 22, w + 16, 20, 10); c.fillStyle = "#FF7A50"; c.fill();
+      c.fillStyle = "#12343B"; c.fillText(txt, x - w / 2, y - 12);
+    }
+  }
+
+  TOPICS.forEach((tp, i) => {
+    const f = M.spread.get(tp.id) || 1;
+    const x = sx(tp.cx), y = sy(tp.cy - tp.rad * f - 0.025), b = M.labels[i];
+    b.hidden = x < -80 || x > M.w + 80 || y < -20 || y > M.h + 20;
+    b.classList.toggle("quiet", !!F && tp.id !== F);
+    b.classList.toggle("focus", tp.id === F);
+    b.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+  });
+  if (M.steps) M.steps.forEach((b, i) => b.setAttribute("aria-pressed", String(i === level)));
+}
+function mapHover(mx, my) {
+  if (M.anim) return;
+  const it = mapFind(mx, my), tip = $("#map-tip");
+  if ((it && it.id) !== (M.hover && M.hover.id)) { M.hover = it; mapDraw(); }
+  M.canvas.style.cursor = it ? "pointer" : "grab";
+  if (!it) { tip.hidden = true; return; }
+  const nb = neighbours(it.id).size - 1;
+  tip.innerHTML = `<b>${esc(it.title)}</b><span>${KIND[it.type].label} · ${fmtDate(it.date)} · ${esc(personById(it.authorId).name)}</span><span class="tip-cta">${nb} ${nb === 1 ? "verbinding" : "verbindingen"} · klik voor details</span>`;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(M.w - w - 8, mx + 14)) + "px";
+  tip.style.top = (my + h + 20 > M.h ? my - h - 12 : my + 14) + "px";
+}
+function setFocus(tid) {
+  const from = new Map(TOPICS.map(t => [t.id, M.spread.get(t.id) || 1]));
+  const to = new Map(TOPICS.map(t => [t.id, t.id === tid ? SPREAD : 1]));
+  M.focus = tid; M.anim = true; M.hover = null; $("#map-tip").hidden = true;
+  d3.select(M.canvas).interrupt("spread").transition("spread").duration(700).ease(d3.easeCubicOut)
+    .tween("spread", () => k => { TOPICS.forEach(t => M.spread.set(t.id, from.get(t.id) + (to.get(t.id) - from.get(t.id)) * k)); applySpread(); mapDraw(); })
+    .on("end interrupt", () => { M.anim = false; mapQuad(); mapDraw(); });
+}
+function zoomTo(x, y, k) {
+  const t = d3.zoomIdentity.translate(mapCX() - bx(x) * k, M.h / 2 - by(y) * k).scale(k);
+  d3.select(M.canvas).transition().duration(750).ease(d3.easeCubicOut).call(M.zoom.transform, t);
+}
+// Zoom so the item, its document and everything it is connected to fit on screen.
+function fitItem(it) {
+  const tp = topicById.get(it.topic), at = x => [tp.c[0] + x.ox * SPREAD, tp.c[1] + x.oy * SPREAD];
+  const set = [...neighbours(it.id)].map(id => itemById.get(id)).filter(x => x.topic === it.topic);
+  if (it.anchor) set.push(itemById.get(it.anchor));
+  const pts = set.map(at);
+  let x0 = d3.min(pts, p => p[0]), x1 = d3.max(pts, p => p[0]), y0 = d3.min(pts, p => p[1]), y1 = d3.max(pts, p => p[1]);
+  const minW = tp.rad * 0.55;
+  if (x1 - x0 < minW) { const m = (x0 + x1) / 2; x0 = m - minW / 2; x1 = m + minW / 2; }
+  if (y1 - y0 < minW) { const m = (y0 + y1) / 2; y0 = m - minW / 2; y1 = m + minW / 2; }
+  const k = Math.max(2.6, Math.min(8, (M.w - M.left - 280) / ((x1 - x0) * M.base), (M.h - 140) / ((y1 - y0) * M.base)));
+  zoomTo((x0 + x1) / 2 + 0.035 / k * 4, (y0 + y1) / 2, k);
+}
+function mapZoomTopic(tid) {
+  if (!views.map.init) { M.pendingTopic = tid; return; }
+  const tp = topicById.get(tid);
+  M.sel = null; M.topic = tid;
+  if (M.focus !== tid) setFocus(tid);
+  const R = tp.rad * SPREAD + 0.03;
+  zoomTo(tp.cx, tp.cy, Math.max(1, Math.min(14, Math.min(M.w - M.left, M.h - 40) / (2 * R * M.base))));
+  mapInspector();
+}
+function mapUnfocus() {
+  M.topic = null; M.sel = null; setFocus(null);
+  d3.select(M.canvas).transition().duration(700).call(M.zoom.transform, d3.zoomIdentity);
+  mapInspector();
+}
+function mapSelect(id, zoom) {
+  if (!views.map.init) { M.pendingSel = { id }; return; }
+  const it = itemById.get(id);
+  if (!M.filter[it.type]) { M.filter[it.type] = true; $(`#map-chips [data-type="${it.type}"]`).setAttribute("aria-pressed", "true"); mapQuad(); }
+  if (M.focus !== it.topic) { M.topic = it.topic; setFocus(it.topic); }
+  M.topic = it.topic; M.sel = id;
+  fitItem(it);
+  mapDraw(); mapInspector();
+}
+function topicHTML(tid) {
+  const tp = topicById.get(tid), list = items.filter(i => i.topic === tid);
+  const mix = Object.fromEntries(ITEM_TYPES.map(t => [t, list.filter(i => i.type === t).length]));
+  const authors = new Map(); list.filter(i => i.type === "doc").forEach(i => authors.set(i.authorId, (authors.get(i.authorId) || 0) + 1));
+  const experts = [...authors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, k]) => ({ p: personById(id), k }));
+  const risky = list.filter(i => i.type === "doc" && i.fresh.k === "old" && (incoming.get(i.id) || []).some(r => itemById.get(r.from).age < 1));
+  const out = HIGHWAYS.filter(h => h.a.id === tid || h.b.id === tid).map(h => ({ t: h.a.id === tid ? h.b : h.a, n: h.n })).sort((a, b) => b.n - a.n).slice(0, 3);
+  const sig = [];
+  if (tp.orphan) sig.push({ tone: "warn", text: `${tp.orphan.n} tickets en gesprekken verwijzen naar geen enkel document. Ze liggen aan de rand van het cluster.` });
+  if (risky.length) sig.push({ tone: "danger", text: `${risky.length} verouderde ${risky.length === 1 ? "document wordt" : "documenten worden"} nog gebruikt.`, go: "map:item:" + risky[0].id });
+  return `<button class="close-x" id="map-close" aria-label="Terug naar alle onderwerpen">×</button>
+    <div class="eyebrow">Onderwerp</div><h2>${esc(tp.name)}</h2>
+    <p>Rond elk document liggen de gesprekken, opnames en tickets die ernaar verwijzen. De meest gebruikte documenten liggen in het midden. Beweeg over een item om zijn verbindingen te zien.</p>
+    <div class="mix">${ITEM_TYPES.map(t => `<i style="width:${mix[t] / list.length * 100}%;background:${DOT[t]}"></i>`).join("")}</div>
+    <div class="mix-legend">${ITEM_TYPES.map(t => `<span><span class="dot" style="background:${DOT[t]}"></span>${KIND[t].plural} ${fmt(mix[t])}</span>`).join("")}</div>
+    ${signalsHTML(sig)}
+    <h3>Kerndocumenten</h3>
+    <div class="rows">${tp.stars.slice(0, 6).map(d => `<button class="row" data-go="map:item:${d.id}">${miniFor({ kind: "doc" })}<span class="main"><span class="name">${esc(d.title)}</span><span class="sub">${d.sats} verwijzingen · ${d.fresh.label.toLowerCase()}</span></span></button>`).join("")}</div>
+    ${out.length ? `<h3>Snelwegen naar</h3><div class="rows">${out.map(x => `<button class="row" data-go="topic:${x.t.id}"><span class="main"><span class="name">${esc(x.t.name)}</span><span class="sub">${x.n} verwijzingen tussen beide onderwerpen</span></span></button>`).join("")}</div>` : ""}
+    <h3>Wie weet hier het meest over?</h3>
+    <div class="rows">${experts.map(x => `<button class="row" data-go="org:person:${x.p.id}"><span class="mini round" style="background:${COL.person.soft};color:${COL.person.strong}">${esc(initials(x.p))}</span><span class="main"><span class="name">${esc(x.p.name)}</span><span class="sub">${esc(teamLabel(x.p))}</span></span><span class="num">${x.k} doc.</span></button>`).join("")}</div>`;
+}
+function mapInspector() {
+  const el = $("#map-insp");
+  if (M.sel) {
+    const it = itemById.get(M.sel), a = personById(it.authorId), t = topicById.get(it.topic);
+    const nb = [...neighbours(it.id)].filter(x => x !== it.id).map(x => itemById.get(x)).sort((p, q) => (p.type === "doc") === (q.type === "doc") ? byDateDesc(p, q) : p.type === "doc" ? -1 : 1);
+    el.innerHTML = `<button class="close-x" id="map-close" aria-label="Sluiten">×</button>
+      <div class="insp-head">${tileFor(it.type)}<div><div class="eyebrow">${KIND[it.type].label} · ${KIND[it.type].src}</div><h2>${esc(it.title)}</h2>${freshPill(it)}</div></div>
+      <dl class="meta">
+        <dt>${cap(AUTH_REL[it.type])}</dt><dd><button class="linkish" data-go="org:person:${a.id}">${esc(a.name)}</button></dd>
+        <dt>Team</dt><dd><button class="linkish" data-go="org:unit:${a.unitId}">${esc(teamLabel(a))}</button></dd>
+        <dt>Datum</dt><dd>${fmtDate(it.date)}</dd>
+        <dt>Onderwerp</dt><dd><button class="linkish" data-go="topic:${t.id}">${esc(t.name)}</button></dd>
+      </dl>
+      <p>${esc(describe(it))}</p>${signalsHTML(signalsFor(it))}
+      <div class="btn-row"><button class="btn primary" data-go="graph:item:${it.id}">Toon alle verbanden</button></div>
+      <h3>Verbonden op de kaart <span class="count">${nb.length}</span></h3>
+      <div class="rows">${nb.slice(0, 12).map(x => `<button class="row" data-go="map:item:${x.id}">${miniFor({ kind: x.type })}<span class="main"><span class="name">${esc(x.title)}</span><span class="sub">${KIND[x.type].label} · ${fmtDate(x.date)}${x.topic !== it.topic ? " · " + esc(topicById.get(x.topic).name) : ""}</span></span></button>`).join("")}</div>
+      ${nb.length > 12 ? `<div class="more">+ ${nb.length - 12} meer</div>` : ""}`;
+    $("#map-close").addEventListener("click", () => { M.sel = null; mapDraw(); mapInspector(); });
+    return;
+  }
+  if (M.topic) { el.innerHTML = topicHTML(M.topic); $("#map-close").addEventListener("click", mapUnfocus); return; }
+  const max = d3.max(TOPICS, t => t.count);
+  const sorted = [...TOPICS].sort((a, b) => b.count - a.count);
+  el.innerHTML = `<div class="eyebrow">Kennislandschap</div><h2>Waar zit onze kennis?</h2>
+    <p>Alle ${fmt(items.length)} kennisitems uit SharePoint, Teams en Hunch, geordend volgens hun verbanden. Rond elk document liggen de gesprekken, opnames en tickets die ernaar verwijzen. Losse items zonder bron liggen aan de rand.</p>
+    <ol class="howto"><li>Klik op een onderwerp: het cluster gaat open en de verbanden worden zichtbaar.</li><li>Beweeg over een item om te zien waarmee het verbonden is.</li><li>Klik op een item voor details en alle verbanden.</li></ol>
+    <div class="stats">${ITEM_TYPES.slice(0, 3).map(t => `<div class="stat"><b>${fmt(typeCount[t])}</b><span>${KIND[t].plural}</span></div>`).join("")}</div>
+    <h3>Onderwerpen <span class="count">${TOPICS.length}</span></h3>
+    <div class="rows">${sorted.map(t => `<button class="row" data-go="topic:${t.id}"><span class="main"><span class="name">${esc(t.name)}</span><span class="bar"><i style="width:${(t.count / max * 100).toFixed(1)}%"></i></span><span class="sub">${t.orphan ? t.orphan.n : 0} zonder bron · ${Math.round(t.stale * 100)}% verouderd</span></span><span class="num">${fmt(t.count)}</span></button>`).join("")}</div>`;
+}
+
+/* ================================================================
+   3 · ORGANIGRAM (collapsible tree; team members as a compact grid)
+   ================================================================ */
+const UW = 252, UH = 68, PW = 232, PH = 44, COLW = 316, CW = PW + 12, CH = PH + 8;
+const O = { expanded: new Set([ROOT.id]), sel: { kind: "unit", id: ROOT.id }, pos: new Map(), nodes: [], w: 0, h: 0 };
+
+function orgInit() {
+  const st = $("#org-stage");
+  O.svg = d3.select(st).insert("svg", ":first-child").attr("role", "img").attr("aria-label", "Organigram");
+  O.g = O.svg.append("g"); O.gl = O.g.append("g"); O.gn = O.g.append("g");
+  O.zoom = d3.zoom().scaleExtent([0.15, 2]).on("zoom", e => O.g.attr("transform", e.transform));
+  O.svg.call(O.zoom).on("dblclick.zoom", null);
+  st.querySelectorAll("[data-zoom]").forEach(b => b.addEventListener("click", () => {
+    const z = b.dataset.zoom; if (z === "fit") orgFit(); else O.svg.transition().duration(250).call(O.zoom.scaleBy, z === "in" ? 1.3 : 1 / 1.3);
+  }));
+  const r = st.getBoundingClientRect(); O.w = r.width; O.h = r.height;
+  new ResizeObserver(() => { const b = st.getBoundingClientRect(); O.w = b.width; O.h = b.height; }).observe(st);
+  const nTeams = units.filter(u => u.level === 3).length;
+  $("#org-stats").innerHTML = `<b>${fmt(people.length)}</b> medewerkers · <b>${DIVISIONS.length}</b> divisies · <b>${deptByName.size}</b> afdelingen · <b>${fmt(nTeams)}</b> teams`;
+  orgSearchInit();
+  orgRender();
+  if (O.pending) { const p = O.pending; O.pending = null; orgReveal(p.kind, p.id); }
+  else { orgFit(false); orgInspector(); }
+}
+function orgTree(u) {
+  const n = { id: u.id, kind: "unit", u };
+  if (O.expanded.has(u.id)) n.children = u.children.length ? u.children.map(orgTree) : [{ id: u.id + "-grid", kind: "grid", u }];
+  return n;
+}
+function gridDims(u) {
+  const n = u.members.length, rows = Math.min(n, Math.max(1, Math.ceil(Math.sqrt(n * 3)))), cols = Math.ceil(n / rows);
+  return { rows, cols, w: cols * CW - 12, h: rows * CH - 8 };
+}
+const nodeH = n => n.kind === "unit" ? UH : gridDims(n.u).h;
+const nodeW = n => n.kind === "unit" ? UW : gridDims(n.u).w;
+const linkPath = (s, t) => { const x0 = s.y + UW, y0 = s.x, x1 = t.y - (t.data.kind === "grid" ? 10 : 0), y1 = t.x, m = (x0 + x1) / 2; return `M${x0},${y0} C${m},${y0} ${m},${y1} ${x1},${y1}`; };
+
+function orgRender(anchorId) {
+  const h = d3.hierarchy(orgTree(ROOT));
+  d3.tree().nodeSize([1, COLW]).separation((a, b) => (nodeH(a.data) + nodeH(b.data)) / 2 + (a.parent === b.parent ? 12 : 30))(h);
+  const nodes = h.descendants(), links = h.links(), prev = O.pos;
+  const startOf = d => { let a = d.parent; while (a) { const p = prev.get(a.data.id); if (p) return p; a = a.parent; } return { x: d.x, y: d.y }; };
+  const T = d3.transition().duration(450).ease(d3.easeCubicOut);
+
+  O.gl.selectAll("path.olink").data(links, d => d.target.data.id).join(
+    en => en.append("path").attr("class", "olink").attr("opacity", 0).attr("d", d => linkPath(d.source, d.target)),
+    up => up, ex => ex.transition(T).attr("opacity", 0).remove()
+  ).transition(T).attr("opacity", 1).attr("d", d => linkPath(d.source, d.target));
+
+  const tr = d => `translate(${d.y},${d.x - nodeH(d.data) / 2})`;
+  const sel = O.gn.selectAll("g.onode").data(nodes, d => d.data.id).join(
+    en => {
+      const g = en.append("g").attr("class", d => d.data.kind === "unit" ? "onode" : "onode grid").attr("opacity", 0)
+        .attr("tabindex", d => d.data.kind === "unit" ? 0 : null).attr("role", d => d.data.kind === "unit" ? "button" : null)
+        .attr("transform", d => { const s = startOf(d); return `translate(${s.y},${s.x - nodeH(d.data) / 2})`; });
+      g.each(function (d) { orgCard(d3.select(this), d.data); });
+      g.on("click", (e, d) => orgClick(d.data)).on("keydown", (e, d) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); orgClick(d.data); } });
+      return g;
+    },
+    up => up, ex => ex.transition(T).attr("opacity", 0).remove()
+  );
+  sel.transition(T).attr("opacity", 1).attr("transform", tr);
+  sel.each(function (d) {
+    const n = d.data; if (n.kind !== "unit") return;
+    const g = d3.select(this), kids = n.u.children.length || n.u.members.length;
+    g.select(".badge").attr("display", kids ? null : "none");
+    g.select(".badge text").text(O.expanded.has(n.id) ? "−" : "+" + kids);
+  });
+  O.nodes = nodes;
+  O.pos = new Map(nodes.map(d => [d.data.id, { x: d.x, y: d.y }]));
+  nodes.filter(d => d.data.kind === "grid").forEach(d => {
+    const gd = gridDims(d.data.u), top = d.x - gd.h / 2;
+    d.data.u.members.forEach((pid, i) => O.pos.set(pid, { x: top + (i % gd.rows) * CH + PH / 2, y: d.y + Math.floor(i / gd.rows) * CW }));
+  });
+  orgMarkSel();
+  if (anchorId) orgFocusFit(anchorId);
+}
+function personCard(g, p) {
+  g.append("rect").attr("class", "card").attr("width", PW).attr("height", PH).attr("rx", 10);
+  g.append("circle").attr("cx", 22).attr("cy", PH / 2).attr("r", 14).attr("fill", COL.person.soft);
+  g.append("text").attr("x", 22).attr("y", PH / 2).attr("dy", "0.36em").attr("text-anchor", "middle").attr("fill", COL.person.strong).style("font", "700 11px var(--font-sans)").text(initials(p));
+  g.append("text").attr("class", "t1").attr("x", 44).attr("y", 19).style("font-size", "13px").style("font-family", "var(--font-sans)").text(trunc(p.name, 24));
+  g.append("text").attr("class", "t2").attr("x", 44).attr("y", 34).style("font-size", "11px").text(trunc(p.role, 30));
+  if (p.authored.length) g.append("text").attr("class", "hc").attr("x", PW - 12).attr("y", 19).attr("text-anchor", "end").attr("fill", COL.doc.strong).text(p.authored.length + "×");
+  g.append("title").text(`${p.name} · ${p.role}${p.authored.length ? ` · ${p.authored.length} kennisitems` : ""}`);
+}
+function orgCard(g, n) {
+  if (n.kind === "grid") {
+    const gd = gridDims(n.u);
+    g.append("rect").attr("x", -10).attr("y", -10).attr("width", gd.w + 20).attr("height", gd.h + 20).attr("rx", 16).attr("fill", "#FFF8EF").attr("stroke", "#E6D5BE").attr("stroke-dasharray", "4 4");
+    n.u.members.forEach((pid, i) => {
+      const p = personById(pid);
+      const pg = g.append("g").datum(p).attr("class", "pcard").attr("tabindex", 0).attr("role", "button")
+        .attr("transform", `translate(${Math.floor(i / gd.rows) * CW},${(i % gd.rows) * CH})`);
+      personCard(pg, p);
+      pg.on("click", e => { e.stopPropagation(); orgPick(p.id); })
+        .on("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); orgPick(p.id); } });
+    });
+    return;
+  }
+  const u = n.u, head = personById(u.headId);
+  g.append("rect").attr("class", "card").attr("width", UW).attr("height", UH).attr("rx", 12);
+  g.append("text").attr("class", "lvl").attr("x", 14).attr("y", 19).text(LEVEL[u.level]);
+  g.append("text").attr("class", "hc").attr("x", UW - 16).attr("y", 19).attr("text-anchor", "end").text(fmt(u.size) + " pers.");
+  g.append("text").attr("class", "t1").attr("x", 14).attr("y", 38).text(trunc(u.name, 27));
+  g.append("text").attr("class", "t2").attr("x", 14).attr("y", 55).text(trunc("Leiding: " + head.name, 34));
+  const tot = ITEM_TYPES.reduce((s, t) => s + u.types[t], 0) || 1;
+  let x = 14; const bw = UW - 28;
+  const bar = g.append("g").attr("transform", `translate(0,${UH - 6})`);
+  bar.append("rect").attr("x", 14).attr("width", bw).attr("height", 3).attr("rx", 1.5).attr("fill", "#F6EBDC");
+  ITEM_TYPES.forEach(t => { const w = bw * u.types[t] / tot; if (w > 0) bar.append("rect").attr("x", x).attr("width", w).attr("height", 3).attr("fill", DOT[t]); x += w; });
+  const b = g.append("g").attr("class", "badge").attr("transform", `translate(${UW},${UH / 2})`);
+  b.append("circle").attr("r", 14);
+  b.append("text").attr("text-anchor", "middle").attr("dy", "0.36em");
+  g.append("title").text(`${u.name} · ${fmt(u.size)} medewerkers · leiding: ${head.name}`);
+}
+function orgMarkSel() {
+  const s = O.sel, p = s.kind === "person" ? personById(s.id) : null;
+  O.gn.selectAll("g.onode").classed("sel", d => d.data.kind === "unit" && (s.kind === "unit" ? d.data.id === s.id : p.isHead && d.data.u.headId === s.id));
+  O.gn.selectAll("g.pcard").classed("sel", d => s.kind === "person" && d.id === s.id);
+}
+function orgPick(pid) { O.sel = { kind: "person", id: pid }; orgMarkSel(); orgInspector(); }
+function orgClick(n) {
+  if (n.kind !== "unit") return;
+  if (n.u.children.length || n.u.members.length) { O.expanded.has(n.id) ? orgCollapse(n.u) : O.expanded.add(n.id); }
+  O.sel = { kind: "unit", id: n.id }; orgRender(n.id); orgInspector();
+}
+function orgCollapse(u) { O.expanded.delete(u.id); u.children.forEach(orgCollapse); }
+// Re-frame the view around a card and its visible children, so an expansion never runs off-screen.
+function orgFocusFit(id) {
+  const me = O.nodes.find(d => d.data.id === id); if (!me) return;
+  const group = [me, ...(me.children || [])];
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const d of group) {
+    const hh = nodeH(d.data), pad = d.data.kind === "grid" ? 10 : 0;
+    x0 = Math.min(x0, d.y - pad); x1 = Math.max(x1, d.y + nodeW(d.data) + pad + 16);
+    y0 = Math.min(y0, d.x - hh / 2 - pad); y1 = Math.max(y1, d.x + hh / 2 + pad);
+  }
+  const m = 36, bw = x1 - x0, bh = y1 - y0, cur = d3.zoomTransform(O.svg.node()).k;
+  const k = me.children ? Math.max(0.25, Math.min(1, (O.w - 2 * m) / bw, (O.h - 2 * m) / bh)) : Math.max(0.6, Math.min(1, cur));
+  const t = d3.zoomIdentity.translate(O.w / 2 - (x0 + bw / 2) * k, O.h / 2 - (y0 + bh / 2) * k).scale(k);
+  O.svg.transition().duration(600).ease(d3.easeCubicOut).call(O.zoom.transform, t);
+}
+function orgFit(animate = true) {
+  const b = O.g.node().getBBox(); if (!b.width) return;
+  const k = Math.max(0.15, Math.min(1, (O.w - 60) / b.width, (O.h - 60) / b.height));
+  const t = d3.zoomIdentity.translate(O.w / 2 - (b.x + b.width / 2) * k, O.h / 2 - (b.y + b.height / 2) * k).scale(k);
+  (animate ? O.svg.transition().duration(500) : O.svg).call(O.zoom.transform, t);
+}
+function orgReveal(kind, id) {
+  if (!views.org.init) { O.pending = { kind, id }; return; }
+  let u;
+  if (kind === "person") { const p = personById(id); u = unitOf(p); if (!p.isHead) O.expanded.add(u.id); }
+  else u = unitById.get(id);
+  let a = parentOf(u); while (a) { O.expanded.add(a.id); a = parentOf(a); }
+  O.sel = { kind, id };
+  orgRender(); orgFocusFit(u.id); orgInspector();
+}
+function orgInspector() {
+  const el = $("#org-insp"), s = O.sel;
+  if (s.kind === "person") {
+    const p = personById(s.id), m = p.managerId ? personById(p.managerId) : null, tops = personTopics(p);
+    const recent = [...p.authored, ...p.joined].map(id => itemById.get(id)).sort(byDateDesc).slice(0, 5);
+    el.innerHTML = `<div class="insp-head"><span class="avatar lg">${esc(initials(p))}</span><div><div class="eyebrow">Medewerker</div><h2>${esc(p.name)}</h2><p>${esc(p.role)}</p></div></div>
+      <div class="crumbs">${unitPath(unitOf(p)).map(u => `<button data-go="org:unit:${u.id}">${esc(u.name)}</button>`).join("<span>›</span>")}</div>
+      <dl class="meta">${m ? `<dt>Leidinggevende</dt><dd><button class="linkish" data-go="org:person:${m.id}">${esc(m.name)}</button></dd>` : ""}
+        ${p.isHead ? `<dt>Rapporteert</dt><dd>${(reportsOf.get(p.id) || []).length} directe medewerkers</dd>` : ""}
+        <dt>Bijdragen</dt><dd>${p.authored.length} gemaakt · ${p.joined.length} meegewerkt</dd></dl>
+      ${tops.length ? `<h3>Expertise</h3><div class="topic-chips">${tops.map(x => `<button class="topic-chip" data-go="topic:${x.t.id}">${esc(x.t.name)}</button>`).join("")}</div>` : ""}
+      ${recent.length ? `<h3>Recente kennis</h3><div class="rows">${recent.map(it => `<button class="row" data-go="graph:item:${it.id}">${miniFor({ kind: it.type })}<span class="main"><span class="name">${esc(it.title)}</span><span class="sub">${KIND[it.type].label} · ${fmtDate(it.date)}</span></span></button>`).join("")}</div>` : `<p style="margin-top:14px">Nog geen gedeelde kennis gevonden voor deze persoon.</p>`}
+      <div class="btn-row"><button class="btn primary" data-go="graph:person:${p.id}">Toon verbanden</button></div>`;
+    return;
+  }
+  const u = unitById.get(s.id), head = personById(u.headId);
+  const tot = ITEM_TYPES.reduce((a, t) => a + u.types[t], 0);
+  const tops = Object.entries(u.topics).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const tmax = tops.length ? tops[0][1] : 1;
+  const pool = []; (function walk(x) { pool.push(x.headId, ...x.members); x.children.forEach(walk); })(u);
+  const sharers = pool.map(personById).filter(p => p.authored.length).sort((a, b) => b.authored.length - a.authored.length).slice(0, 4);
+  el.innerHTML = `<div class="eyebrow">${LEVEL[u.level]}</div><h2>${esc(u.name)}</h2>
+    ${u.level ? `<div class="crumbs">${unitPath(u).slice(0, -1).map(x => `<button data-go="org:unit:${x.id}">${esc(x.name)}</button>`).join("<span>›</span>")}</div>` : ""}
+    <div class="rows" style="margin-top:12px"><button class="row" data-go="org:person:${head.id}"><span class="mini round" style="background:${COL.person.soft};color:${COL.person.strong}">${esc(initials(head))}</span><span class="main"><span class="name">${esc(head.name)}</span><span class="sub">${esc(head.role)}</span></span></button></div>
+    <div class="stats"><div class="stat"><b>${fmt(u.size)}</b><span>mensen</span></div><div class="stat"><b>${u.children.length || u.members.length}</b><span>${u.children.length ? (u.level === 0 ? "divisies" : u.level === 1 ? "afdelingen" : "teams") : "teamleden"}</span></div><div class="stat"><b>${fmt(tot)}</b><span>kennisitems</span></div></div>
+    ${tot ? `<h3>Kennismix</h3><div class="mix">${ITEM_TYPES.map(t => `<i style="width:${u.types[t] / tot * 100}%;background:${DOT[t]}"></i>`).join("")}</div>
+      <div class="mix-legend">${ITEM_TYPES.map(t => `<span><span class="dot" style="background:${DOT[t]}"></span>${KIND[t].plural} ${fmt(u.types[t])}</span>`).join("")}</div>` : ""}
+    ${tops.length ? `<h3>Waar dit ${u.level === 3 ? "team" : "onderdeel"} over schrijft</h3><div class="rows">${tops.map(([id, k]) => { const t = topicById.get(id); return `<button class="row" data-go="topic:${id}"><span class="main"><span class="name">${esc(t.name)}</span><span class="bar"><i style="width:${(k / tmax * 100).toFixed(0)}%"></i></span></span><span class="num">${fmt(k)}</span></button>`; }).join("")}</div>` : ""}
+    ${sharers.length ? `<h3>Grootste kennisdelers</h3><div class="rows">${sharers.map(p => `<button class="row" data-go="org:person:${p.id}"><span class="mini round" style="background:${COL.person.soft};color:${COL.person.strong}">${esc(initials(p))}</span><span class="main"><span class="name">${esc(p.name)}</span><span class="sub">${esc(teamLabel(p))}</span></span><span class="num">${p.authored.length}</span></button>`).join("")}</div>` : ""}
+    <div class="btn-row"><button class="btn primary" data-go="graph:person:${head.id}">Verbanden van ${esc(head.first)}</button></div>`;
+}
+function orgSearchInit() {
+  const inp = $("#org-q"), box = $("#org-results");
+  let list = [];
+  const render = () => {
+    const q = inp.value.trim().toLowerCase();
+    if (q.length < 2) { box.hidden = true; return; }
+    const us = units.filter(u => u.level && u.name.toLowerCase().includes(q)).slice(0, 4).map(u => ({ kind: "unit", id: u.id, name: u.name, sub: `${LEVEL[u.level]} · ${(parentOf(u) || {}).name}` }));
+    const ps = []; for (const p of people) { if (p.name.toLowerCase().includes(q)) { ps.push({ kind: "person", id: p.id, name: p.name, sub: `${p.role} · ${teamLabel(p)}` }); if (ps.length >= 7) break; } }
+    list = [...ps, ...us];
+    box.innerHTML = list.length ? list.map((r, i) => `<button class="row" data-i="${i}">${r.kind === "person" ? `<span class="mini round" style="background:${COL.person.soft};color:${COL.person.strong}">${esc(initials(personById(r.id)))}</span>` : `<span class="mini" style="background:${COL.unit.soft}">${icon("unit", COL.unit.strong, 15)}</span>`}<span class="main"><span class="name">${esc(r.name)}</span><span class="sub">${esc(r.sub)}</span></span></button>`).join("") : `<div class="empty">Niemand gevonden voor “${esc(inp.value)}”.</div>`;
+    box.hidden = false;
+  };
+  const choose = i => { const r = list[i]; if (!r) return; box.hidden = true; inp.value = r.name; orgReveal(r.kind, r.id); };
+  inp.addEventListener("input", render);
+  inp.addEventListener("focus", render);
+  inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); choose(0); } if (e.key === "Escape") box.hidden = true; });
+  box.addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) choose(+b.dataset.i); });
+  document.addEventListener("click", e => { if (!e.target.closest(".search-wrap")) box.hidden = true; });
+}
+
+/* ================================================================
+   Boot
+   ================================================================ */
+let start = "graph";
+try { const h = location.hash.slice(1); if (views[h]) start = h; } catch (e) {}
+show(start);
+})();
+</script>
+
+</body>
+</html>
