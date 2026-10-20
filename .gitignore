@@ -2,6 +2,7 @@ node_modules/
 .next/
 .env
 .env.local
+.claude
 .data/
 coverage/
 test-results/
