@@ -3071,18 +3071,37 @@ button.thread-attachment:hover {
   align-items: center;
   gap: var(--space-2);
 }
-.status-select {
-  height: 40px;
-  padding: 0 var(--space-3);
+/* Status filter: same box, type and spacing as the search field next to it,
+   with our own chevron instead of the browser's. */
+.status-filter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.status-filter select {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  padding: var(--space-2) 36px var(--space-2) var(--space-3);
   border: 1px solid var(--ink-muted);
   border-radius: var(--radius-md);
   background: var(--surface-raised);
-  font: 600 13px/18px var(--font-sans);
+  font: 400 15px/22px var(--font-sans);
   color: var(--ink);
   cursor: pointer;
 }
-.status-select:hover {
+.status-filter select:hover {
   background: var(--surface);
+}
+.status-filter select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.status-filter > svg {
+  position: absolute;
+  right: var(--space-3);
+  color: var(--ink-muted);
+  pointer-events: none;
 }
 .tab > span.tab-alert {
   background: var(--coral);

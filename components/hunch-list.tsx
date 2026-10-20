@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Paperclip,
@@ -139,19 +140,21 @@ export function HunchList() {
             ))}
           </div>
           <div className="toolbar-right">
-            <select
-              className="status-select"
-              aria-label="Filter op status"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as StatusFilter);
-                setPage(0);
-              }}
-            >
-              <option value="any">Elke status</option>
-              <option value="open">Lopend</option>
-              <option value="resolved">Opgelost</option>
-            </select>
+            <span className="status-filter">
+              <select
+                aria-label="Filter op status"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as StatusFilter);
+                  setPage(0);
+                }}
+              >
+                <option value="any">Elke status</option>
+                <option value="open">Lopend</option>
+                <option value="resolved">Opgelost</option>
+              </select>
+              <ChevronDown size={16} aria-hidden="true" />
+            </span>
             <label className="search-field">
               <Search size={17} />
               <input
