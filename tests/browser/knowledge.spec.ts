@@ -48,6 +48,24 @@ for (const entry of [
   });
 }
 
+test("organisation chart can be left while its layout is settling", async ({
+  page,
+}) => {
+  await page.goto("/organigram?person=e-emma");
+  for (let i = 0; i < 4; i++) {
+    await expect(page.locator(".kg-view > .kg-inspector h2")).toHaveText(
+      "Emma Peeters",
+    );
+    await page.getByRole("link", { name: "Knowledge base", exact: true }).click();
+    await expect(page).toHaveURL("/kennisbank");
+    await page.goBack();
+  }
+  await expect(page.locator(".kg-view > .kg-inspector h2")).toHaveText(
+    "Emma Peeters",
+  );
+  await expect(page.locator(".kg-canvas > svg")).toBeVisible();
+});
+
 test("knowledge search, graph, filters and dialog navigation", async ({
   page,
 }) => {

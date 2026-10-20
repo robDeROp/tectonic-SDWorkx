@@ -131,15 +131,18 @@ function OrgChart({
   act.current.person = (id: string) => setSel({ kind: "person", id });
 
   const size = () => {
-    const b = stage.current!.getBoundingClientRect();
+    const el = stage.current;
+    if (!el) return null;
+    const b = el.getBoundingClientRect();
     return { w: b.width || 1, h: b.height || 1 };
   };
   const fitAll = (animate = true) => {
     const o = O.current;
-    if (!o) return;
+    const viewport = size();
+    if (!o || !viewport) return;
     const b = o.g.node()!.getBBox();
     if (!b.width) return;
-    const { w, h } = size();
+    const { w, h } = viewport;
     const k = Math.max(
       0.15,
       Math.min(1, (w - 60) / b.width, (h - 60) / b.height),
@@ -156,7 +159,8 @@ function OrgChart({
   /* Re-frame around a card and its visible children, so an expansion never runs off-screen. */
   const focusFit = (id: string) => {
     const o = O.current;
-    if (!o) return;
+    const viewport = size();
+    if (!o || !viewport) return;
     const me = o.nodes.find((d) => d.data.id === id);
     if (!me) return;
     const group = [me, ...(me.children ?? [])];
@@ -172,7 +176,7 @@ function OrgChart({
       y0 = Math.min(y0, d.x - hh / 2 - pad);
       y1 = Math.max(y1, d.x + hh / 2 + pad);
     }
-    const { w, h } = size();
+    const { w, h } = viewport;
     const m = 36,
       bw = x1 - x0,
       bh = y1 - y0,
@@ -226,6 +230,8 @@ function OrgChart({
       fitted: false,
     };
     return () => {
+      svg.interrupt();
+      svg.selectAll("*").interrupt();
       svg.remove();
       O.current = null;
     };
@@ -401,7 +407,7 @@ function OrgChart({
         .attr("x", UW - 16)
         .attr("y", 19)
         .attr("text-anchor", "end")
-        .text(fmt(st.size) + "people");
+        .text(fmt(st.size) + " people");
       g.append("text")
         .attr("class", "kg-t1")
         .attr("x", 14)
@@ -500,15 +506,28 @@ function OrgChart({
     });
     o.nodes = nodes;
     o.pos = new Map(nodes.map((d) => [d.data.id, { x: d.x, y: d.y }]));
+    let frame: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (!o.fitted) {
-      o.fitted = true;
-      requestAnimationFrame(() => setTimeout(() => fitAll(false), 0));
+      frame = requestAnimationFrame(() => {
+        timer = setTimeout(() => {
+          if (O.current !== o || !stage.current) return;
+          fitAll(false);
+          o.fitted = true;
+        }, 0);
+      });
     }
+    return () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      if (timer !== undefined) clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, expanded]);
 
   useEffect(() => {
-    if (anchor) setTimeout(() => focusFit(anchor.id), 30);
+    if (!anchor) return;
+    const timer = setTimeout(() => focusFit(anchor.id), 30);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor]);
 
