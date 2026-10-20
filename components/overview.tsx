@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  ArrowDown,
   ArrowRight,
   Check,
   ChevronRight,
@@ -164,6 +165,7 @@ const pipStages = [
   { count: 6, image: "3-overworked", label: "overwerkt" },
   { count: 10, image: "4-overwhelmed", label: "overweldigd" },
   { count: 20, image: "5-drowning", label: "overspoeld" },
+  { count: 0, image: "1-happy", label: "ontspannen" },
 ];
 
 const initialHunches: Hunch[] = [
@@ -258,6 +260,8 @@ export function Overview() {
   const [title, setTitle] = useState("");
   const [feedback, setFeedback] = useState("");
   const returnFocus = useRef<HTMLElement | null>(null);
+  const hunchesSection = useRef<HTMLElement | null>(null);
+  const hunchesHeading = useRef<HTMLHeadingElement | null>(null);
 
   function open(next: DialogState) {
     returnFocus.current =
@@ -274,11 +278,10 @@ export function Overview() {
     // Restore focus after React removes the native dialog.
     requestAnimationFrame(() => {
       const target = returnFocus.current;
-      if (target instanceof HTMLButtonElement && target.disabled) {
-        target
-          .closest("li")
-          ?.querySelector<HTMLButtonElement>(".overview-row-title")
-          ?.focus();
+      if (!target?.isConnected) {
+        document
+          .querySelector<HTMLElement>("#activity-title, #overview-guide-title")
+          ?.focus({ preventScroll: true });
       } else {
         target?.focus();
       }
@@ -319,8 +322,32 @@ export function Overview() {
     close();
   }
 
-  const pending = activities.length - completed.length;
+  const remainingActivities = activities.filter(
+    (item) => !completed.includes(item.id),
+  );
+  const pending = remainingActivities.length;
+  const hasCompleted = activities.some((item) => completed.includes(item.id));
+  const isClear = pending === 0;
+  const isLastAction = pending === 1;
+  const isCompact = pending > 0 && pending <= 3;
+  const mascotStage =
+    [...pipStages]
+      .reverse()
+      .find((stage) => stage.count > 0 && pending >= stage.count) ??
+    pipStages[0];
+  const lastActivity = isLastAction ? remainingActivities[0] : null;
   const activeActivity = dialog?.kind === "activity" ? dialog.item : null;
+
+  function scrollToHunches(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    hunchesHeading.current?.focus({ preventScroll: true });
+    hunchesSection.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "start",
+    });
+  }
 
   return (
     <div className="page hunch-overview">
@@ -342,114 +369,209 @@ export function Overview() {
         </Link>
       </div>
 
-      <div className="overview-split-card">
-        <section
-          className="overview-activities"
-          aria-labelledby="activity-title"
-        >
-          <div className="overview-card-heading">
-            <h2 id="activity-title">
-              Activiteiten van de dag{" "}
-              <span
-                className="overview-count"
-                aria-label={`${pending} openstaande activiteiten`}
-              >
-                {pending}
-              </span>
-            </h2>
-            <button
-              className="text-button"
-              onClick={() => open({ kind: "all-activities" })}
-            >
-              Alles bekijken <ChevronRight size={19} />
-            </button>
-          </div>
-          <ul className="overview-list overview-activity-list">
-            {activities.map((item) => {
-              const done = completed.includes(item.id);
-              return (
-                <li
-                  key={item.id}
-                  className={`overview-activity${done ? " is-complete" : ""}`}
+      <div
+        className={`overview-split-card${isCompact ? " overview-compact-card" : ""}${isLastAction ? " overview-last-card" : ""}${isClear ? " overview-clear-card" : ""}${isClear && hasCompleted ? " is-celebrating" : ""}`}
+      >
+        {!isClear && (
+          <section
+            className="overview-activities"
+            aria-labelledby="activity-title"
+          >
+            <div className="overview-card-heading">
+              <h2 id="activity-title" tabIndex={-1}>
+                {isLastAction ? "Je laatste actie" : "Activiteiten van de dag"}{" "}
+                <span
+                  className="overview-count"
+                  aria-label={`${pending} openstaande activiteiten`}
                 >
-                  <time className="overview-time">{item.time}</time>
-                  <Priority priority={item.priority} done={done} />
-                  <SourceIcon source={item.source} />
-                  <button
-                    className="overview-row-title"
-                    onClick={() =>
-                      open({ kind: "activity", item, execute: false })
-                    }
-                  >
-                    {item.title}
-                  </button>
+                  {pending}
+                </span>
+              </h2>
+              <button
+                className="text-button"
+                onClick={() => open({ kind: "all-activities" })}
+              >
+                Alles bekijken <ChevronRight size={19} />
+              </button>
+            </div>
+            {lastActivity ? (
+              <article className="overview-final-activity">
+                <div className="overview-final-meta">
+                  <SourceIcon source={lastActivity.source} />
                   <span
-                    className={`overview-project overview-project-${item.tone}`}
+                    className={`overview-project overview-project-${lastActivity.tone}`}
                   >
-                    {item.project}
+                    {lastActivity.project}
                   </span>
+                  <time className="overview-time">{lastActivity.time}</time>
+                </div>
+                <h3>{lastActivity.title}</h3>
+                <p>{lastActivity.description}</p>
+                <div className="overview-final-actions">
                   <button
-                    className={`button overview-action${done ? " overview-action-done" : ""}`}
-                    disabled={done}
+                    className="button overview-action"
                     onClick={() =>
-                      open({ kind: "activity", item, execute: true })
+                      open({
+                        kind: "activity",
+                        item: lastActivity,
+                        execute: true,
+                      })
                     }
                   >
-                    {done ? (
-                      <>
-                        <Check size={16} /> Afgerond
-                      </>
-                    ) : (
-                      actionLabels[item.action]
-                    )}
+                    {actionLabels[lastActivity.action]} <ArrowRight size={17} />
                   </button>
                   <button
-                    className="icon-button overview-more"
-                    aria-label={`Meer opties voor ${item.title}`}
+                    className="text-button"
                     onClick={() =>
-                      open({ kind: "activity", item, execute: false })
+                      open({
+                        kind: "activity",
+                        item: lastActivity,
+                        execute: false,
+                      })
                     }
                   >
-                    <MoreHorizontal size={20} />
+                    Context bekijken <ChevronRight size={17} />
                   </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                </div>
+              </article>
+            ) : (
+              <ul className="overview-list overview-activity-list">
+                {remainingActivities.map((item) => {
+                  return (
+                    <li key={item.id} className="overview-activity">
+                      <time className="overview-time">{item.time}</time>
+                      <Priority priority={item.priority} />
+                      <SourceIcon source={item.source} />
+                      <button
+                        className="overview-row-title"
+                        onClick={() =>
+                          open({ kind: "activity", item, execute: false })
+                        }
+                      >
+                        {item.title}
+                      </button>
+                      <span
+                        className={`overview-project overview-project-${item.tone}`}
+                      >
+                        {item.project}
+                      </span>
+                      <button
+                        className="button overview-action"
+                        onClick={() =>
+                          open({ kind: "activity", item, execute: true })
+                        }
+                      >
+                        {actionLabels[item.action]}
+                      </button>
+                      <button
+                        className="icon-button overview-more"
+                        aria-label={`Meer opties voor ${item.title}`}
+                        onClick={() =>
+                          open({ kind: "activity", item, execute: false })
+                        }
+                      >
+                        <MoreHorizontal size={20} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        )}
 
         <section className="overview-guide" aria-label="Pip helpt je op weg">
           <button
             type="button"
             className="overview-mascot-stage"
             onClick={cyclePip}
-            aria-label={`Pip is ${pipStage.label}. Toon ${nextPipStage.count} openstaande ${nextPipStage.count === 1 ? "activiteit" : "activiteiten"}.`}
+            aria-label={`Pip is ${isClear ? "ontspannen" : mascotStage.label}. Toon ${nextPipStage.count} openstaande ${nextPipStage.count === 1 ? "activiteit" : "activiteiten"}.`}
           >
             <Image
               className="overview-mascot"
-              src={`/hunch-mascot-${pipStage.image}.png`}
-              alt={`Pip, ${pipStage.label}`}
+              src={`/hunch-mascot-${mascotStage.image}.png`}
+              alt={`Pip, ${isClear ? "ontspannen" : mascotStage.label}`}
               width={1280}
               height={1280}
-              sizes="(max-width: 650px) 260px, (max-width: 1150px) 340px, 360px"
+              sizes={
+                isCompact
+                  ? "(max-width: 760px) 160px, 220px"
+                  : "(max-width: 760px) 260px, 360px"
+              }
               preload
             />
             <span className="overview-guide-spark" aria-hidden="true">
               <Sparkles size={40} />
             </span>
           </button>
-          <div>
-            <span className="section-overline">Pip denkt met je mee</span>
-            <h2>
-              {pending
-                ? "Een helder begin van je dag."
-                : "Helemaal bij. Goed gedaan!"}
+          <div className="overview-guide-copy">
+            <span className="section-overline">
+              {isClear ? (
+                <>
+                  <Check size={15} aria-hidden="true" />{" "}
+                  {hasCompleted ? "Alles afgehandeld" : "Helemaal bij"}
+                </>
+              ) : isLastAction ? (
+                "De laatste stap"
+              ) : (
+                "Pip denkt met je mee"
+              )}
+            </span>
+            <h2 id="overview-guide-title" tabIndex={-1}>
+              {isClear ? (
+                hasCompleted ? (
+                  <>
+                    Goed gedaan, Jamie. <span>Je bent helemaal bij.</span>
+                  </>
+                ) : (
+                  "Alles is rustig, Jamie."
+                )
+              ) : isLastAction ? (
+                "Nog één actie. Je bent er bijna."
+              ) : isCompact ? (
+                hasCompleted ? (
+                  "Goed bezig, Jamie."
+                ) : (
+                  "Nog een paar kleine stappen."
+                )
+              ) : (
+                "Een helder begin van je dag."
+              )}
             </h2>
             <p aria-live="polite" aria-atomic="true">
-              {pending
-                ? `Ik heb ${pending} ${pending === 1 ? "activiteit" : "activiteiten"} voor je klaargezet. Bekijk de context en kies je volgende stap.`
-                : "Alle activiteiten zijn opgepakt. Je Hunches staan hieronder voor je klaar."}
+              {isClear
+                ? hasCompleted
+                  ? "Alle activiteiten zijn afgehandeld. Tijd om even adem te halen."
+                  : "Je hebt op dit moment geen nieuwe activiteiten. Zodra er iets binnenkomt, zet ik het hier voor je klaar."
+                : isLastAction
+                  ? "De context staat klaar. Pak deze laatste actie op, dan ben je weer helemaal bij."
+                  : isCompact
+                    ? `Nog ${pending} acties, dan ben je weer helemaal bij. Eén stap tegelijk.`
+                    : `Ik heb ${pending} activiteiten voor je klaargezet. Bekijk de context en kies je volgende stap.`}
             </p>
+            {isClear && (
+              <div className="overview-clear-actions">
+                {hunches.length > 0 && (
+                  <a
+                    href="#open-hunches"
+                    className="button overview-action"
+                    onClick={scrollToHunches}
+                  >
+                    Bekijk je {hunches.length} open{" "}
+                    {hunches.length === 1 ? "Hunch" : "Hunches"}{" "}
+                    <ArrowDown size={17} />
+                  </a>
+                )}
+                {hasCompleted && (
+                  <button
+                    className="text-button"
+                    onClick={() => open({ kind: "all-activities" })}
+                  >
+                    Afgeronde activiteiten <ChevronRight size={17} />
+                  </button>
+                )}
+              </div>
+            )}
             <p
               className="overview-feedback"
               role="status"
@@ -462,42 +584,49 @@ export function Overview() {
         </section>
       </div>
 
-      <section className="overview-card" aria-labelledby="hunches-title">
-        <div className="overview-card-heading">
-          <h2 id="hunches-title">
-            Mijn Hunches{" "}
-            <span className="overview-hunch-count">{hunches.length}</span>
-          </h2>
-          <button
-            className="text-button"
-            onClick={() => open({ kind: "all-hunches" })}
-          >
-            Alles bekijken <ChevronRight size={19} />
-          </button>
-        </div>
-        <ul className="overview-list">
-          {hunches.map((item) => (
-            <li key={item.id} className="overview-hunch">
-              <Priority priority={item.priority} />
-              <button
-                className="overview-row-title"
-                onClick={() => open({ kind: "hunch", item })}
-              >
-                {item.title}
-              </button>
-              <Members names={item.members} />
-              <HunchStatus status={item.status} />
-              <button
-                className="icon-button overview-more"
-                aria-label={`Meer opties voor ${item.title}`}
-                onClick={() => open({ kind: "hunch", item })}
-              >
-                <MoreHorizontal size={20} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {hunches.length > 0 && (
+        <section
+          ref={hunchesSection}
+          id="open-hunches"
+          className="overview-card overview-hunches-card"
+          aria-labelledby="hunches-title"
+        >
+          <div className="overview-card-heading">
+            <h2 ref={hunchesHeading} id="hunches-title" tabIndex={-1}>
+              Mijn Hunches{" "}
+              <span className="overview-hunch-count">{hunches.length}</span>
+            </h2>
+            <button
+              className="text-button"
+              onClick={() => open({ kind: "all-hunches" })}
+            >
+              Alles bekijken <ChevronRight size={19} />
+            </button>
+          </div>
+          <ul className="overview-list">
+            {hunches.map((item) => (
+              <li key={item.id} className="overview-hunch">
+                <Priority priority={item.priority} />
+                <button
+                  className="overview-row-title"
+                  onClick={() => open({ kind: "hunch", item })}
+                >
+                  {item.title}
+                </button>
+                <Members names={item.members} />
+                <HunchStatus status={item.status} />
+                <button
+                  className="icon-button overview-more"
+                  aria-label={`Meer opties voor ${item.title}`}
+                  onClick={() => open({ kind: "hunch", item })}
+                >
+                  <MoreHorizontal size={20} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="overview-footnote">
         <Sparkles size={15} aria-hidden="true" /> Find it. Understand it. Trust
@@ -653,24 +782,29 @@ export function Overview() {
               </div>
             </>
           )}
-          {dialog.kind === "all-activities" && (
-            <ul className="overview-dialog-list">
-              {activities.map((item) => (
-                <li key={item.id}>
-                  <SourceIcon source={item.source} />
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>
-                      {item.time} · {item.project}
-                    </p>
-                  </div>
-                  <span className="overview-list-state">
-                    {completed.includes(item.id) ? "Afgerond" : "Openstaand"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {dialog.kind === "all-activities" &&
+            (activities.length === 0 ? (
+              <p className="overview-detail-copy">
+                Je hebt op dit moment geen nieuwe activiteiten.
+              </p>
+            ) : (
+              <ul className="overview-dialog-list">
+                {activities.map((item) => (
+                  <li key={item.id}>
+                    <SourceIcon source={item.source} />
+                    <div>
+                      <strong>{item.title}</strong>
+                      <p>
+                        {item.time} · {item.project}
+                      </p>
+                    </div>
+                    <span className="overview-list-state">
+                      {completed.includes(item.id) ? "Afgerond" : "Openstaand"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ))}
           {dialog.kind === "all-hunches" && (
             <ul className="overview-dialog-list">
               {hunches.map((item) => (
