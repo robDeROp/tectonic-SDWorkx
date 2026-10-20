@@ -3649,8 +3649,6 @@ button.thread-attachment:hover {
 
 /* Keep the imported Hunches styling local to the Hunches screens. */
 .hunch-shell {
-  --on-coral: #ffffff;
-
   /* ============================================================
      Hunches: overview, hunch page, context, call for help
      ============================================================ */
