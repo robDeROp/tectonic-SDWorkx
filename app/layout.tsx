@@ -18,7 +18,8 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="nl">
-      <body>
+      {/* Browser extensions (e.g. ColorZilla) add attributes to <body> before hydration. */}
+      <body suppressHydrationWarning>
         <Shell>{children}</Shell>
       </body>
     </html>

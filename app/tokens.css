@@ -51,6 +51,13 @@
   --danger-soft: #fce6e3;
   --on-header-muted: color-mix(in srgb, var(--on-header) 72%, var(--header));
   --header-hover: color-mix(in srgb, var(--on-header) 10%, var(--header));
+  /* Two extra department hues for the organogram (six departments, four brand hues) */
+  --sky: #3a7bd5;
+  --sky-soft: #dde9f8;
+  --sky-strong: #1f4f8f;
+  --moss: #6b8e23;
+  --moss-soft: #e6efd3;
+  --moss-strong: #44601a;
 
   /* Type */
   --font-display:

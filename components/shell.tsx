@@ -6,6 +6,7 @@ import {
   ChevronDown,
   CircleHelp,
   Inbox,
+  Network,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
@@ -24,6 +25,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
       label: "Kennisbank",
       icon: BookOpen,
       active: path === "/kennisbank",
+    },
+    {
+      href: "/organogram",
+      label: "Organogram",
+      icon: Network,
+      active: path === "/organogram",
     },
     {
       href: "/instellingen",
