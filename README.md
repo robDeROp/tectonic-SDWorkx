@@ -78,6 +78,29 @@ Opnieuw seeden vult alleen ontbrekende cases aan. Bestaande cases, reacties,
 statussen en verwijderde contextkeuzes worden niet overschreven.
 De invoerkanalen zijn voorbeelddata; er is geen live Teams- of Outlook-import.
 
+### Kennisbank, Organigram en details
+
+De kennisgraaf uit `poc/kennisgraaf` draait nu op de live data van de app
+(`GET /api/knowledge`): de Entra-achtige directory (mensen, teams, documenten,
+gesprekken), de hunches met hun gekoppelde context en hulpvragen, en de
+klantvragen met hun bronnen. Bronnen van klantvragen met dezelfde naam als een
+directorydocument worden samengevoegd; een document dat een ouder document
+vervangt (SharePoint-metadata `replaces`) markeert dat oude document als
+vervangen.
+
+- **Kennisbank** (`/kennisbank`) toont het kennislandschap uit
+  `variant-sterren.html`: onderwerpen → kernbronnen → de hunches, klantvragen
+  en gesprekken die ze gebruiken, met de lenzen voor ontbrekende, verouderde en
+  persoonsafhankelijke kennis.
+- **Organigram** (`/organigram`) toont de organisatie als uitklapbare boom met
+  per team de kennismix.
+- In een hunch openen mensen en documenten onder **Relevante context** een
+  detailvenster: links de verbandengraaf, rechts de details. Vanuit dat venster
+  spring je door naar de kennisbank of het organigram.
+
+Gesprekken worden aan documenten gekoppeld op basis van gedeelde trefwoorden,
+op dezelfde manier waarop Hunch context herkent.
+
 ### Status en voorgestelde acties
 
 De auteur kan op de status bovenaan een hunch klikken om deze te wijzigen.

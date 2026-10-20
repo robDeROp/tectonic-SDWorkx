@@ -7,6 +7,7 @@ import {
   CircleHelp,
   Inbox,
   Lightbulb,
+  Network,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
@@ -33,6 +34,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
       label: "Kennisbank",
       icon: BookOpen,
       active: path === "/kennisbank",
+    },
+    {
+      href: "/organigram",
+      label: "Organigram",
+      icon: Network,
+      active: path === "/organigram",
     },
     {
       href: "/instellingen",

@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
-import { Moon } from "lucide-react";
+import { ArrowUpRight, Moon } from "lucide-react";
 import Link from "next/link";
 import { dateLabel } from "@/lib/client";
 import type { HunchContextView, HunchSummary } from "@/lib/types";
 import { GlyphTile, Relevance, SourceChip } from "./hunch";
 import { Avatar, HunchStatus } from "./ui";
+import { KnowledgeDetailsModal, type Origin } from "./knowledge/details-modal";
+import type { Focus } from "./knowledge/model";
 
 type Tab = "people" | "docs" | "chats";
 
@@ -16,10 +18,32 @@ type Tab = "people" | "docs" | "chats";
 export function HunchContext({
   context,
   hunches,
+  origin,
 }: {
   context: HunchContextView;
   hunches: HunchSummary[];
+  /** The hunch this context belongs to, shown in the details modal. */
+  origin?: Origin;
 }) {
+  const [details, setDetails] = useState<Focus | null>(null);
+  /** A row that opens the details modal: graph left, details right. */
+  const opens = (focus: Focus, name: string) => ({
+    role: "button",
+    tabIndex: 0,
+    "aria-label": `Details en verbanden van ${name}`,
+    onClick: () => setDetails(focus),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setDetails(focus);
+      }
+    },
+  });
+  const hint = (
+    <span className="kg-open-hint">
+      Details <ArrowUpRight size={13} />
+    </span>
+  );
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "people", label: "Mensen", count: context.people.length },
     { key: "docs", label: "Documenten", count: context.documents.length },
@@ -57,7 +81,11 @@ export function HunchContext({
       <ul className="context-list" role="tabpanel">
         {tab === "people" &&
           context.people.map((p) => (
-            <li key={p.id} className="context-item hn-k-people">
+            <li
+              key={p.id}
+              {...opens({ kind: "person", id: p.id }, p.name)}
+              className="context-item hn-k-people kg-clickable"
+            >
               <Avatar person={p} />
               <div>
                 <strong>{p.name}</strong>
@@ -78,12 +106,17 @@ export function HunchContext({
                 {p.relevance !== undefined && (
                   <Relevance value={p.relevance} label="relevant" />
                 )}
+                {hint}
               </div>
             </li>
           ))}
         {tab === "docs" &&
           context.documents.map((d) => (
-            <li key={d.id} className="context-item hn-k-docs">
+            <li
+              key={d.id}
+              {...opens({ kind: "item", id: d.id }, d.name)}
+              className="context-item hn-k-docs kg-clickable"
+            >
               <GlyphTile kind="docs" />
               <div>
                 <strong>{d.name}</strong>
@@ -96,6 +129,7 @@ export function HunchContext({
               <div className="context-meta">
                 <span>Bijgewerkt {dateLabel(d.updatedAt, true)}</span>
                 <Relevance value={d.relevance} label="relevant" />
+                {hint}
               </div>
             </li>
           ))}
@@ -123,6 +157,13 @@ export function HunchContext({
           </li>
         )}
       </ul>
+      {details && (
+        <KnowledgeDetailsModal
+          focus={details}
+          origin={origin}
+          onClose={() => setDetails(null)}
+        />
+      )}
     </section>
   );
 }

@@ -1,56 +1,29 @@
-import { BookOpen, Info, ShieldCheck } from "lucide-react";
-import { demoDocuments } from "@/lib/fixtures";
-import { dateLabel } from "@/lib/client";
-import { GlyphTile, SourceChip } from "@/components/hunch";
-export default function KnowledgePage() {
+import { KnowledgeLandscape } from "@/components/knowledge/landscape";
+
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
+export default async function KnowledgePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
   return (
-    <div className="page">
-      <div className="page-heading">
+    <div className="kg-page">
+      <div className="kg-page-head">
         <div>
           <div className="eyebrow">Find it. Understand it. Trust it.</div>
-          <h1>Een gedeelde basis van kennis.</h1>
+          <h1>Kennisbank</h1>
           <p>
-            De drie bronnen achter de demonstratie over vertrekvakantiegeld.
+            Alle documenten, gesprekken, hunches en klantvragen per onderwerp:
+            welke bronnen dragen de kennis, en waar ontbreekt ze?
           </p>
         </div>
-        <span className="page-heading-icon" aria-hidden="true">
-          <BookOpen size={28} />
-        </span>
+        <span className="kg-poc-chip">Fictieve demodata</span>
       </div>
-      <div className="connection-notice">
-        <Info size={20} />
-        <div>
-          <strong>Fictieve bronnen, echte beoordelingen</strong>
-          <p>
-            Deze teksten zijn gemaakt voor de demo. Het zijn geen officiële SD
-            Worx-documenten of juridische bronnen.
-          </p>
-        </div>
-      </div>
-      <div className="knowledge-grid">
-        {demoDocuments.map((doc) => (
-          <article className="panel knowledge-card" key={doc.key}>
-            <div className="knowledge-top">
-              <GlyphTile kind="docs" size={44} />
-              <SourceChip kind="docs">{doc.kind}</SourceChip>
-            </div>
-            <h2>{doc.name}</h2>
-            <div className="knowledge-date">
-              Bijgewerkt op {dateLabel(doc.date)}
-            </div>
-            <p>{doc.content}</p>
-            <div className="knowledge-foot">
-              <ShieldCheck size={15} />
-              De beoordeling hangt af van de klantvraag.
-            </div>
-          </article>
-        ))}
-      </div>
-      <div className="inline-info">
-        <Info size={17} />
-        Extra uploads worden aan het betreffende ticket gekoppeld. Scores
-        verschijnen in het ticket zodra Gemini de bronnen heeft beoordeeld.
-      </div>
+      <KnowledgeLandscape
+        start={{ item: one(params.item), topic: one(params.topic) }}
+      />
     </div>
   );
 }
